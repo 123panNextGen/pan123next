@@ -1,0 +1,31 @@
+name: pan123next
+description: "Your cloud, always ready"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  dio: ^5.9.2
+  package_info_plus: ^10.0.0
+  window_manager: ^0.5.1
+  fluent_ui: ^4.15.1
+  shared_preferences: ^2.5.5
+  uuid: ^4.5.3
+
+  fluentui_system_icons: ^1.1.273
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/data/device.json
