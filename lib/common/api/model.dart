@@ -83,6 +83,20 @@ class FileItemModel {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+    'FileId': fileId,
+    'FileName': fileName,
+    'Type': type,
+    'Size': size,
+    'ContentType': contentType,
+    'CreateAt': createAt,
+    'UpdateAt': updateAt,
+    'Hidden': hidden,
+    'ParentFileId': parentFileId,
+    'PinYin': pinYin,
+    'StarredStatus': starredStatus ? 1 : 0,
+  };
+
   bool get isFolder => type == 1;
 }
 
@@ -127,7 +141,8 @@ class FileListData {
       len: json['Len'] ?? 0,
       isFirst: json['IsFirst'] ?? false,
       total: json['Total'] ?? 0,
-      infoList: (json['InfoList'] as List?)
+      infoList:
+          (json['InfoList'] as List?)
               ?.map((item) => FileItemModel.fromJson(item))
               .toList() ??
           [],

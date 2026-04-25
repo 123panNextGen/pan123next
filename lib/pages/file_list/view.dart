@@ -433,9 +433,37 @@ class _FileListViewState extends State<FileListView> {
                             ),
                             label: const Text('删除'),
                             tooltip: '删除选中文件',
-                            onPressed: () async {
-                              // 删除选中文件
-                            },
+                            onPressed: _selectedFile != null
+                                ? () async {
+                                    bool? result = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) =>
+                                          const TrashContentDialog(),
+                                    );
+
+                                    if (!mounted || !(result ?? false)) return;
+
+                                    ApiReturnModel returnModel = await _session
+                                        .trashFile(_selectedFile!);
+                                    if (!mounted) return;
+
+                                    if (returnModel.apiCodeEnum ==
+                                        ApiCode.success) {
+                                      _loadFileList(
+                                        _currentParentId.toString(),
+                                      );
+                                      _selectedFile = null;
+                                    } else {
+                                      showInfoBar(
+                                        // ignore: use_build_context_synchronously
+                                        context,
+                                        '错误',
+                                        returnModel.msg,
+                                        InfoBarSeverity.error,
+                                      );
+                                    }
+                                  }
+                                : null,
                           ),
                         ],
                       ),
@@ -538,6 +566,33 @@ class _AddContentDialogState extends State<AddContentDialog> {
           onPressed: () => Navigator.pop(context),
         ),
         Button(onPressed: _createFile, child: Text('新建')),
+      ],
+    );
+  }
+}
+
+class TrashContentDialog extends StatefulWidget {
+  const TrashContentDialog({super.key});
+
+  @override
+  State<TrashContentDialog> createState() => _TrashContentDialogState();
+}
+
+class _TrashContentDialogState extends State<TrashContentDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return ContentDialog(
+      title: const Text('删除'),
+      content: const Text('确认删除选中文件吗?\n删除后的文件将会放入回收站中'),
+      actions: [
+        FilledButton(
+          child: const Text('取消'),
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        Button(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('删除'),
+        ),
       ],
     );
   }

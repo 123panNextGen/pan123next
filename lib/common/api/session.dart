@@ -210,7 +210,7 @@ class NetSession {
       },
     );
 
-    if  (response.data['code'] != 0) {
+    if (response.data['code'] != 0) {
       return ApiReturnModel(
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
@@ -224,6 +224,38 @@ class NetSession {
       apiCode: response.data['code'],
       apiCodeEnum: ApiCode.success,
       msg: response.data['message'] ?? '创建成功',
+    );
+  }
+
+  Future<ApiReturnModel> trashFile(
+    FileItemModel file, [
+    bool operation = true,
+  ]) async {
+    final response = await dio.post(
+      '/a/api/file/trash',
+      data: {
+        'driveId': '0',
+        'fileTrashInfoList': file.toJson(),
+        'operation': operation,
+      },
+    );
+
+    if (response.data['code'] != 0) {
+      return ApiReturnModel(
+        code: response.statusCode ?? 0,
+        apiCode: response.data['code'],
+        apiCodeEnum: ApiCode.fail,
+        msg: response.data['message'] ?? '删除失败',
+        data: response.data,
+      );
+    }
+
+    return ApiReturnModel(
+      code: response.statusCode ?? 0,
+      apiCode: response.data['code'],
+      apiCodeEnum: ApiCode.success,
+      msg: response.data['message'] ?? '删除成功',
+      data: response.data,
     );
   }
 }
