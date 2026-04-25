@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:window_manager/window_manager.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
   }
 
   await UserDb().initDb();
+  AppSession().clearSession();
 
   runApp(const MainApp());
 }

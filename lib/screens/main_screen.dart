@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/pages/file_list/view.dart';
+import 'package:pan123next/pages/settings/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
@@ -41,6 +42,20 @@ class _MainScreenState extends State<MainScreen> {
                 vertical: 16.0,
               ),
               child: FileListView(),
+            ),
+          ),
+        ],
+
+        footerItems: [
+          PaneItem(
+            icon: const WindowsIcon(FluentIcons.settings_24_regular),
+            title: const Text('设置'),
+            body: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 16.0,
+              ),
+              child: const SettingsView(),
             ),
           ),
         ],

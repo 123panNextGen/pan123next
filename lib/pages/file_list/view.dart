@@ -138,6 +138,7 @@ class _FileListViewState extends State<FileListView> {
     setState(() {
       _isLoading = true;
       _currentParentId = int.parse(fileId);
+      _selectedFile = null;
     });
 
     try {
@@ -231,17 +232,17 @@ class _FileListViewState extends State<FileListView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           '文件列表',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
 
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Card(
           child: Row(
             children: [
               Button(
-                child: Row(
+                child: const Row(
                   children: [
                     Icon(FluentIcons.arrow_left_24_regular),
                     SizedBox(width: 4),
@@ -264,7 +265,7 @@ class _FileListViewState extends State<FileListView> {
                   }
                 },
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: BreadcrumbBar(
                   items: _breadItems,
@@ -282,7 +283,7 @@ class _FileListViewState extends State<FileListView> {
           ),
         ),
 
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Expanded(
           child: Row(
             children: [
@@ -391,7 +392,7 @@ class _FileListViewState extends State<FileListView> {
                   ),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Flexible(
                 flex: 6,
                 child: Card(
