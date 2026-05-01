@@ -17,24 +17,7 @@ class _FileListViewState extends State<FileListView> {
   late TreeViewController _treeController = TreeViewController(
     items: [
       TreeViewItem(
-        content: GestureDetector(
-          child: Row(
-            children: [
-              Icon(FluentIcons.folder_24_regular, size: 16),
-              SizedBox(width: 8),
-              Text('根目录'),
-            ],
-          ),
-          onTap: () {
-            _loadFileList('0');
-            setState(() {
-              _breadItems.clear();
-              _breadFiles.clear();
-              _breadItems.add(BreadcrumbItem(label: Text('根目录'), value: 0));
-              _breadFiles.add('0');
-            });
-          },
-        ),
+        content: _buildTreeItemContent('根目录', '0', isFolder: true),
         value: '0',
         lazy: true,
         children: [],
@@ -53,6 +36,67 @@ class _FileListViewState extends State<FileListView> {
 
   final commandBarKey = GlobalKey<CommandBarState>();
 
+  // Method to build tree item content
+  Widget _buildTreeItemContent(
+    String fileName,
+    String fileId, {
+    bool isFolder = true,
+  }) {
+    return GestureDetector(
+      child: Row(
+        children: [
+          Icon(
+            isFolder
+                ? FluentIcons.folder_24_regular
+                : FluentIcons.document_24_regular,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(fileName, overflow: TextOverflow.ellipsis, maxLines: 1),
+          ),
+        ],
+      ),
+      onTap: () {
+        _loadFileList(fileId);
+
+        // Update breadcrumb
+        final fileNames = <String>[];
+        final fileIds = <String>[];
+        _collectBreadcrumbPath(
+          _treeController.items,
+          fileId,
+          fileNames,
+          fileIds,
+        );
+
+        setState(() {
+          _breadItems.clear();
+          _breadFiles.clear();
+
+          for (int i = 0; i < fileNames.length; i++) {
+            _breadItems.add(
+              BreadcrumbItem(
+                label: Expanded(
+                  child: Text(
+                    fileNames[i],
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                value: i,
+              ),
+            );
+            _breadFiles.add(fileIds[i]);
+          }
+        });
+
+        // Auto expand tree path to this folder
+        _expandTreePath(fileId);
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,60 +110,9 @@ class _FileListViewState extends State<FileListView> {
       final response = await _session.getFileList('0');
       if (response.apiCode == 200) {
         final List<FileItemModel> infoList = response.data.data.infoList;
-        final children = infoList
-            .where((FileItemModel file) => file.isFolder)
-            .map(
-              (FileItemModel file) => TreeViewItem(
-                content: GestureDetector(
-                  child: Row(
-                    children: [
-                      Icon(FluentIcons.folder_24_regular, size: 16),
-                      SizedBox(width: 8),
-                      Text(file.fileName),
-                    ],
-                  ),
-                  onTap: () {
-                    final childFileId = file.fileId.toString();
-                    _loadFileList(childFileId);
-
-                    // 更新面包屑
-                    final fileNames = <String>[];
-                    final fileIds = <String>[];
-                    _collectBreadcrumbPath(
-                      _treeController.items,
-                      childFileId,
-                      fileNames,
-                      fileIds,
-                    );
-
-                    setState(() {
-                      _breadItems.clear();
-                      _breadFiles.clear();
-
-                      for (int i = 0; i < fileNames.length; i++) {
-                        _breadItems.add(
-                          BreadcrumbItem(
-                            label: Expanded(
-                              child: Text(
-                                fileNames[i],
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                            value: i,
-                          ),
-                        );
-                        _breadFiles.add(fileIds[i]);
-                      }
-                    });
-                  },
-                ),
-                value: file.fileId.toString(),
-                lazy: true,
-                children: [],
-              ),
-            )
-            .toList();
+        final children = _buildTreeItems(
+          infoList.where((file) => file.isFolder).toList(),
+        );
 
         final updatedController = TreeViewController(
           items: _updateTreeItems(_treeController.items, '0', children),
@@ -185,6 +178,165 @@ class _FileListViewState extends State<FileListView> {
         value: item.value,
         lazy: item.lazy,
         children: _updateTreeItems(item.children, targetId, children),
+        expanded: item.expanded,
+      );
+    }).toList();
+  }
+
+  // Helper method to build tree items from file list
+  List<TreeViewItem> _buildTreeItems(List<FileItemModel> fileList) {
+    return fileList.map((file) {
+      return TreeViewItem(
+        content: _buildTreeItemContent(
+          file.fileName,
+          file.fileId.toString(),
+          isFolder: file.isFolder,
+        ),
+        value: file.fileId.toString(),
+        lazy: true,
+        children: [],
+      );
+    }).toList();
+  }
+
+  // Refresh the tree view
+  Future<void> _refreshTreeView() async {
+    // Reset tree controller with only the root item
+    setState(() {
+      _treeController = TreeViewController(
+        items: [
+          TreeViewItem(
+            content: _buildTreeItemContent('根目录', '0', isFolder: true),
+            value: '0',
+            lazy: true,
+            children: [],
+          ),
+        ],
+      );
+    });
+
+    // Reload the root tree items
+    await _loadRootTreeItems();
+  }
+
+  // Expand tree items along the path to a specific fileId
+  Future<void> _expandTreePath(String targetFileId) async {
+    // Collect the path from root to target
+    final pathIds = <String>[];
+    _collectPathToTarget(_treeController.items, targetFileId, pathIds);
+
+    // Expand each node along the path
+    for (final fileId in pathIds) {
+      await _expandTreeNode(fileId);
+    }
+  }
+
+  // Helper to collect path from root to target
+  bool _collectPathToTarget(
+    List<TreeViewItem> items,
+    String targetId,
+    List<String> path,
+  ) {
+    for (final item in items) {
+      path.add(item.value as String);
+
+      if (item.value == targetId) {
+        return true;
+      }
+
+      if (_collectPathToTarget(item.children, targetId, path)) {
+        return true;
+      }
+
+      path.removeLast();
+    }
+    return false;
+  }
+
+  // Expand a specific tree node and load its children if needed
+  Future<void> _expandTreeNode(String fileId) async {
+    // Check if already expanded
+    bool isExpanded = _isNodeExpanded(_treeController.items, fileId);
+    if (isExpanded) return;
+
+    // Load children if lazy
+    bool hasChildren = !_isNodeLazy(_treeController.items, fileId);
+    if (!hasChildren) {
+      try {
+        final response = await _session.getFileList(fileId);
+        if (response.apiCode == 200) {
+          final List<FileItemModel> infoList = response.data.data.infoList;
+          final children = _buildTreeItems(
+            infoList.where((file) => file.isFolder).toList(),
+          );
+
+          setState(() {
+            _treeController = TreeViewController(
+              items: _updateTreeItems(_treeController.items, fileId, children),
+            );
+          });
+          return;
+        }
+      } catch (e) {
+        debugPrint('加载树形结构失败: $e');
+      }
+    }
+
+    // Expand the node
+    setState(() {
+      _treeController = TreeViewController(
+        items: _setNodeExpanded(_treeController.items, fileId, true),
+      );
+    });
+  }
+
+  // Check if a node is expanded
+  bool _isNodeExpanded(List<TreeViewItem> items, String targetId) {
+    for (final item in items) {
+      if (item.value == targetId) {
+        return item.expanded;
+      }
+      if (_isNodeExpanded(item.children, targetId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Check if a node is lazy (has no children loaded)
+  bool _isNodeLazy(List<TreeViewItem> items, String targetId) {
+    for (final item in items) {
+      if (item.value == targetId) {
+        return item.lazy;
+      }
+      if (_isNodeLazy(item.children, targetId)) {
+        return true;
+      }
+    }
+    return true;
+  }
+
+  // Set a node's expanded state while preserving other states
+  List<TreeViewItem> _setNodeExpanded(
+    List<TreeViewItem> items,
+    String targetId,
+    bool expanded,
+  ) {
+    return items.map((item) {
+      if (item.value == targetId) {
+        return TreeViewItem(
+          content: item.content,
+          value: item.value,
+          lazy: item.lazy,
+          children: item.children,
+          expanded: expanded,
+        );
+      }
+      return TreeViewItem(
+        content: item.content,
+        value: item.value,
+        lazy: item.lazy,
+        children: _setNodeExpanded(item.children, targetId, expanded),
         expanded: item.expanded,
       );
     }).toList();
@@ -276,6 +428,8 @@ class _FileListViewState extends State<FileListView> {
                       _breadFiles.removeRange(index + 1, _breadFiles.length);
                       _loadFileList(_breadFiles.last);
                     });
+                    // Auto expand tree path to the clicked breadcrumb
+                    _expandTreePath(_breadFiles.last);
                   },
                 ),
               ),
@@ -301,75 +455,11 @@ class _FileListViewState extends State<FileListView> {
                             if (response.apiCode == 200) {
                               final List<FileItemModel> infoList =
                                   response.data.data.infoList;
-                              final children = infoList
-                                  .where((FileItemModel file) => file.isFolder)
-                                  .map(
-                                    (FileItemModel file) => TreeViewItem(
-                                      content: GestureDetector(
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              FluentIcons.folder_24_regular,
-                                              size: 16,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                file.fileName,
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        onTap: () {
-                                          final childFileId = file.fileId
-                                              .toString();
-                                          _loadFileList(childFileId);
-
-                                          // 更新面包屑
-                                          final fileNames = <String>[];
-                                          final fileIds = <String>[];
-                                          _collectBreadcrumbPath(
-                                            _treeController.items,
-                                            childFileId,
-                                            fileNames,
-                                            fileIds,
-                                          );
-
-                                          setState(() {
-                                            _breadItems.clear();
-                                            _breadFiles.clear();
-
-                                            for (
-                                              int i = 0;
-                                              i < fileNames.length;
-                                              i++
-                                            ) {
-                                              _breadItems.add(
-                                                BreadcrumbItem(
-                                                  label: Expanded(
-                                                    child: Text(
-                                                      fileNames[i],
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      maxLines: 1,
-                                                    ),
-                                                  ),
-                                                  value: i,
-                                                ),
-                                              );
-                                              _breadFiles.add(fileIds[i]);
-                                            }
-                                          });
-                                        },
-                                      ),
-                                      value: file.fileId.toString(),
-                                      lazy: true,
-                                      children: [],
-                                    ),
-                                  )
-                                  .toList();
+                              final children = _buildTreeItems(
+                                infoList
+                                    .where((file) => file.isFolder)
+                                    .toList(),
+                              );
 
                               final updatedController = TreeViewController(
                                 items: _updateTreeItems(
@@ -404,27 +494,34 @@ class _FileListViewState extends State<FileListView> {
                             CommandBarOverflowBehavior.dynamicOverflow,
                         primaryItems: [
                           CommandBarButton(
-                            icon: const WindowsIcon(FluentIcons.add_24_regular),
-                            label: const Text('新建'),
-                            tooltip: '新建文件/文件夹',
+                            icon: const WindowsIcon(
+                              FluentIcons.arrow_repeat_all_24_regular,
+                            ),
+                            label: const Text('刷新'),
+                            tooltip: '刷新文件列表和目录树',
+                            onPressed: () {
+                              _loadFileList(_currentParentId.toString());
+                              _refreshTreeView();
+                            },
+                          ),
+                          CommandBarButton(
+                            icon: const WindowsIcon(
+                              FluentIcons.folder_add_24_regular,
+                            ),
+                            label: const Text('新建文件夹'),
+                            tooltip: '新建文件夹',
                             onPressed: () async {
                               var result = await showDialog<String>(
                                 context: context,
-                                builder: (context) => const AddContentDialog(),
+                                builder: (context) => const AddFolderDialog(),
                               );
 
                               if (result != null) {
-                                if (result.endsWith('/')) {
-                                  result = result.substring(
-                                    0,
-                                    result.length - 1,
-                                  );
-                                  await _session.createDir(
-                                    result,
-                                    _currentParentId.toString(),
-                                  );
-                                  _loadFileList(_currentParentId.toString());
-                                }
+                                await _session.createDir(
+                                  result,
+                                  _currentParentId.toString(),
+                                );
+                                _loadFileList(_currentParentId.toString());
                               }
                             },
                           ),
@@ -499,6 +596,8 @@ class _FileListViewState extends State<FileListView> {
                                             value: _breadItems.length + 1,
                                           ),
                                         );
+                                        // Auto expand tree path to this folder
+                                        _expandTreePath(file.fileId.toString());
                                       } else {
                                         setState(() => _selectedFile = file);
                                       }
@@ -520,14 +619,14 @@ class _FileListViewState extends State<FileListView> {
   }
 }
 
-class AddContentDialog extends StatefulWidget {
-  const AddContentDialog({super.key});
+class AddFolderDialog extends StatefulWidget {
+  const AddFolderDialog({super.key});
 
   @override
-  State<AddContentDialog> createState() => _AddContentDialogState();
+  State<AddFolderDialog> createState() => _AddFolderDialogState();
 }
 
-class _AddContentDialogState extends State<AddContentDialog> {
+class _AddFolderDialogState extends State<AddFolderDialog> {
   final TextEditingController _fileNameController = TextEditingController();
 
   @override
@@ -539,7 +638,7 @@ class _AddContentDialogState extends State<AddContentDialog> {
   void _createFile() async {
     final fileName = _fileNameController.text;
     if (fileName.isEmpty) {
-      showInfoBar(context, '错误', '请输入文件名', InfoBarSeverity.error);
+      showInfoBar(context, '错误', '请输入文件夹名', InfoBarSeverity.error);
       return;
     }
     Navigator.pop(context, fileName);
@@ -548,15 +647,13 @@ class _AddContentDialogState extends State<AddContentDialog> {
   @override
   Widget build(BuildContext context) {
     return ContentDialog(
-      title: const Text('新建'),
+      title: const Text('新建文件夹'),
       content: InfoLabel(
-        label:
-            '在当前目录下新建文件/文件夹'
-            '\n如果需要创建文件夹, 请在文件名后添加 /\n不支持多个 /',
+        label: '在当前目录下新建文件夹',
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextBox(controller: _fileNameController, placeholder: '请输入文件名'),
+            TextBox(controller: _fileNameController, placeholder: '请输入文件夹名'),
           ],
         ),
       ),
