@@ -21,7 +21,8 @@ class _LoginInputPageState extends State<LoginInputPage> {
   bool isLogin = false;
 
   void login() {
-    setState(() => isLogin = true);
+    isLogin = true;
+    setState(() {});
 
     if (userNameController.text.isEmpty || passwordController.text.isEmpty) {
       showInfoBar(context, '登录失败', '用户名或密码不能为空', InfoBarSeverity.error);
@@ -45,7 +46,8 @@ class _LoginInputPageState extends State<LoginInputPage> {
           }
         });
 
-    setState(() => isLogin = false);
+    isLogin = false;
+    setState(() {});
   }
 
   @override
@@ -67,62 +69,64 @@ class _LoginInputPageState extends State<LoginInputPage> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '欢迎!',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
+      child: !isLogin
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '欢迎!',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ),
 
-          SizedBox(height: 10),
-          TextBox(placeholder: '用户名(邮箱/手机号)', controller: userNameController),
-          SizedBox(height: 10),
-          PasswordBox(placeholder: '密码', controller: passwordController),
+                SizedBox(height: 10),
+                TextBox(
+                  placeholder: '用户名(邮箱/手机号)',
+                  controller: userNameController,
+                ),
+                SizedBox(height: 10),
+                PasswordBox(placeholder: '密码', controller: passwordController),
 
-          SizedBox(height: 10),
-          Row(
-            children: [
-              Checkbox(
-                checked: rememberPassword,
-                onChanged: (_) =>
-                    setState(() => rememberPassword = !rememberPassword),
-              ),
-              SizedBox(width: 5),
-              Text('保存密码'),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Checkbox(
+                      checked: rememberPassword,
+                      onChanged: (_) =>
+                          setState(() => rememberPassword = !rememberPassword),
+                    ),
+                    SizedBox(width: 5),
+                    Text('保存密码'),
 
-              SizedBox(width: 15),
-              Checkbox(
-                checked: autoLogin,
-                onChanged: (_) => setState(() {
-                  if (!rememberPassword && !autoLogin) {
-                    rememberPassword = true;
-                  }
-                  autoLogin = !autoLogin;
-                }),
-              ),
-              SizedBox(width: 5),
-              Text('自动登录'),
-            ],
-          ),
+                    SizedBox(width: 15),
+                    Checkbox(
+                      checked: autoLogin,
+                      onChanged: (_) => setState(() {
+                        if (!rememberPassword && !autoLogin) {
+                          rememberPassword = true;
+                        }
+                        autoLogin = !autoLogin;
+                      }),
+                    ),
+                    SizedBox(width: 5),
+                    Text('自动登录'),
+                  ],
+                ),
 
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              FilledButton(
-                onPressed: login,
-                child: Text(isLogin ? '登录中' : '登录'),
-              ),
-              SizedBox(width: 5),
-              Button(
-                onPressed: () => Navigator.pop(context),
-                child: Text('取消'),
-              ),
-            ],
-          ),
-        ],
-      ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FilledButton(onPressed: login, child: Text('登录')),
+                    SizedBox(width: 5),
+                    Button(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('取消'),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : ProgressRing(),
     );
   }
 }
