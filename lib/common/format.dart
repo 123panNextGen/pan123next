@@ -21,44 +21,52 @@ String formatDate(String dateString) {
   }
 }
 
-Widget getFileIcon(FileItemModel item) {
-  if (item.isFolder) {
-    return Icon(FluentIcons.folder_24_regular, size: 24);
-  }
-
-  final ext = item.fileName.split('.').last.toLowerCase();
-  switch (ext) {
+IconData getFileIconDataBySuffix(String suffix) {
+  switch (suffix.toLowerCase()) {
     case 'pdf':
-      return Icon(FluentIcons.document_pdf_24_regular, size: 24);
+      return FluentIcons.document_pdf_24_regular;
     case 'txt':
-      return Icon(WindowsIcons.document, size: 24);
+      return WindowsIcons.document;
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
-      return Icon(FluentIcons.image_24_regular, size: 24);
+      return FluentIcons.image_24_regular;
     case 'mp4':
     case 'mov':
     case 'avi':
     case 'flv':
-      return Icon(FluentIcons.video_24_regular, size: 24);
+      return FluentIcons.video_24_regular;
     case 'zip':
     case 'rar':
     case '7z':
     case 'tar':
     case 'gz':
-      return Icon(FluentIcons.folder_zip_24_regular, size: 24);
+      return FluentIcons.folder_zip_24_regular;
     case 'doc':
     case 'docx':
     case 'md':
-      return Icon(FluentIcons.document_text_24_regular, size: 24);
+      return FluentIcons.document_text_24_regular;
     case 'xls':
     case 'xlsx':
-      return Icon(FluentIcons.document_table_24_regular, size: 24);
+      return FluentIcons.document_table_24_regular;
     case 'ppt':
     case 'pptx':
-      return Icon(FluentIcons.document_queue_24_regular, size: 24);
+      return FluentIcons.document_queue_24_regular;
     default:
-      return Icon(FluentIcons.document_24_regular, size: 24);
+      return FluentIcons.document_24_regular;
   }
+}
+
+Widget getFileIconBySuffix(String suffix) {
+  return Icon(getFileIconDataBySuffix(suffix), size: 24);
+}
+
+Widget getFileIcon(FileItemModel item) {
+  if (item.isFolder) {
+    return Icon(FluentIcons.folder_24_regular, size: 24);
+  }
+
+  final ext = item.fileName.split('.').last;
+  return getFileIconBySuffix(ext);
 }

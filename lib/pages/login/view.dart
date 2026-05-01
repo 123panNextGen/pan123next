@@ -78,15 +78,15 @@ class _LoginInputPageState extends State<LoginInputPage> {
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 TextBox(
                   placeholder: '用户名(邮箱/手机号)',
                   controller: userNameController,
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 PasswordBox(placeholder: '密码', controller: passwordController),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Checkbox(
@@ -94,10 +94,10 @@ class _LoginInputPageState extends State<LoginInputPage> {
                       onChanged: (_) =>
                           setState(() => rememberPassword = !rememberPassword),
                     ),
-                    SizedBox(width: 5),
+                    const SizedBox(width: 5),
                     Text('保存密码'),
 
-                    SizedBox(width: 15),
+                    const SizedBox(width: 15),
                     Checkbox(
                       checked: autoLogin,
                       onChanged: (_) => setState(() {
@@ -107,8 +107,8 @@ class _LoginInputPageState extends State<LoginInputPage> {
                         autoLogin = !autoLogin;
                       }),
                     ),
-                    SizedBox(width: 5),
-                    Text('自动登录'),
+                    const SizedBox(width: 5),
+                    const Text('自动登录'),
                   ],
                 ),
 

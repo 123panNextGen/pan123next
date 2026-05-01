@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/get_platform.dart';
+import 'package:pan123next/pages/downloader/view.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
@@ -42,6 +43,17 @@ class _MainScreenState extends State<MainScreen> {
                 vertical: 16.0,
               ),
               child: FileListView(),
+            ),
+          ),
+          PaneItem(
+            icon: const WindowsIcon(FluentIcons.arrow_down_24_regular),
+            title: const Text('下载'),
+            body: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 16.0,
+              ),
+              child: const DownloaderPage(),
             ),
           ),
         ],
