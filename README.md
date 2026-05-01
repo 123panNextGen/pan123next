@@ -35,13 +35,22 @@ flutter run
 
 如果你想要为这个项目搭把手, 你需要遵守以下规则:
 
-- Git Commit Message 必须遵循规范, 例如:
+- Git Commit Message 必须遵循规范, 详见 [这里](/doc/GitCommitMessageStyle.md), 例如:
 
     ```plain
     feat(file): 添加XXX功能
 
     修改了 XXX
     ```
+
+### AI 问题
+
+本项目不提倡 **完全使用 AI 编写/修改**,
+ 使用 AI 工具可以提升效率, 但请不要产生更多的问题.
+
+建议使用 AI 进行询问以及简单修改,
+ 不提倡完全信任 AI 且不做干预.
+ 您必须确保您看得懂 AI 写的什么的前提下应用.
 
 ## End
 
