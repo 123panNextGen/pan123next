@@ -26,6 +26,11 @@ class _FileListViewState extends State<FileListView> {
   ];
 
   final commandBarKey = GlobalKey<CommandBarState>();
+  final Map<int, FlyoutController> _flyoutControllers = {};
+
+  FlyoutController _getFlyoutController(int fileId) {
+    return _flyoutControllers.putIfAbsent(fileId, () => FlyoutController());
+  }
 
   @override
   void initState() {
@@ -68,7 +73,10 @@ class _FileListViewState extends State<FileListView> {
       _loadFileList(_breadItemIds[_breadItems.length - 2]);
       setState(() {
         _breadItems.removeRange(_breadItems.length - 1, _breadItems.length);
-        _breadItemIds.removeRange(_breadItemIds.length - 1, _breadItemIds.length);
+        _breadItemIds.removeRange(
+          _breadItemIds.length - 1,
+          _breadItemIds.length,
+        );
       });
     }
   }
@@ -141,9 +149,67 @@ class _FileListViewState extends State<FileListView> {
             ? '文件夹 - ${formatSize(file.size)}'
             : formatSize(file.size),
       ),
-      trailing: Text(file.updateAt),
+      trailing: FlyoutTarget(
+        controller: _getFlyoutController(file.fileId),
+        child: IconButton(
+          icon: const Icon(FluentIcons.more_vertical_24_regular),
+          onPressed: () {
+            setState(() => _selectedFile = file);
+
+            _getFlyoutController(file.fileId).showFlyout<void>(
+              autoModeConfiguration: FlyoutAutoConfiguration(
+                preferredMode: FlyoutPlacementMode.topCenter,
+              ),
+              barrierDismissible: true,
+              dismissOnPointerMoveAway: false,
+              dismissWithEsc: true,
+              builder: (context) {
+                return MenuFlyout(
+                  items: [
+                    MenuFlyoutItem(
+                      leading: const WindowsIcon(FluentIcons.delete_24_regular),
+                      text: const Text('删除'),
+                      onPressed: () {
+                        Flyout.of(context).close();
+                        _handleDelete();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
       selected: _selectedFile?.fileId == file.fileId,
       onPressed: () => _handleFileTap(file),
+    );
+  }
+
+  Widget _buildCommandBar() {
+    return CommandBar(
+      key: commandBarKey,
+      overflowBehavior: CommandBarOverflowBehavior.dynamicOverflow,
+      primaryItems: [
+        CommandBarButton(
+          icon: const WindowsIcon(FluentIcons.arrow_repeat_all_24_regular),
+          label: const Text('刷新'),
+          tooltip: '刷新文件列表',
+          onPressed: () => _loadFileList(_currentParentId.toString()),
+        ),
+        CommandBarButton(
+          icon: const WindowsIcon(FluentIcons.folder_add_24_regular),
+          label: const Text('新建文件夹'),
+          tooltip: '新建文件夹',
+          onPressed: _handleAddFolder,
+        ),
+        CommandBarButton(
+          icon: const WindowsIcon(FluentIcons.delete_24_regular),
+          label: const Text('删除'),
+          tooltip: '删除选中文件',
+          onPressed: _selectedFile != null ? _handleDelete : null,
+        ),
+      ],
     );
   }
 
@@ -185,35 +251,7 @@ class _FileListViewState extends State<FileListView> {
           child: Card(
             child: Column(
               children: [
-                CommandBar(
-                  key: commandBarKey,
-                  overflowBehavior: CommandBarOverflowBehavior.dynamicOverflow,
-                  primaryItems: [
-                    CommandBarButton(
-                      icon: const WindowsIcon(
-                        FluentIcons.arrow_repeat_all_24_regular,
-                      ),
-                      label: const Text('刷新'),
-                      tooltip: '刷新文件列表',
-                      onPressed: () =>
-                          _loadFileList(_currentParentId.toString()),
-                    ),
-                    CommandBarButton(
-                      icon: const WindowsIcon(
-                        FluentIcons.folder_add_24_regular,
-                      ),
-                      label: const Text('新建文件夹'),
-                      tooltip: '新建文件夹',
-                      onPressed: _handleAddFolder,
-                    ),
-                    CommandBarButton(
-                      icon: const WindowsIcon(FluentIcons.delete_24_regular),
-                      label: const Text('删除'),
-                      tooltip: '删除选中文件',
-                      onPressed: _selectedFile != null ? _handleDelete : null,
-                    ),
-                  ],
-                ),
+                _buildCommandBar(),
                 !_isLoading
                     ? Expanded(
                         child: ListView.builder(
