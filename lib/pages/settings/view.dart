@@ -1,6 +1,9 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
+import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
+import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/get_platform.dart';
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -10,91 +13,124 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  late String version = '获取版本中...';
-  Brightness theme = AppSession().theme;
-  AccentColor accentColor = AppSession().accentColor;
+  List<Map> themes = [
+    {'value': 'dark', 'label': '暗色'},
+    {'value': 'light', 'label': '亮色'},
+  ];
+  List<Map> accentColors = [
+    {'value': 'purple', 'label': '紫色'},
+    {'value': 'blue', 'label': '蓝色'},
+    {'value': 'yellow', 'label': '黄色'},
+    {'value': 'red', 'label': '红色'},
+    {'value': 'green', 'label': '绿色'},
+  ];
 
-  void updateVersion() async {
-    version = await getVersion();
-    setState(() {});
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    updateVersion();
-  }
+  String theme = AppDb().getValue('theme') ?? 'dark';
+  String accentColor = AppDb().getValue('accentColor') ?? 'purple';
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text(
-          '设置',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16.0),
+    final AppSession appSession = Get.find();
 
-        Expander(
-          header: const Text('切换主题', style: TextStyle(fontSize: 16)),
-          content: Row(
-            children: [
-              RadioGroup(
-                groupValue: accentColor,
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => accentColor = v);
-                    AppSession().accentColor = v;
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioButton<AccentColor>(
-                      value: Colors.blue,
-                      content: const Text('蓝色'),
-                      enabled: true,
-                    ),
-                    RadioButton<AccentColor>(
-                      value: Colors.purple,
-                      content: const Text('紫色'),
-                      enabled: true,
-                    ),
-                  ],
-                ),
+    return FutureBuilder<String>(
+      future: getVersion(),
+      builder: (context, snapshot) {
+        final version = snapshot.data ?? '获取版本中...';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              '设置',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 16.0),
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(FluentIcons.dark_theme_24_regular),
+                      SizedBox(width: 8.0),
+                      Text('切换主题', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Expanded(child: const Text('主题')),
+                      ComboBox<String>(
+                        value: theme,
+                        items: themes
+                            .map(
+                              (e) => ComboBoxItem<String>(
+                                value: e['value'],
+                                child: Text(e['label']),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            theme = v;
+                            setState(() {});
+                            appSession.updateTheme(
+                              v == 'dark' ? Brightness.dark : Brightness.light,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Expanded(child: const Text('颜色')),
+                      ComboBox<String>(
+                        value: accentColor,
+                        items: accentColors
+                            .map(
+                              (e) => ComboBoxItem<String>(
+                                value: e['value'],
+                                child: Text(e['label']),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            accentColor = v;
+                            setState(() {});
+                            appSession.updateAccentColor(v);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 8.0),
-              RadioGroup(
-                groupValue: theme,
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => theme = v);
-                    AppSession().theme = v;
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioButton<Brightness>(
-                      value: Brightness.dark,
-                      content: const Text('暗色'),
-                      enabled: true,
-                    ),
-                    RadioButton<Brightness>(
-                      value: Brightness.light,
-                      content: const Text('亮色'),
-                      enabled: true,
-                    ),
-                  ],
-                ),
+            ),
+
+            const SizedBox(height: 16.0),
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(FluentIcons.info_24_regular),
+                      const SizedBox(width: 8.0),
+                      const Text('123Pan Next'),
+                    ],
+                  ),
+                  const SizedBox(height: 8.0),
+                  Text('当前版本: $version'),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

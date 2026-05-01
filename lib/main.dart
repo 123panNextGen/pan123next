@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
+import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:window_manager/window_manager.dart';
@@ -7,6 +9,8 @@ import 'package:window_manager/window_manager.dart';
 import 'app.dart';
 
 Future<void> main() async {
+  Get.put(AppSession());
+
   // 对桌面端标题栏自定义
   if (isDesktop()) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +31,7 @@ Future<void> main() async {
   }
 
   await UserDb().initDb();
+  await AppDb().initDb();
   AppSession().clearSession();
 
   runApp(const MainApp());

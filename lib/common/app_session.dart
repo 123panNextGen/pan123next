@@ -1,47 +1,44 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:get/get.dart';
+import 'package:pan123next/common/data/app.dart';
 
-class AppSession {
-  static final AppSession _instance = AppSession._internal();
+class AppSession extends GetxController {
+  final Rx<Brightness> theme = Brightness.dark.obs;
+  final Rx<AccentColor> accentColor = Colors.purple.obs;
 
-  factory AppSession() {
-    return _instance;
+  static final _accentColorMap = {
+    'purple': Colors.purple,
+    'blue': Colors.blue,
+    'green': Colors.green,
+    'yellow': Colors.yellow,
+    'red': Colors.red,
+  };
+
+  void updateTheme(Brightness value) {
+    theme.value = value;
+    AppDb().setValue(
+      'theme',
+      value == Brightness.dark ? 'dark' : 'light',
+      'string',
+    );
   }
 
-  AppSession._internal();
-
-  Brightness _theme = Brightness.dark;
-  AccentColor _accentColor = Colors.purple;
-  Function(Brightness)? _themeChangeCallback;
-  Function(AccentColor)? _accentColorChangeCallback;
-
-  Brightness get theme => _theme;
-  AccentColor get accentColor => _accentColor;
-
-  set theme(Brightness value) {
-    _theme = value;
-    // 通知监听器主题变化
-    _themeChangeCallback?.call(value);
+  void updateAccentColor(String value) {
+    accentColor.value = _accentColorMap[value] ?? Colors.purple;
+    AppDb().setValue('accentColor', value, 'string');
   }
 
-  set accentColor(AccentColor value) {
-    _accentColor = value;
-    // 通知监听器主题变化
-    _accentColorChangeCallback?.call(value);
-  }
+  String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
 
-  // 注册主题变化监听器
-  void addThemeChangeListener(Function(Brightness) callback) {
-    _themeChangeCallback = callback;
-  }
+  String getAccentColor() => _accentColorMap.entries
+      .firstWhere(
+        (e) => e.value == accentColor.value,
+        orElse: () => MapEntry('purple', Colors.purple),
+      )
+      .key;
 
-  // 注册主题变化监听器
-  void addAccentColorChangeListener(Function(AccentColor) callback) {
-    _accentColorChangeCallback = callback;
-  }
-
-  // Method to clear session data
   void clearSession() {
-    theme = Brightness.dark;
-    accentColor = Colors.purple;
+    updateTheme(Brightness.dark);
+    updateAccentColor('purple');
   }
 }
