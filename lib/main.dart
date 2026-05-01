@@ -9,8 +9,6 @@ import 'package:window_manager/window_manager.dart';
 import 'app.dart';
 
 Future<void> main() async {
-  Get.put(AppSession());
-
   // 对桌面端标题栏自定义
   if (isDesktop()) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +30,8 @@ Future<void> main() async {
 
   await UserDb().initDb();
   await AppDb().initDb();
-  AppSession().clearSession();
+
+  Get.put(AppSession());
 
   runApp(const MainApp());
 }

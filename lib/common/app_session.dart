@@ -3,16 +3,10 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/data/app.dart';
 
 class AppSession extends GetxController {
-  final Rx<Brightness> theme = Brightness.dark.obs;
-  final Rx<AccentColor> accentColor = Colors.purple.obs;
-
-  static final _accentColorMap = {
-    'purple': Colors.purple,
-    'blue': Colors.blue,
-    'green': Colors.green,
-    'yellow': Colors.yellow,
-    'red': Colors.red,
-  };
+  final Rx<Brightness> theme = AppDb().getValue('theme') == 'dark'
+      ? Brightness.dark.obs
+      : Brightness.light.obs;
+  final Rx<AccentColor> accentColor = AppDb().getAccentColor().obs;
 
   void updateTheme(Brightness value) {
     theme.value = value;
@@ -24,18 +18,16 @@ class AppSession extends GetxController {
   }
 
   void updateAccentColor(String value) {
-    accentColor.value = _accentColorMap[value] ?? Colors.purple;
     AppDb().setValue('accentColor', value, 'string');
+    accentColor.value = AppDb().getAccentColor();
   }
 
   String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
 
-  String getAccentColor() => _accentColorMap.entries
-      .firstWhere(
-        (e) => e.value == accentColor.value,
-        orElse: () => MapEntry('purple', Colors.purple),
-      )
-      .key;
+  String getAccentColor() => accentColors.firstWhere(
+    (e) => e['result'] == accentColor.value,
+    orElse: () => accentColors.first,
+  )['value'];
 
   void clearSession() {
     updateTheme(Brightness.dark);

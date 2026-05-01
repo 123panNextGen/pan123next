@@ -2,7 +2,6 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/format.dart';
-import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'dialog.dart';
@@ -21,7 +20,7 @@ class _FileListViewState extends State<FileListView> {
   int _currentParentId = 0;
   bool _isLoading = false;
 
-  final List<String> _breadFiles = ['0'];
+  final List<String> _breadItemIds = ['0'];
   final _breadItems = <BreadcrumbItem<int>>[
     BreadcrumbItem(label: Text('根目录'), value: 0),
   ];
@@ -66,10 +65,10 @@ class _FileListViewState extends State<FileListView> {
 
   void _handleBack() {
     if (_breadItems.length > 1) {
-      _loadFileList(_breadFiles[_breadItems.length - 2]);
+      _loadFileList(_breadItemIds[_breadItems.length - 2]);
       setState(() {
         _breadItems.removeRange(_breadItems.length - 1, _breadItems.length);
-        _breadFiles.removeRange(_breadFiles.length - 1, _breadFiles.length);
+        _breadItemIds.removeRange(_breadItemIds.length - 1, _breadItemIds.length);
       });
     }
   }
@@ -78,9 +77,9 @@ class _FileListViewState extends State<FileListView> {
     final index = _breadItems.indexOf(item);
     setState(() {
       _breadItems.removeRange(index + 1, _breadItems.length);
-      _breadFiles.removeRange(index + 1, _breadFiles.length);
+      _breadItemIds.removeRange(index + 1, _breadItemIds.length);
     });
-    _loadFileList(_breadFiles.last);
+    _loadFileList(_breadItemIds.last);
   }
 
   void _handleFileTap(FileItemModel file) {
@@ -90,7 +89,7 @@ class _FileListViewState extends State<FileListView> {
         _breadItems.add(
           BreadcrumbItem(label: Text(file.fileName), value: file.fileId),
         );
-        _breadFiles.add(file.fileId.toString());
+        _breadItemIds.add(file.fileId.toString());
       });
     } else {
       setState(() {

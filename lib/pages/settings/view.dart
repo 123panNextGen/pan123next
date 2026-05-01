@@ -13,25 +13,21 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  List<Map> themes = [
-    {'value': 'dark', 'label': '暗色'},
-    {'value': 'light', 'label': '亮色'},
-  ];
-  List<Map> accentColors = [
-    {'value': 'purple', 'label': '紫色'},
-    {'value': 'blue', 'label': '蓝色'},
-    {'value': 'yellow', 'label': '黄色'},
-    {'value': 'red', 'label': '红色'},
-    {'value': 'green', 'label': '绿色'},
-  ];
+  final AppSession appSession = Get.find();
+  late String theme;
+  late String accentColor;
 
-  String theme = AppDb().getValue('theme') ?? 'dark';
-  String accentColor = AppDb().getValue('accentColor') ?? 'purple';
+  @override
+  void initState() {
+    super.initState();
+    theme = appSession.getTheme();
+    accentColor = appSession.getAccentColor();
+
+    debugPrint('theme: $theme, accentColor: $accentColor');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AppSession appSession = Get.find();
-
     return FutureBuilder<String>(
       future: getVersion(),
       builder: (context, snapshot) {
@@ -93,7 +89,20 @@ class _SettingsViewState extends State<SettingsView> {
                             .map(
                               (e) => ComboBoxItem<String>(
                                 value: e['value'],
-                                child: Text(e['label']),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: e['result'],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8.0),
+                                    Text(e['label']),
+                                  ],
+                                ),
                               ),
                             )
                             .toList(),
