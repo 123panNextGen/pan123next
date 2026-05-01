@@ -12,7 +12,7 @@ class AppDb {
 
     _prefs = await SharedPreferences.getInstance();
     try {
-      if (!(_prefs!.getBool('user.initialed') ?? false)) _firstInitDb();
+      if (!(_prefs!.getBool('app.initialed') ?? false)) _firstInitDb();
     } catch (e) {
       _firstInitDb();
     }
