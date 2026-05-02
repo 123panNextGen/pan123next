@@ -35,7 +35,7 @@ class _MainScreenState extends State<MainScreen> {
 
         items: [
           PaneItem(
-            icon: const WindowsIcon(FluentIcons.list_24_regular),
+            icon: const Icon(FluentIcons.list_24_regular),
             title: const Text('文件列表'),
             body: Padding(
               padding: const EdgeInsets.symmetric(
@@ -46,7 +46,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
           PaneItem(
-            icon: const WindowsIcon(FluentIcons.arrow_download_24_regular),
+            icon: const Icon(FluentIcons.arrow_download_24_regular),
             title: const Text('下载'),
             body: Padding(
               padding: const EdgeInsets.symmetric(
@@ -60,7 +60,7 @@ class _MainScreenState extends State<MainScreen> {
 
         footerItems: [
           PaneItem(
-            icon: const WindowsIcon(FluentIcons.settings_24_regular),
+            icon: const Icon(FluentIcons.settings_24_regular),
             title: const Text('设置'),
             body: Padding(
               padding: const EdgeInsets.symmetric(

@@ -211,9 +211,7 @@ class _FileListViewState extends State<FileListView> {
               return MenuFlyout(
                 items: [
                   MenuFlyoutItem(
-                    leading: const WindowsIcon(
-                      FluentIcons.folder_add_24_regular,
-                    ),
+                    leading: const Icon(FluentIcons.folder_add_24_regular),
                     text: const Text('添加文件夹'),
                     onPressed: () {
                       Flyout.of(context).close();
@@ -221,7 +219,7 @@ class _FileListViewState extends State<FileListView> {
                     },
                   ),
                   MenuFlyoutItem(
-                    leading: const WindowsIcon(FluentIcons.delete_24_regular),
+                    leading: const Icon(FluentIcons.delete_24_regular),
                     text: const Text('删除当前目录'),
                     onPressed: _currentParentId == 0
                         ? null
@@ -267,7 +265,7 @@ class _FileListViewState extends State<FileListView> {
                 return MenuFlyout(
                   items: [
                     MenuFlyoutItem(
-                      leading: const WindowsIcon(FluentIcons.delete_24_regular),
+                      leading: const Icon(FluentIcons.delete_24_regular),
                       text: const Text('删除'),
                       onPressed: () {
                         Flyout.of(context).close();
@@ -276,7 +274,7 @@ class _FileListViewState extends State<FileListView> {
                     ),
                     MenuFlyoutSeparator(),
                     MenuFlyoutItem(
-                      leading: const WindowsIcon(FluentIcons.link_24_regular),
+                      leading: const Icon(FluentIcons.link_24_regular),
                       text: const Text('获取下载链接'),
                       onPressed: () {
                         Flyout.of(context).close();
@@ -301,19 +299,19 @@ class _FileListViewState extends State<FileListView> {
       overflowBehavior: CommandBarOverflowBehavior.dynamicOverflow,
       primaryItems: [
         CommandBarButton(
-          icon: const WindowsIcon(FluentIcons.arrow_repeat_all_24_regular),
+          icon: const Icon(FluentIcons.arrow_repeat_all_24_regular),
           label: const Text('刷新'),
           tooltip: '刷新文件列表',
           onPressed: () => _loadFileList(_currentParentId.toString()),
         ),
         CommandBarButton(
-          icon: const WindowsIcon(FluentIcons.folder_add_24_regular),
+          icon: const Icon(FluentIcons.folder_add_24_regular),
           label: const Text('新建文件夹'),
           tooltip: '新建文件夹',
           onPressed: _handleAddFolder,
         ),
         CommandBarButton(
-          icon: const WindowsIcon(FluentIcons.delete_24_regular),
+          icon: const Icon(FluentIcons.delete_24_regular),
           label: const Text('删除'),
           tooltip: '删除选中文件',
           onPressed: _selectedFile != null ? _handleDelete : null,

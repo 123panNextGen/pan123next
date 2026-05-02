@@ -40,7 +40,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                             value: '下载',
                             child: Row(
                               children: [
-                                const WindowsIcon(
+                                const Icon(
                                   FluentIcons.arrow_download_24_regular,
                                 ),
                                 const SizedBox(width: 5),
@@ -52,9 +52,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                             value: '上传',
                             child: Row(
                               children: [
-                                const WindowsIcon(
-                                  FluentIcons.arrow_upload_24_regular,
-                                ),
+                                const Icon(FluentIcons.arrow_upload_24_regular),
                                 const SizedBox(width: 5),
                                 Text('上传'),
                               ],

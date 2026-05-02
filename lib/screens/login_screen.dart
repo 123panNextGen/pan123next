@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         items: [
           PaneItem(
-            icon: const WindowsIcon(FluentIcons.input_address),
+            icon: const Icon(FluentIcons.input_address),
             title: const Text('用户名/密码 登录'),
             body: Padding(
               padding: const EdgeInsets.symmetric(
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           PaneItem(
-            icon: const WindowsIcon(WindowsIcons.q_r_code),
+            icon: const Icon(Icons.q_r_code),
             title: const Text('二维码 登录'),
             body: Center(child: Text('作者其实很懒，什么都没有做呢~')),
           ),
