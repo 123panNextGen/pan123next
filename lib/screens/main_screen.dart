@@ -46,7 +46,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
           PaneItem(
-            icon: const WindowsIcon(FluentIcons.arrow_down_24_regular),
+            icon: const WindowsIcon(FluentIcons.arrow_download_24_regular),
             title: const Text('下载'),
             body: Padding(
               padding: const EdgeInsets.symmetric(

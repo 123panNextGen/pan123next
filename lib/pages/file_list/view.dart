@@ -21,12 +21,14 @@ class _FileListViewState extends State<FileListView> {
   bool _isLoading = false;
 
   final List<String> _breadItemIds = ['0'];
+  final List<FileItemModel> _breadItemModels = [];
   final _breadItems = <BreadcrumbItem<int>>[
     BreadcrumbItem(label: Text('根目录'), value: 0),
   ];
 
   final commandBarKey = GlobalKey<CommandBarState>();
   final Map<int, FlyoutController> _flyoutControllers = {};
+  final FlyoutController _currentFlyoutController = FlyoutController();
 
   FlyoutController _getFlyoutController(int fileId) {
     return _flyoutControllers.putIfAbsent(fileId, () => FlyoutController());
@@ -98,6 +100,7 @@ class _FileListViewState extends State<FileListView> {
           BreadcrumbItem(label: Text(file.fileName), value: file.fileId),
         );
         _breadItemIds.add(file.fileId.toString());
+        _breadItemModels.add(file);
       });
     } else {
       setState(() {
@@ -137,6 +140,83 @@ class _FileListViewState extends State<FileListView> {
     } else {
       showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
     }
+  }
+
+  Future<void> _handleDeleteCurrent() async {
+    if (_currentParentId == 0) return;
+
+    bool? result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const TrashCurrentDialog(),
+    );
+
+    if (!mounted || !(result ?? false)) return;
+
+    // 从面包屑中获取当前 fileModel
+    final currentFile = _breadItemModels.last;
+    // 删除当前目录
+    ApiReturnModel returnModel = await _session.trashFile(currentFile);
+    if (!mounted) return;
+
+    if (returnModel.apiCodeEnum == ApiCode.success) {
+      _loadFileList(_breadItemIds[_breadItems.length - 2]);
+      setState(() {
+        _breadItems.removeRange(_breadItems.length - 1, _breadItems.length);
+        _breadItemIds.removeRange(
+          _breadItemIds.length - 1,
+          _breadItemIds.length,
+        );
+        _breadItemModels.removeRange(
+          _breadItemModels.length - 1,
+          _breadItemModels.length,
+        );
+      });
+    } else {
+      showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
+    }
+  }
+
+  Widget _buildCurrentFlyout() {
+    return FlyoutTarget(
+      controller: _currentFlyoutController,
+      child: IconButton(
+        icon: const Icon(FluentIcons.more_vertical_24_regular),
+        onPressed: () {
+          _currentFlyoutController.showFlyout<void>(
+            autoModeConfiguration: FlyoutAutoConfiguration(
+              preferredMode: FlyoutPlacementMode.bottomLeft,
+            ),
+            barrierDismissible: true,
+            dismissOnPointerMoveAway: false,
+            dismissWithEsc: true,
+            builder: (context) {
+              return MenuFlyout(
+                items: [
+                  MenuFlyoutItem(
+                    leading: const WindowsIcon(
+                      FluentIcons.folder_add_24_regular,
+                    ),
+                    text: const Text('添加文件夹'),
+                    onPressed: () {
+                      Flyout.of(context).close();
+                      _handleAddFolder();
+                    },
+                  ),
+                  MenuFlyoutItem(
+                    leading: const WindowsIcon(FluentIcons.delete_24_regular),
+                    text: const Text('删除当前目录'),
+                    onPressed: () {
+                      Flyout.of(context).close();
+                      _handleDeleteCurrent();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildFileItem(FileItemModel file) {
@@ -243,6 +323,8 @@ class _FileListViewState extends State<FileListView> {
                   onItemPressed: _handleBreadcrumbTap,
                 ),
               ),
+              const SizedBox(width: 8),
+              _buildCurrentFlyout(),
             ],
           ),
         ),
