@@ -137,7 +137,11 @@ class NetSession {
 
   // Pan API
 
-  Future<ApiReturnModel> getFileList(String fileId) async {
+  Future<ApiReturnModel> getFileList(
+    String fileId, [
+    bool reverse = false,
+    bool trashed = false,
+  ]) async {
     int page = 1;
     String next = '';
     List<FileItemModel> allFiles = [];
@@ -152,7 +156,7 @@ class NetSession {
           'page': page,
           'orderBy': 'file_name',
           'orderDirection': 'desc',
-          'trashed': false,
+          'trashed': trashed,
         },
       );
 
@@ -187,7 +191,7 @@ class NetSession {
           len: allFiles.length,
           isFirst: true,
           total: allFiles.length,
-          infoList: allFiles,
+          infoList: reverse ? allFiles.reversed.toList() : allFiles,
         ),
       ),
     );
