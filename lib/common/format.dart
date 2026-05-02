@@ -25,8 +25,11 @@ IconData getFileIconDataBySuffix(String suffix) {
   switch (suffix.toLowerCase()) {
     case 'pdf':
       return FluentIcons.document_pdf_24_regular;
+    case 'doc':
+    case 'docx':
+    case 'md':
     case 'txt':
-      return WindowsIcons.document;
+      return FluentIcons.document_text_24_regular;
     case 'jpg':
     case 'jpeg':
     case 'png':
@@ -43,10 +46,6 @@ IconData getFileIconDataBySuffix(String suffix) {
     case 'tar':
     case 'gz':
       return FluentIcons.folder_zip_24_regular;
-    case 'doc':
-    case 'docx':
-    case 'md':
-      return FluentIcons.document_text_24_regular;
     case 'xls':
     case 'xlsx':
       return FluentIcons.document_table_24_regular;

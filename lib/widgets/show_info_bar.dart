@@ -11,7 +11,7 @@ Future<void> showInfoBar(
     builder: (context, close) {
       return InfoBar(
         title: Text(titleText),
-        content: Text(info),
+        content: SelectableText(info),
         action: IconButton(
           icon: const WindowsIcon(WindowsIcons.clear),
           onPressed: close,

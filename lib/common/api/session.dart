@@ -260,10 +260,10 @@ class NetSession {
   }
 
   Future<ApiReturnModel> getFileLink(FileItemModel file) async {
-    Response reponse;
+    Response response;
 
     if (file.isFolder) {
-      reponse = await dio.post(
+      response = await dio.post(
         '/a/api/file/batch_download_info',
         data: {
           'fileIdList': [
@@ -272,7 +272,7 @@ class NetSession {
         },
       );
     } else {
-      reponse = await dio.post(
+      response = await dio.post(
         '/a/api/file/download_info',
         data: {
           'driveId': '0',
@@ -286,34 +286,24 @@ class NetSession {
       );
     }
 
-    if (reponse.data['code'] != 0) {
+    if (response.data['code'] != 0) {
       return ApiReturnModel(
-        code: reponse.statusCode ?? 0,
-        apiCode: reponse.data['code'],
+        code: response.statusCode ?? 0,
+        apiCode: response.data['code'],
         apiCodeEnum: ApiCode.fail,
-        msg: reponse.data['message'] ?? '获取文件链接失败',
+        msg: response.data['message'] ?? '获取文件链接失败',
       );
     }
 
-    String downloadUrl = reponse.data['data']['DownloadUrl'] ?? '';
+    String downloadUrl = response.data['data']['DownloadUrl'] ?? '';
 
-    final response = await dio.get(
-      downloadUrl,
-      options: Options(followRedirects: false),
-    );
-
-    // 使用正则表达式提取重定向URL
-    final urlPattern = RegExp(r"href='(https?://[^']+)'");
-    final matches = urlPattern.allMatches(response.data);
-
-    if (matches.isNotEmpty) {
-      String redirectUrl = matches.first.group(1) ?? '';
+    if (downloadUrl.isNotEmpty) {
       return ApiReturnModel(
         code: response.statusCode ?? 0,
-        apiCode: 200,
+        apiCode: 0,
         apiCodeEnum: ApiCode.success,
-        msg: 'ok',
-        data: redirectUrl,
+        msg: '',
+        data: downloadUrl,
       );
     }
 

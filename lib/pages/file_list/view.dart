@@ -176,6 +176,24 @@ class _FileListViewState extends State<FileListView> {
     }
   }
 
+  Future<void> getFileDownloadLink(FileItemModel file) async {
+    final ApiReturnModel result = await _session.getFileLink(file);
+    final String fileName = file.fileName;
+
+    if (result.apiCodeEnum == ApiCode.fail) {
+      if (!mounted) return;
+      showInfoBar(context, '错误', result.msg, InfoBarSeverity.error);
+      return;
+    }
+
+    if (!mounted) return;
+    await showDialog<bool>(
+      context: context,
+      builder: (context) =>
+          ShowDownloadLinkDialog(fileName: fileName, link: result.data),
+    );
+  }
+
   Widget _buildCurrentFlyout() {
     return FlyoutTarget(
       controller: _currentFlyoutController,
@@ -205,10 +223,12 @@ class _FileListViewState extends State<FileListView> {
                   MenuFlyoutItem(
                     leading: const WindowsIcon(FluentIcons.delete_24_regular),
                     text: const Text('删除当前目录'),
-                    onPressed: () {
-                      Flyout.of(context).close();
-                      _handleDeleteCurrent();
-                    },
+                    onPressed: _currentParentId == 0
+                        ? null
+                        : () {
+                            Flyout.of(context).close();
+                            _handleDeleteCurrent();
+                          },
                   ),
                 ],
               );
@@ -252,6 +272,15 @@ class _FileListViewState extends State<FileListView> {
                       onPressed: () {
                         Flyout.of(context).close();
                         _handleDelete();
+                      },
+                    ),
+                    MenuFlyoutSeparator(),
+                    MenuFlyoutItem(
+                      leading: const WindowsIcon(FluentIcons.link_24_regular),
+                      text: const Text('获取下载链接'),
+                      onPressed: () {
+                        Flyout.of(context).close();
+                        getFileDownloadLink(file);
                       },
                     ),
                   ],
