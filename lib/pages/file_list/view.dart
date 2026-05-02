@@ -361,15 +361,18 @@ class _FileListViewState extends State<FileListView> {
             child: Column(
               children: [
                 _buildCommandBar(),
-                !_isLoading
-                    ? Expanded(
-                        child: ListView.builder(
-                          itemCount: _fileList.length,
-                          itemBuilder: (context, index) =>
-                              _buildFileItem(_fileList[index]),
-                        ),
-                      )
-                    : const Expanded(child: Center(child: ProgressRing())),
+                if (!_isLoading)
+                  _fileList.isNotEmpty
+                      ? Expanded(
+                          child: ListView.builder(
+                            itemCount: _fileList.length,
+                            itemBuilder: (context, index) =>
+                                _buildFileItem(_fileList[index]),
+                          ),
+                        )
+                      : const Expanded(child: Center(child: Text('空空如也呢...')))
+                else
+                  const Expanded(child: Center(child: ProgressRing())),
               ],
             ),
           ),

@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           PaneItem(
-            icon: const Icon(Icons.q_r_code),
+            icon: const Icon(WindowsIcons.q_r_code),
             title: const Text('二维码 登录'),
             body: Center(child: Text('作者其实很懒，什么都没有做呢~')),
           ),
