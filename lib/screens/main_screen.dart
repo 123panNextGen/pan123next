@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/get_platform.dart';
-import 'package:pan123next/pages/downloader/view.dart';
+import 'package:pan123next/pages/transfer/view.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
