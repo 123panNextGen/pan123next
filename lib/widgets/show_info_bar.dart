@@ -1,4 +1,6 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:flutter/services.dart';
 
 Future<void> showInfoBar(
   BuildContext context,
@@ -12,9 +14,21 @@ Future<void> showInfoBar(
       return InfoBar(
         title: Text(titleText),
         content: SelectableText(info),
-        action: IconButton(
-          icon: const WindowsIcon(WindowsIcons.clear),
-          onPressed: close,
+        action: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(FluentIcons.copy_24_regular),
+              onPressed: () async {
+                Clipboard.setData(ClipboardData(text: info));
+              },
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const WindowsIcon(WindowsIcons.clear),
+              onPressed: close,
+            ),
+          ],
         ),
         severity: severity,
       );

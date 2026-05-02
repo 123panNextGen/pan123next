@@ -195,7 +195,7 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
                               )
                             : const Row(
                                 children: [
-                                  WindowsIcon(FluentIcons.copy_24_regular),
+                                  Icon(FluentIcons.copy_24_regular),
                                   SizedBox(width: 6),
                                   Text('复制'),
                                 ],
