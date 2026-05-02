@@ -258,4 +258,70 @@ class NetSession {
       data: response.data,
     );
   }
+
+  Future<ApiReturnModel> getFileLink(FileItemModel file) async {
+    Response reponse;
+
+    if (file.isFolder) {
+      reponse = await dio.post(
+        '/a/api/file/batch_download_info',
+        data: {
+          'fileIdList': [
+            {'fileId': file.fileId},
+          ],
+        },
+      );
+    } else {
+      reponse = await dio.post(
+        '/a/api/file/download_info',
+        data: {
+          'driveId': '0',
+          'etag': file.etag,
+          'fileId': file.fileId,
+          's3keyFlag': file.s3keyFlag,
+          'type': file.type,
+          'fileName': file.fileName,
+          'size': file.size,
+        },
+      );
+    }
+
+    if (reponse.data['code'] != 0) {
+      return ApiReturnModel(
+        code: reponse.statusCode ?? 0,
+        apiCode: reponse.data['code'],
+        apiCodeEnum: ApiCode.fail,
+        msg: reponse.data['message'] ?? '获取文件链接失败',
+      );
+    }
+
+    String downloadUrl = reponse.data['data']['DownloadUrl'] ?? '';
+
+    final response = await dio.get(
+      downloadUrl,
+      options: Options(followRedirects: false),
+    );
+
+    // 使用正则表达式提取重定向URL
+    final urlPattern = RegExp(r"href='(https?://[^']+)'");
+    final matches = urlPattern.allMatches(response.data);
+
+    if (matches.isNotEmpty) {
+      String redirectUrl = matches.first.group(1) ?? '';
+      return ApiReturnModel(
+        code: response.statusCode ?? 0,
+        apiCode: 200,
+        apiCodeEnum: ApiCode.success,
+        msg: 'ok',
+        data: redirectUrl,
+      );
+    }
+
+    return ApiReturnModel(
+      code: response.statusCode ?? 0,
+      apiCode: 404,
+      apiCodeEnum: ApiCode.fail,
+      msg: '文件链接不存在',
+    );
+  }
 }

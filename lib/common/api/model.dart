@@ -45,6 +45,8 @@ class FileItemModel {
   final String fileName;
   final int type;
   final int size;
+  final String etag;
+  final String s3keyFlag;
   final String contentType;
   final String createAt;
   final String updateAt;
@@ -58,6 +60,8 @@ class FileItemModel {
     required this.fileName,
     required this.type,
     required this.size,
+    required this.etag,
+    required this.s3keyFlag,
     required this.contentType,
     required this.createAt,
     required this.updateAt,
@@ -73,6 +77,8 @@ class FileItemModel {
       fileName: json['FileName'] ?? '',
       type: json['Type'] ?? 0,
       size: json['Size'] ?? 0,
+      etag: json['Etag'] ?? '',
+      s3keyFlag: json['S3keyFlag'] ?? '',
       contentType: json['ContentType'] ?? '',
       createAt: json['CreateAt'] ?? '',
       updateAt: json['UpdateAt'] ?? '',
@@ -88,6 +94,8 @@ class FileItemModel {
     'FileName': fileName,
     'Type': type,
     'Size': size,
+    'Etag': etag,
+    'S3keyFlag': s3keyFlag,
     'ContentType': contentType,
     'CreateAt': createAt,
     'UpdateAt': updateAt,
