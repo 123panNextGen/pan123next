@@ -216,9 +216,7 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
                     const SizedBox(height: 8),
                     SelectableText(
                       widget.link,
-                      style: TextStyle(
-                        fontFamily: 'JetBrainsMono Nerd Font Mono',
-                      ),
+                      style: TextStyle(fontFamily: 'JetBrainsMono'),
                     ),
                   ],
                 ),

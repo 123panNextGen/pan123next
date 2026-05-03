@@ -19,7 +19,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return NavigationView(
       titleBar: TitleBar(
-        icon: const FlutterLogo(),
+        icon: Padding(
+          padding: EdgeInsetsGeometry.all(2.0),
+          child: Image.asset('assets/image/app_icon.png'),
+        ),
         title: Text(appName),
         subtitle: const Text('Preview'),
         captionControls: const WindowButtons(),

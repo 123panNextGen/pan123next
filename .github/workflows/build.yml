@@ -1,0 +1,174 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (如: 1.0.0)'
+        required: false
+        default: '1.0.0'
+      preview:
+        description: '是否为预览版本'
+        required: false
+        type: boolean
+        default: false
+      release_title:
+        description: 'Release 标题'
+        required: false
+        default: '新版本发布'
+      release_body:
+        description: 'Release 描述内容'
+        required: false
+        default: '本次更新包含以下内容：\n\n- 修复已知问题\n- 性能优化'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: linux
+            artifact: build/linux/x64/release/bundle/
+            artifact_name: pan123next-linux
+          - os: windows-latest
+            target: windows
+            artifact: build/windows/x64/runner/Release/
+            artifact_name: pan123next-windows
+          - os: macos-latest
+            target: macos
+            artifact: build/macos/Build/Products/Release/
+            artifact_name: pan123next-macos
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Linux
+        if: matrix.target == 'linux'
+        run: flutter build linux --release
+
+      - name: Build Windows
+        if: matrix.target == 'windows'
+        run: flutter build windows --release
+
+      - name: Build macOS
+        if: matrix.target == 'macos'
+        run: flutter build macos --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact }}
+
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: pan123next-apk
+          path: build/app/outputs/apk/release/app-release.apk
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pan123next-ios
+          path: build/ios/iphoneos/Runner.app
+
+  release:
+    name: Create Release
+    needs: [build, build-apk, build-ios]
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Prepare release notes
+        id: notes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "title=Pan123Next ${{ github.event.inputs.release_title }}" >> $GITHUB_OUTPUT
+            echo "body=${{ github.event.inputs.release_body }}" >> $GITHUB_OUTPUT
+            echo "tag=v${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "title=Pan123Next Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "body=自动构建发布\n\n**版本**: ${{ github.ref_name }}\n\n**更新内容**:\n- 自动构建\n- 基于 ${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.notes.outputs.tag }}
+          name: ${{ steps.notes.outputs.title }}
+          body: ${{ steps.notes.outputs.body }}
+          prerelease: ${{ github.event.inputs.preview == 'true' }}
+          artifacts: |
+            pan123next-linux/**
+            pan123next-windows/**
+            pan123next-macos/**
+            pan123next-apk/*.apk
+            pan123next-ios/**
+          token: ${{ secrets.GITHUB_TOKEN }}

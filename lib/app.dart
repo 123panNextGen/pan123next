@@ -44,9 +44,11 @@ class _MainAppState extends State<MainApp> {
         brightness: appSession.theme.value,
         accentColor: appSession.accentColor.value,
       ),
-      home: isLoggedIn
-          ? const MainScreen()
-          : LoginScreen(onLoginSuccess: onLoginSuccess),
+      home: SafeArea(
+        child: isLoggedIn
+            ? const MainScreen()
+            : LoginScreen(onLoginSuccess: onLoginSuccess),
+      ),
     );
   }
 }
