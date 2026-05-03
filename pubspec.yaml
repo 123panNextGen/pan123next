@@ -24,7 +24,7 @@ dependencies:
 
   path_provider: ^2.1.5
   # flutter_aria2: ^0.1.3
-  file_picker: ^3.0.4
+  # file_picker: ^3.0.4
 
 dev_dependencies:
   flutter_test:
@@ -36,5 +36,63 @@ flutter:
 
   assets:
     - assets/data/device.json
-    - assets/fonts/
     - assets/image/
+
+  fonts:
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-Thin.ttf
+          weight: 100
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-ThinItalic.ttf
+          weight: 100
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-ExtraLight.ttf
+          weight: 200
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-ExtraLightItalic.ttf
+          weight: 200
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-Light.ttf
+          weight: 300
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-LightItalic.ttf
+          weight: 300
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-Regular.ttf
+          weight: 400
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-Italic.ttf
+          weight: 400
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-Medium.ttf
+          weight: 500
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-MediumItalic.ttf
+          weight: 500
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-SemiBold.ttf
+          weight: 600
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-Bold.ttf
+          weight: 700
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-BoldItalic.ttf
+          weight: 700
+          style: italic
+
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-ExtraBold.ttf
+          weight: 800
+          style: normal
+        - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-ExtraBoldItalic.ttf
+          weight: 800
+          style: italic
