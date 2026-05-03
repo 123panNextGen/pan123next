@@ -1,4 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:pan123next/common/data/downloader.dart';
+import 'package:pan123next/common/downloader/session.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
@@ -32,6 +34,9 @@ Future<void> main() async {
 
   await UserDb().initDb();
   await AppDb().initDb();
+  await DownloaderDb().initDb();
+
+  await DownloadSession().initialize();
 
   Get.put(AppSession());
 
