@@ -59,6 +59,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+      
+      - name: Install Linux dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libnotify-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            ninja-build
 
       - name: Install dependencies
         run: flutter pub get
@@ -117,7 +125,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
+          flutter-version: 3.11.x
           channel: stable
 
       - name: Install dependencies
