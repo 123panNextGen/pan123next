@@ -113,36 +113,9 @@ jobs:
         with:
           name: pan123next-apk
           path: build/app/outputs/apk/release/app-release.apk
-
-  build-ios:
-    name: Build iOS
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.11.x
-          channel: stable
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS
-        run: flutter build ios --release --no-codesign
-
-      - name: Upload iOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pan123next-ios
-          path: build/ios/iphoneos/Runner.app
-
   release:
     name: Create Release
-    needs: [build, build-apk, build-ios]
+    needs: [build, build-apk]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch')
 
