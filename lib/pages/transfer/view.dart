@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:get/get.dart';
-import 'package:pan123next/common/format.dart';
+import 'package:pan123next/common/downloader/model.dart';
+import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/app_session.dart';
+import 'package:pan123next/widgets/downloader_tile.dart';
+import 'package:pan123next/widgets/show_info_bar.dart';
 
 class DownloaderPage extends StatefulWidget {
   const DownloaderPage({super.key});
@@ -13,9 +17,63 @@ class DownloaderPage extends StatefulWidget {
 
 class _DownloaderPageState extends State<DownloaderPage> {
   final AppSession appSession = Get.find();
+  List<DownloadItemModel> _downloadList = [];
+  StreamSubscription<List<DownloadItemModel>>? _listSubscription;
+  StreamSubscription<DownloadItemModel>? _progressSubscription;
+  final Set<int> _notifiedCompletedIds = {};
+
+  String _filterType = '全部';
+  final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _downloadList = DownloadSession().downloadList;
+    _listSubscription = DownloadSession().listStream.listen((list) {
+      if (mounted) {
+        setState(() => _downloadList = list);
+      }
+    });
+    _progressSubscription = DownloadSession().progressStream.listen((item) {
+      if (item.status == DownloadStatus.completed &&
+          _notifiedCompletedIds.add(item.file.fileId)) {
+        if (!mounted) return;
+        showInfoBar(
+          context,
+          '下载完成',
+          item.file.fileName,
+          InfoBarSeverity.success,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _listSubscription?.cancel();
+    _progressSubscription?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<DownloadItemModel> get _filteredList {
+    return _downloadList.where((item) {
+      if (_filterType == '下载' && item.status == DownloadStatus.completed) {
+        return false;
+      }
+      if (_searchController.text.isNotEmpty) {
+        return item.file.fileName.toLowerCase().contains(
+          _searchController.text.toLowerCase(),
+        );
+      }
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final list = _filteredList;
+
     return Center(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,7 +82,6 @@ class _DownloaderPageState extends State<DownloaderPage> {
             '传输',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 16),
           Expanded(
             child: Card(
@@ -33,7 +90,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                   Row(
                     children: [
                       ComboBox(
-                        value: '全部',
+                        value: _filterType,
                         items: [
                           ComboBoxItem(value: '全部', child: Text('全部')),
                           ComboBoxItem(
@@ -59,180 +116,44 @@ class _DownloaderPageState extends State<DownloaderPage> {
                             ),
                           ),
                         ],
-                        onChanged: (value) {},
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _filterType = value);
+                          }
+                        },
                       ),
                       const SizedBox(width: 10),
-                      Expanded(child: TextBox(placeholder: '过滤: 文件名')),
+                      const Text('过滤: '),
+                      Expanded(
+                        child: TextBox(
+                          controller: _searchController,
+                          placeholder: '文件名',
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      const Text('排序: '),
-                      ComboBox(
-                        value: '文件名',
-                        items: [
-                          ComboBoxItem(value: '文件名', child: Text('文件名')),
-                          ComboBoxItem(value: '文件大小', child: Text('文件大小')),
-                        ],
-                        onChanged: (value) {},
+                      FilledButton(
+                        onPressed: () {},
+                        child: Row(
+                          children: [
+                            Icon(FluentIcons.add_24_regular),
+                            const SizedBox(width: 4),
+                            Text('添加新下载'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        ListTile(
-                          leading: Row(
-                            children: [
-                              Icon(
-                                FluentIcons.arrow_download_24_regular,
-                                color: appSession.accentColor.value,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 5),
-                              Icon(
-                                getFileIconDataBySuffix('mp4'),
-                                color: appSession.accentColor.value,
-                                size: 24,
-                              ),
-                            ],
-                          ),
-                          title: Text('Demo Video.mp4'),
-                          subtitle: Row(
-                            children: [
-                              ProgressBar(value: 100),
-                              const SizedBox(width: 5),
-                              Text('100% (1GB/1GB)'),
-                            ],
-                          ),
-                          trailing: Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(FluentIcons.dismiss_24_regular),
-                                onPressed: () {},
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  FluentIcons.more_vertical_24_regular,
-                                ),
-                                onPressed: () {},
-                              ),
-                            ],
-                          ),
-                        ),
-                        ListTile(
-                          leading: Row(
-                            children: [
-                              Icon(
-                                FluentIcons.arrow_download_24_regular,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 5),
-                              Icon(getFileIconDataBySuffix('txt'), size: 24),
-                            ],
-                          ),
-                          title: Text('Demo File 1.txt'),
-                          subtitle: Row(
-                            children: [
-                              ProgressBar(value: 50),
-                              const SizedBox(width: 5),
-                              Text('50% (100MB/200MB) (100MB/s)'),
-                            ],
-                          ),
-                          trailing: Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(FluentIcons.pause_24_regular),
-                                onPressed: () {},
-                              ),
-                              IconButton(
-                                icon: Icon(FluentIcons.dismiss_24_regular),
-                                onPressed: () {},
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  FluentIcons.more_vertical_24_regular,
-                                ),
-                                onPressed: () {},
-                              ),
-                            ],
-                          ),
-                        ),
-                        ListTile(
-                          leading: Row(
-                            children: [
-                              Icon(
-                                FluentIcons.arrow_upload_24_regular,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 5),
-                              Icon(getFileIconDataBySuffix('zip'), size: 24),
-                            ],
-                          ),
-                          title: Text('Demo File 2.zip'),
-                          subtitle: Row(
-                            children: [
-                              ProgressBar(value: 20),
-                              const SizedBox(width: 5),
-                              Text('20% (40MB/200MB) (40MB/s)'),
-                            ],
-                          ),
-                          trailing: Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(FluentIcons.pause_24_regular),
-                                onPressed: () {},
-                              ),
-                              IconButton(
-                                icon: Icon(FluentIcons.dismiss_24_regular),
-                                onPressed: () {},
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  FluentIcons.more_vertical_24_regular,
-                                ),
-                                onPressed: () {},
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        ListTile(
-                          leading: Row(
-                            children: [
-                              Icon(
-                                FluentIcons.arrow_download_24_regular,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 5),
-                              Icon(FluentIcons.dismiss_24_regular, size: 24),
-                              const SizedBox(width: 5),
-                              Icon(getFileIconDataBySuffix('txt'), size: 24),
-                            ],
-                          ),
-                          title: Text('Demo File 3.txt'),
-                          subtitle: Row(
-                            children: [
-                              ProgressBar(value: 0),
-                              const SizedBox(width: 5),
-                              Text('10% (20MB/200MB) (0MB/s)'),
-                            ],
-                          ),
-                          trailing: Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(FluentIcons.dismiss_24_regular),
-                                onPressed: () {},
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  FluentIcons.more_vertical_24_regular,
-                                ),
-                                onPressed: () {},
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                  if (list.isEmpty)
+                    const Expanded(child: Center(child: Text('暂无下载任务')))
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: list.length,
+                        itemBuilder: (context, index) =>
+                            DownloaderTile(file: list[index]),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

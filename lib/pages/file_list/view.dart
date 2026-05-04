@@ -1,9 +1,13 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/data/user.dart';
+import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dialog.dart';
 
 class FileListView extends StatefulWidget {
@@ -176,6 +180,64 @@ class _FileListViewState extends State<FileListView> {
     }
   }
 
+  Future<void> downloadFile(FileItemModel file) async {
+    String savePath;
+    late String? fileResult;
+
+    if (!UserDb().getValue('set.askDownload')) {
+      savePath =
+          UserDb().getValue('set.defaultDownloadPath') ??
+          await getDownloadsDirectory().then((dir) => dir?.path ?? '');
+
+      if (file.isFolder) {
+        savePath = '$savePath/${file.fileName}.zip';
+      } else {
+        savePath = '$savePath/${file.fileName}';
+      }
+    } else {
+      if (file.isFolder) {
+        fileResult = await FilePicker.saveFile(
+          dialogTitle: '选择保存路径:',
+          fileName: '${file.fileName}.zip',
+        );
+      } else {
+        fileResult = await FilePicker.saveFile(
+          dialogTitle: '选择保存路径:',
+          fileName: file.fileName,
+        );
+      }
+
+      if (fileResult != null) {
+      } else {
+        return;
+      }
+
+      savePath = fileResult;
+    }
+
+    final ApiReturnModel result = await _session.getFileLink(file);
+
+    if (result.apiCodeEnum == ApiCode.fail) {
+      if (!mounted) return;
+      showInfoBar(context, '错误', result.msg, InfoBarSeverity.error);
+      return;
+    }
+
+    await DownloadSession().addDownload(
+      file: file,
+      downloadUrl: result.data,
+      savePath: savePath,
+    );
+
+    if (!mounted) return;
+    showInfoBar(
+      context,
+      '成功',
+      '已成功下载: ${file.fileName}',
+      InfoBarSeverity.success,
+    );
+  }
+
   Future<void> getFileDownloadLink(FileItemModel file) async {
     final ApiReturnModel result = await _session.getFileLink(file);
     final String fileName = file.fileName;
@@ -279,6 +341,16 @@ class _FileListViewState extends State<FileListView> {
                       onPressed: () {
                         Flyout.of(context).close();
                         getFileDownloadLink(file);
+                      },
+                    ),
+                    MenuFlyoutItem(
+                      leading: const Icon(
+                        FluentIcons.arrow_download_24_regular,
+                      ),
+                      text: const Text('下载'),
+                      onPressed: () {
+                        Flyout.of(context).close();
+                        downloadFile(file);
                       },
                     ),
                   ],
