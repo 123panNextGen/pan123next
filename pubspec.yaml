@@ -1,7 +1,7 @@
 name: pan123next
 description: "Your cloud, always ready"
 publish_to: 'none'
-version: 0.1.1+1
+version: 0.1.2+1
 
 environment:
   sdk: ^3.11.4
