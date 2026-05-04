@@ -133,7 +133,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6\
+        uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -185,8 +185,7 @@ jobs:
             uv run script/formatRelease.py \
               --file=doc/ReleaseTemplate.md \
               --version="$VERSION" \
-              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
-              --auto > /tmp/release_body.md
+              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) > /tmp/release_body.md
           else
             # 使用用户输入的内容
             uv run script/formatRelease.py \
@@ -201,6 +200,10 @@ jobs:
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
           echo "prerelease=${IS_PREVIEW:-false}" >> $GITHUB_OUTPUT
           echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
+
+      - name: Find build files
+        run: |
+          find ./artifacts
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
