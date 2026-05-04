@@ -143,6 +143,12 @@ jobs:
         with:
           python-version: "3.13"
           python-version-file: ".python-version"
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip zip
+          uv sync
 
       - name: Download all artifacts
         uses: actions/download-artifact@v6
@@ -154,11 +160,6 @@ jobs:
       - name: Set version for push trigger
         if: github.event_name == 'push'
         run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
-
-      - name: Checkout code for release notes
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Prepare release notes
         id: notes
@@ -201,10 +202,14 @@ jobs:
           echo "prerelease=${IS_PREVIEW:-false}" >> $GITHUB_OUTPUT
           echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
 
-      - name: Find build files
+      - name: Unzip artifacts
         run: |
-          find ./artifacts
-
+          mkdir artifacts
+          cp pan123next-apk/app-release.apk artifacts/Pan123Next-Android.apk
+          zip -r artifacts/Pan123Next-Linux.zip pan123next-linux/
+          zip -r artifacts/Pan123Next-Windows.zip pan123next-windows/
+          zip -r artifacts/Pan123Next-macos.zip pan123next-macos/
+          
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -212,10 +217,7 @@ jobs:
           name: ${{ steps.notes.outputs.title }}
           body_path: ${{ steps.notes.outputs.body_file }}
           files: |
-            ./artifacts/windows/**
-            ./artifacts/linux/**
-            ./artifacts/macos/**
-            ./artifacts/apk/*.apk
+            ./artifacts/*
           prerelease: ${{ steps.notes.outputs.prerelease == 'true' }}
           generate_release_notes: false
           token: ${{ secrets.CUSTOM_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
