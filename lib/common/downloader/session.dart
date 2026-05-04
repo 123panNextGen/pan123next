@@ -18,6 +18,7 @@ class DownloadSession {
 
   final List<DownloadItemModel> _downloadList = [];
   final Map<String, CancelToken> _cancelTokens = {};
+  final Map<String, _SpeedTracker> _speedTrackers = {};
   final StreamController<DownloadItemModel> _progressController =
       StreamController.broadcast();
   final StreamController<List<DownloadItemModel>> _listController =
@@ -101,7 +102,7 @@ class DownloadSession {
 
   Future<void> _loadDownloadList() async {
     final db = DownloaderDb();
-    final listJson = db.getValue('downloadList') as List<String>? ?? [];
+    final List<dynamic> listJson = db.getValue('downloadList') ?? [];
 
     _downloadList.clear();
     for (final jsonStr in listJson) {
@@ -123,8 +124,8 @@ class DownloadSession {
           }
           _downloadList.add(item);
         }
-      } catch (e) {
-        continue;
+      } catch (_) {
+        // 跳过已损坏的条目，不影响其他记录加载
       }
     }
     _notifyListChange();
@@ -225,6 +226,7 @@ class DownloadSession {
       item.progress = 1.0;
       item.downloadedSize = item.totalSize;
 
+      _speedTrackers.remove(item.file.fileId.toString());
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
@@ -235,6 +237,7 @@ class DownloadSession {
         item.status = DownloadStatus.failed;
         item.errorMessage = e.toString();
       }
+      _speedTrackers.remove(item.file.fileId.toString());
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
@@ -278,6 +281,7 @@ class DownloadSession {
       item.progress = 1.0;
       item.downloadedSize = item.totalSize;
 
+      _speedTrackers.remove(item.file.fileId.toString());
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
@@ -288,6 +292,7 @@ class DownloadSession {
         item.status = DownloadStatus.failed;
         item.errorMessage = e.toString();
       }
+      _speedTrackers.remove(item.file.fileId.toString());
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
@@ -318,8 +323,8 @@ class DownloadSession {
       if (acceptRanges != null && acceptRanges.toLowerCase() == 'bytes') {
         item.supportsResume = true;
       }
-    } catch (e) {
-      // ignore
+    } catch (_) {
+      // HEAD 请求失败时保持默认值继续下载
     }
   }
 
@@ -328,20 +333,26 @@ class DownloadSession {
     item.totalSize = total;
     item.progress = total > 0 ? received / total : 0;
 
+    final id = item.file.fileId.toString();
+    final tracker =
+        _speedTrackers.putIfAbsent(id, () => _SpeedTracker());
+
     final now = DateTime.now();
-    if (item.startTime != null) {
-      final elapsed = now.difference(item.startTime!).inSeconds;
-      if (elapsed > 0) {
-        item.speed = received ~/ elapsed;
-      }
+    final elapsed = now.difference(tracker.lastTime).inMilliseconds;
+    if (elapsed > 800) {
+      final bytesDiff = received - tracker.lastBytes;
+      item.speed = bytesDiff ~/ (elapsed / 1000).ceil();
+      tracker.lastBytes = received;
+      tracker.lastTime = now;
     }
 
     _notifyProgress(item);
   }
 
   void pauseDownload(DownloadItemModel item) {
-    final cancelToken = _cancelTokens[item.file.fileId.toString()];
-    cancelToken?.cancel();
+    final id = item.file.fileId.toString();
+    _cancelTokens[id]?.cancel();
+    _speedTrackers.remove(id);
     item.status = DownloadStatus.paused;
     _notifyProgress(item);
     _saveDownloadList();
@@ -390,4 +401,9 @@ class DownloadSession {
     _progressController.close();
     _listController.close();
   }
+}
+
+class _SpeedTracker {
+  int lastBytes = 0;
+  DateTime lastTime = DateTime.now();
 }
