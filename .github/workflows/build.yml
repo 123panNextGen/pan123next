@@ -23,7 +23,7 @@ on:
       release_title:
         description: 'Release 标题'
         required: false
-        default: '新版本发布'
+        default: 'Pan123 Next Release Version'
       release_body:
         description: 'Release 描述内容'
         required: false
@@ -202,7 +202,7 @@ jobs:
           echo "prerelease=${IS_PREVIEW:-false}" >> $GITHUB_OUTPUT
           echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
 
-      - name: Unzip artifacts
+      - name: Create artifacts
         run: |
           mkdir artifacts
           cp pan123next-apk/app-release.apk artifacts/Pan123Next-Android.apk

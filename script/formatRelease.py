@@ -165,11 +165,11 @@ def main(file: Optional[Path], version: str, pre: bool, message: str):
     print(formatted_output)
 
     # 输出详细信息
-    console.print("\n[dim]---[/dim]")
-    console.print(f"[dim]版本：{version}[/dim]")
-    console.print(f"[dim]预览版：{'是' if pre else '否'}[/dim]")
-    if file:
-        console.print(f"[dim]模板文件：{file}[/dim]")
+    # console.print("\n[dim]---[/dim]")
+    # console.print(f"[dim]版本：{version}[/dim]")
+    # console.print(f"[dim]预览版：{'是' if pre else '否'}[/dim]")
+    # if file:
+    #     console.print(f"[dim]模板文件：{file}[/dim]")
 
 
 if __name__ == "__main__":
