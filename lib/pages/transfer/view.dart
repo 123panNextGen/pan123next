@@ -6,6 +6,7 @@ import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/widgets/downloader_tile.dart';
+import 'package:pan123next/widgets/show_info_bar.dart';
 
 class DownloaderPage extends StatefulWidget {
   const DownloaderPage({super.key});
@@ -18,6 +19,8 @@ class _DownloaderPageState extends State<DownloaderPage> {
   final AppSession appSession = Get.find();
   List<DownloadItemModel> _downloadList = [];
   StreamSubscription<List<DownloadItemModel>>? _listSubscription;
+  StreamSubscription<DownloadItemModel>? _progressSubscription;
+  final Set<int> _notifiedCompletedIds = {};
 
   String _filterType = '全部';
   final _searchController = TextEditingController();
@@ -31,11 +34,24 @@ class _DownloaderPageState extends State<DownloaderPage> {
         setState(() => _downloadList = list);
       }
     });
+    _progressSubscription = DownloadSession().progressStream.listen((item) {
+      if (item.status == DownloadStatus.completed &&
+          _notifiedCompletedIds.add(item.file.fileId)) {
+        if (!mounted) return;
+        showInfoBar(
+          context,
+          '下载完成',
+          item.file.fileName,
+          InfoBarSeverity.success,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
     _listSubscription?.cancel();
+    _progressSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -46,19 +62,12 @@ class _DownloaderPageState extends State<DownloaderPage> {
         return false;
       }
       if (_searchController.text.isNotEmpty) {
-        return item.file.fileName
-            .toLowerCase()
-            .contains(_searchController.text.toLowerCase());
+        return item.file.fileName.toLowerCase().contains(
+          _searchController.text.toLowerCase(),
+        );
       }
       return true;
     }).toList();
-  }
-
-  void _addDownload() {
-    // TODO: 接入文件选择器，从 123 云盘选择文件后调用:
-    // final file = FileItemModel(...);
-    // final url = await getDownloadUrl(file);
-    // await DownloadSession().addDownload(file: file, downloadUrl: url);
   }
 
   @override
@@ -124,6 +133,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                       ),
                       const SizedBox(width: 10),
                       FilledButton(
+                        onPressed: () {},
                         child: Row(
                           children: [
                             Icon(FluentIcons.add_24_regular),
@@ -131,14 +141,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                             Text('添加新下载'),
                           ],
                         ),
-                        onPressed: _addDownload,
                       ),
                     ],
                   ),
                   if (list.isEmpty)
-                    const Expanded(
-                      child: Center(child: Text('暂无下载任务')),
-                    )
+                    const Expanded(child: Center(child: Text('暂无下载任务')))
                   else
                     Expanded(
                       child: ListView.builder(

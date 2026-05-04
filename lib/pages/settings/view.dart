@@ -1,7 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/app.dart';
+import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
@@ -16,12 +18,14 @@ class _SettingsViewState extends State<SettingsView> {
   final AppSession appSession = Get.find();
   late String theme;
   late String accentColor;
+  late bool askDownload;
 
   @override
   void initState() {
     super.initState();
     theme = appSession.getTheme();
     accentColor = appSession.getAccentColor();
+    askDownload = UserDb().getValue('set.askDownload') ?? true;
 
     debugPrint('theme: $theme, accentColor: $accentColor');
   }
@@ -111,6 +115,78 @@ class _SettingsViewState extends State<SettingsView> {
                             accentColor = v;
                             setState(() {});
                             appSession.updateAccentColor(v);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16.0),
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(FluentIcons.arrow_download_24_regular),
+                      SizedBox(width: 8.0),
+                      Text('下载设置', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Expanded(child: const Text('是否询问下载位置')),
+                      ToggleSwitch(
+                        checked: askDownload,
+                        onChanged: (v) {
+                          askDownload = !askDownload;
+                          UserDb().setValue(
+                            'set.askDownload',
+                            askDownload,
+                            'bool',
+                          );
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Expanded(child: const Text('默认下载位置')),
+                      Expanded(
+                        child: TextBox(
+                          controller: TextEditingController(
+                            text:
+                                UserDb().getValue('set.defaultDownloadPath') ??
+                                '',
+                          ),
+                          placeholder: '请输入默认下载位置',
+                          onChanged: (v) {
+                            UserDb().setValue(
+                              'set.defaultDownloadPath',
+                              v,
+                              'string',
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton(
+                        child: const Text('选择'),
+                        onPressed: () async {
+                          final path = await FilePicker.getDirectoryPath();
+                          if (path != null) {
+                            UserDb().setValue(
+                              'set.defaultDownloadPath',
+                              path,
+                              'string',
+                            );
+                            setState(() {});
                           }
                         },
                       ),

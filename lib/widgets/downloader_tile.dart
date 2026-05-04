@@ -52,19 +52,17 @@ class _DownloaderTileState extends State<DownloaderTile> {
           const SizedBox(width: 5),
           Icon(
             getFileIconDataBySuffix(
-              file.file.fileName.split('.').lastOrNull ?? '',
+              file.savePath.split('/').last.split('.').lastOrNull ?? '',
             ),
             color: appSession.accentColor.value,
             size: 24,
           ),
         ],
       ),
-      title: Text(file.file.fileName),
+      title: Text(file.savePath.split('/').last),
       subtitle: Row(
         children: [
-          Expanded(
-            child: ProgressBar(value: file.progress),
-          ),
+          Expanded(child: ProgressBar(value: file.progress * 100)),
           const SizedBox(width: 5),
           Text('${(file.progress * 100).toStringAsFixed(0)}%'),
           if (file.status == DownloadStatus.downloading) ...[
@@ -73,12 +71,12 @@ class _DownloaderTileState extends State<DownloaderTile> {
           ],
           const SizedBox(width: 5),
           Text(
-            '${file.formattedDownloadedSize}/${file.formattedTotalSize}',
-            style: TextStyle(
-              color: Colors.grey[90],
-              fontSize: 12,
-            ),
+            widget.file.status != DownloadStatus.completed
+                ? '${file.formattedDownloadedSize}/${file.formattedTotalSize}'
+                : file.formattedTotalSize,
+            style: TextStyle(color: Colors.grey[90], fontSize: 12),
           ),
+          const SizedBox(width: 5),
         ],
       ),
       trailing: Row(

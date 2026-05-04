@@ -1,5 +1,6 @@
 import 'package:pan123next/common/api/model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 class UserDb {
   static final UserDb _instance = UserDb._internal();
@@ -26,7 +27,12 @@ class UserDb {
     return _prefs!;
   }
 
-  void _firstInitDb() {
+  Future<String> getDownloadPath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
+
+  Future<void> _firstInitDb() async {
     prefs.setString('user.userName', '');
     prefs.setString('user.password', '');
     prefs.setString('user.uuid', '');
@@ -36,6 +42,9 @@ class UserDb {
 
     prefs.setBool('user.autoLogin', false);
     prefs.setBool('user.rememberPassword', false);
+
+    prefs.setBool('user.set.askDownload', true);
+    prefs.setString('user.set.defaultDownloadPath', await getDownloadPath());
 
     prefs.setBool('user.initialed', true);
   }

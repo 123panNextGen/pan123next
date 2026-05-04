@@ -17,7 +17,8 @@ class DownloadSession {
   UserInfoModel? _userInformation;
 
   final List<DownloadItemModel> _downloadList = [];
-  final Map<String, CancelToken> _cancelTokens = {};
+  final Map<String, List<CancelToken>> _cancelTokens = {};
+  final Map<String, List<_SegmentInfo>> _segments = {};
   final Map<String, _SpeedTracker> _speedTrackers = {};
   final StreamController<DownloadItemModel> _progressController =
       StreamController.broadcast();
@@ -191,7 +192,7 @@ class DownloadSession {
     await _saveDownloadList();
     _notifyProgress(item);
 
-    if (item.downloadedSize > 0 && item.supportsResume) {
+    if (item.downloadedSize > 0) {
       await _resumeDownload(item);
     } else {
       await _startNewDownload(item);
@@ -199,56 +200,84 @@ class DownloadSession {
   }
 
   Future<void> _startNewDownload(DownloadItemModel item) async {
-    final cancelToken = CancelToken();
-    _cancelTokens[item.file.fileId.toString()] = cancelToken;
+    final id = item.file.fileId.toString();
 
     try {
       await _getDownloadInfo(item);
 
-      final file = File(item.savePath);
-      await file.create(recursive: true);
+      if (item.totalSize <= 0) {
+        item.status = DownloadStatus.failed;
+        item.errorMessage = '无法获取文件大小';
+        _notifyProgress(item);
+        await _saveDownloadList();
+        _notifyListChange();
+        return;
+      }
 
-      await _dio.download(
-        item.downloadUrl,
-        item.savePath,
-        options: Options(
-          headers: {...headers, 'range': 'bytes=0-'},
-          responseType: ResponseType.stream,
-        ),
-        cancelToken: cancelToken,
-        onReceiveProgress: (received, total) {
-          _updateProgress(item, received, total);
-        },
-      );
+      final parentDir = File(item.savePath).parent;
+      if (!await parentDir.exists()) {
+        await parentDir.create(recursive: true);
+      }
+
+      final segCount = _segmentCount(item.totalSize);
+      if (segCount <= 1) {
+        // 小文件，单线程下载
+        final cancelToken = CancelToken();
+        _cancelTokens[id] = [cancelToken];
+
+        final file = File(item.savePath);
+        await file.create(recursive: true);
+
+        await _dio.download(
+          item.downloadUrl,
+          item.savePath,
+          options: Options(
+            headers: headers,
+            responseType: ResponseType.stream,
+            receiveTimeout: const Duration(seconds: 300),
+          ),
+          cancelToken: cancelToken,
+          onReceiveProgress: (received, total) {
+            _updateProgress(item, received, total);
+          },
+        );
+      } else {
+        // 大文件，分片并行下载
+        await _segmentedDownload(item, segCount);
+      }
 
       item.status = DownloadStatus.completed;
       item.endTime = DateTime.now();
       item.progress = 1.0;
       item.downloadedSize = item.totalSize;
 
-      _speedTrackers.remove(item.file.fileId.toString());
+      _speedTrackers.remove(id);
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
     } catch (e) {
+      _cancelTokens.remove(id);
+      _segments.remove(id);
       if (e is DioException && e.type == DioExceptionType.cancel) {
         item.status = DownloadStatus.paused;
       } else {
         item.status = DownloadStatus.failed;
         item.errorMessage = e.toString();
       }
-      _speedTrackers.remove(item.file.fileId.toString());
+      _speedTrackers.remove(id);
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
     } finally {
-      _cancelTokens.remove(item.file.fileId.toString());
+      _cancelTokens.remove(id);
+      _segments.remove(id);
     }
   }
 
   Future<void> _resumeDownload(DownloadItemModel item) async {
     final cancelToken = CancelToken();
-    _cancelTokens[item.file.fileId.toString()] = cancelToken;
+    final id = item.file.fileId.toString();
+    _cancelTokens[id] = [cancelToken];
 
     try {
       final file = File(item.savePath);
@@ -263,12 +292,19 @@ class DownloadSession {
         item.downloadedSize = fileSize;
       }
 
-      await _dio.download(
+      // 下载剩余部分到临时文件
+      final tempPath = '${item.savePath}.tmp';
+      final tempFile = File(tempPath);
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+
+      final response = await _dio.download(
         item.downloadUrl,
-        item.savePath,
+        tempPath,
         options: Options(
           headers: {...headers, 'range': 'bytes=${item.downloadedSize}-'},
-          responseType: ResponseType.stream,
+          receiveTimeout: const Duration(seconds: 300),
         ),
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
@@ -276,29 +312,237 @@ class DownloadSession {
         },
       );
 
-      item.status = DownloadStatus.completed;
-      item.endTime = DateTime.now();
-      item.progress = 1.0;
-      item.downloadedSize = item.totalSize;
+      final statusCode = response.statusCode ?? 0;
+      final tempSize = await tempFile.length();
 
-      _speedTrackers.remove(item.file.fileId.toString());
+      if (statusCode == 200) {
+        // 服务器忽略 Range 返回完整文件，直接替换
+        await tempFile.rename(item.savePath);
+        item.downloadedSize = tempSize;
+      } else if (statusCode == 206) {
+        // 从 Content-Range 确认文件总大小
+        final contentRange = response.headers.value('content-range');
+        if (contentRange != null) {
+          final total = int.tryParse(contentRange.split('/').last);
+          if (total != null && total > 0) {
+            item.totalSize = total;
+          }
+        }
+
+        // 追加临时文件到主文件
+        const chunkSize = 8192;
+        final src = await tempFile.open(mode: FileMode.read);
+        final dest = await file.open(mode: FileMode.append);
+        try {
+          while (true) {
+            final chunk = await src.read(chunkSize);
+            if (chunk.isEmpty) break;
+            await dest.writeFrom(chunk);
+          }
+        } finally {
+          await src.close();
+          await dest.close();
+        }
+        await tempFile.delete();
+        item.downloadedSize += tempSize;
+      } else {
+        // 未预期的状态码
+        await tempFile.delete();
+        item.status = DownloadStatus.failed;
+        item.errorMessage = '断点续传失败：HTTP $statusCode';
+        _speedTrackers.remove(id);
+        _notifyProgress(item);
+        await _saveDownloadList();
+        _notifyListChange();
+        return;
+      }
+
+      // 验证文件完整性
+      final finalSize = await file.length();
+      if (finalSize < item.totalSize) {
+        item.status = DownloadStatus.failed;
+        item.errorMessage = '下载不完整：$finalSize / ${item.totalSize}';
+      } else {
+        item.status = DownloadStatus.completed;
+        item.endTime = DateTime.now();
+        item.progress = 1.0;
+        item.downloadedSize = item.totalSize;
+      }
+
+      _speedTrackers.remove(id);
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
     } catch (e) {
+      // 清理临时文件
+      final tempFile = File('${item.savePath}.tmp');
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
       if (e is DioException && e.type == DioExceptionType.cancel) {
         item.status = DownloadStatus.paused;
       } else {
         item.status = DownloadStatus.failed;
         item.errorMessage = e.toString();
       }
-      _speedTrackers.remove(item.file.fileId.toString());
+      _speedTrackers.remove(id);
       _notifyProgress(item);
       await _saveDownloadList();
       _notifyListChange();
     } finally {
-      _cancelTokens.remove(item.file.fileId.toString());
+      _cancelTokens.remove(id);
     }
+  }
+
+  Future<void> _segmentedDownload(DownloadItemModel item, int segCount) async {
+    final id = item.file.fileId.toString();
+    final segments = _calculateSegments(item.totalSize, segCount);
+    _segments[id] = segments;
+
+    final cancelTokens = <CancelToken>[];
+    final futures = <Future<void>>[];
+    final errors = <Object>[];
+
+    for (final seg in segments) {
+      final token = CancelToken();
+      seg.cancelToken = token;
+      cancelTokens.add(token);
+      _cancelTokens.putIfAbsent(id, () => []).add(token);
+
+      final segPath = '${item.savePath}.part${seg.index}';
+      futures.add(_downloadSegment(item, seg, segPath));
+    }
+
+    // 等待所有分片完成
+    for (int i = 0; i < futures.length; i++) {
+      try {
+        await futures[i];
+      } catch (e) {
+        errors.add(e);
+        // 取消其他未完成的片，并等待其确认（防止 Future 异常漏捕）
+        for (int j = i + 1; j < futures.length; j++) {
+          cancelTokens[j].cancel();
+        }
+        for (int j = i + 1; j < futures.length; j++) {
+          try {
+            await futures[j];
+          } catch (_) {
+            // 被取消的分片必然抛 cancel 异常，吞掉即可
+          }
+        }
+        break;
+      }
+    }
+
+    if (errors.isNotEmpty) {
+      // 清理分片文件
+      for (final seg in segments) {
+        final p = File('${item.savePath}.part${seg.index}');
+        if (await p.exists()) await p.delete();
+      }
+      throw errors.first;
+    }
+
+    // 合并分片到最终文件
+    await _mergeSegmentFiles(item, segments);
+  }
+
+  Future<void> _downloadSegment(
+    DownloadItemModel item,
+    _SegmentInfo seg,
+    String segPath,
+  ) async {
+    final segFile = File(segPath);
+    if (await segFile.exists()) {
+      await segFile.delete();
+    }
+    await segFile.create(recursive: true);
+
+    await _dio.download(
+      item.downloadUrl,
+      segPath,
+      options: Options(
+        headers: {
+          ...headers,
+          'range': 'bytes=${seg.start}-${seg.end}',
+        },
+        responseType: ResponseType.stream,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 300),
+      ),
+      cancelToken: seg.cancelToken,
+      onReceiveProgress: (received, total) {
+        seg.downloaded = received;
+        _aggregateSegmentsProgress(item, item.file.fileId.toString());
+      },
+    );
+
+    // 验证分片大小
+    final actualSize = await segFile.length();
+    final expectedSize = seg.end - seg.start + 1;
+    if (actualSize != expectedSize) {
+      throw Exception(
+        '分片 ${seg.index} 大小不匹配：期望 $expectedSize，实际 $actualSize',
+      );
+    }
+  }
+
+  void _aggregateSegmentsProgress(DownloadItemModel item, String id) {
+    final segments = _segments[id];
+    if (segments == null || segments.isEmpty) return;
+
+    int totalDownloaded = 0;
+    for (final seg in segments) {
+      totalDownloaded += seg.downloaded;
+    }
+    _updateProgress(item, totalDownloaded, item.totalSize);
+  }
+
+  Future<void> _mergeSegmentFiles(
+    DownloadItemModel item,
+    List<_SegmentInfo> segments,
+  ) async {
+    const chunkSize = 65536;
+    final dest = await File(item.savePath).open(mode: FileMode.write);
+    try {
+      for (final seg in segments) {
+        final segPath = '${item.savePath}.part${seg.index}';
+        final src = await File(segPath).open(mode: FileMode.read);
+        try {
+          while (true) {
+            final chunk = await src.read(chunkSize);
+            if (chunk.isEmpty) break;
+            await dest.writeFrom(chunk);
+          }
+        } finally {
+          await src.close();
+        }
+        await File(segPath).delete();
+      }
+    } finally {
+      await dest.close();
+    }
+  }
+
+  int _segmentCount(int fileSize) {
+    if (fileSize < 10 * 1024 * 1024) return 1;          // < 10MB: 单线程
+    if (fileSize < 100 * 1024 * 1024) return 2;          // 10-100MB: 2片
+    if (fileSize < 512 * 1024 * 1024) return 4;          // 100-512MB: 4片
+    if (fileSize < 2 * 1024 * 1024 * 1024) return 8;     // 512MB-2GB: 8片
+    return 16;                                            // > 2GB: 16片
+  }
+
+  List<_SegmentInfo> _calculateSegments(int fileSize, int count) {
+    final segments = <_SegmentInfo>[];
+    final segSize = fileSize ~/ count;
+    int start = 0;
+
+    for (int i = 0; i < count; i++) {
+      final end = (i == count - 1) ? fileSize - 1 : start + segSize - 1;
+      segments.add(_SegmentInfo(index: i, start: start, end: end));
+      start = end + 1;
+    }
+    return segments;
   }
 
   Future<void> _getDownloadInfo(DownloadItemModel item) async {
@@ -313,15 +557,15 @@ class DownloadSession {
         item.totalSize = int.parse(contentLength);
       }
 
-      final etag = response.headers['etag']?.first;
-      if (etag != null) {
-        item.etag = etag;
-        item.supportsResume = true;
-      }
-
+      // 仅当 Accept-Ranges: bytes 时才确认支持断点续传
       final acceptRanges = response.headers['accept-ranges']?.first;
       if (acceptRanges != null && acceptRanges.toLowerCase() == 'bytes') {
         item.supportsResume = true;
+      }
+
+      final etag = response.headers['etag']?.first;
+      if (etag != null) {
+        item.etag = etag;
       }
     } catch (_) {
       // HEAD 请求失败时保持默认值继续下载
@@ -334,8 +578,7 @@ class DownloadSession {
     item.progress = total > 0 ? received / total : 0;
 
     final id = item.file.fileId.toString();
-    final tracker =
-        _speedTrackers.putIfAbsent(id, () => _SpeedTracker());
+    final tracker = _speedTrackers.putIfAbsent(id, () => _SpeedTracker());
 
     final now = DateTime.now();
     final elapsed = now.difference(tracker.lastTime).inMilliseconds;
@@ -351,7 +594,12 @@ class DownloadSession {
 
   void pauseDownload(DownloadItemModel item) {
     final id = item.file.fileId.toString();
-    _cancelTokens[id]?.cancel();
+    final tokens = _cancelTokens[id];
+    if (tokens != null) {
+      for (final token in tokens) {
+        token.cancel();
+      }
+    }
     _speedTrackers.remove(id);
     item.status = DownloadStatus.paused;
     _notifyProgress(item);
@@ -406,4 +654,18 @@ class DownloadSession {
 class _SpeedTracker {
   int lastBytes = 0;
   DateTime lastTime = DateTime.now();
+}
+
+class _SegmentInfo {
+  final int index;
+  final int start;
+  final int end;
+  int downloaded = 0;
+  CancelToken? cancelToken;
+
+  _SegmentInfo({
+    required this.index,
+    required this.start,
+    required this.end,
+  });
 }
