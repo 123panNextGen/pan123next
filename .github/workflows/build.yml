@@ -28,6 +28,11 @@ on:
         description: 'Release 描述内容'
         required: false
         default: '本次更新包含以下内容：\n\n- 修复已知问题\n- 性能优化'
+      auto_generate:
+        description: '是否自动生成更新内容 (基于 git log)'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -40,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
           - os: ubuntu-latest
             target: linux
@@ -119,8 +124,8 @@ jobs:
           path: build/app/outputs/apk/release/app-release.apk
 
   release:
-    name: Create Release
-    needs: [build, build-apk]
+    name: Create GitHub Release
+    needs: [ build, build-apk ]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch')
     permissions:
@@ -128,53 +133,67 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6\
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: "3.13"
           python-version-file: ".python-version"
 
-      - name: Install dependencies
-        run: |
-          uv sync --locked --all-extras --all-groups --dev
-
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
+
+      - name: Set version for manual trigger
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+
+      - name: Set version for push trigger
+        if: github.event_name == 'push'
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Checkout code for release notes
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Prepare release notes
         id: notes
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # 手动触发：使用用户输入的内容
+            # 手动触发
             VERSION="${{ github.event.inputs.version }}"
             IS_PREVIEW="${{ github.event.inputs.preview }}"
             RELEASE_TITLE="${{ github.event.inputs.release_title }}"
             RELEASE_BODY="${{ github.event.inputs.release_body }}"
-
-            # 调用格式化脚本
-            uv run script/formatRelease.py \
-            --file=doc/ReleaseTemplate.md \
-            --version="$VERSION" \
-            $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
-            --message="$RELEASE_BODY" > /tmp/release_body.md
-
+            AUTO_GENERATE="${{ github.event.inputs.auto_generate }}"
           else
-            # Tag 推送触发：使用 tag 信息
-            VERSION="${{ github.ref_name }}"
+            # Tag 推送触发
+            VERSION="${GITHUB_REF_NAME#v}"
+            IS_PREVIEW="false"
             RELEASE_TITLE="Pan123Next Release $VERSION"
-            RELEASE_BODY="自动构建发布\n\n**版本**: $VERSION\n\n**提交**: ${{ github.sha }}\n\n**更新内容**:\n- 自动构建版本"
+            RELEASE_BODY=""
+            AUTO_GENERATE="true"
+          fi
 
-            # 调用格式化脚本
+          # 调用格式化脚本
+          if [ "$AUTO_GENERATE" == "true" ]; then
+            # 自动生成更新内容
             uv run script/formatRelease.py \
-            --file=/tmp/release_template.md \
-            --version="$VERSION" \
-            --no-pre \
-            --message="$RELEASE_BODY" > /tmp/release_body.md
+              --file=doc/ReleaseTemplate.md \
+              --version="$VERSION" \
+              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
+              --auto > /tmp/release_body.md
+          else
+            # 使用用户输入的内容
+            uv run script/formatRelease.py \
+              --file=doc/ReleaseTemplate.md \
+              --version="$VERSION" \
+              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
+              --message="$RELEASE_BODY" > /tmp/release_body.md
           fi
 
           # 设置输出变量
@@ -183,16 +202,17 @@ jobs:
           echo "prerelease=${IS_PREVIEW:-false}" >> $GITHUB_OUTPUT
           echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
 
-      - name: Create release
-        uses: ncipollo/release-action@v1
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ steps.notes.outputs.tag }}
+          tag_name: ${{ steps.notes.outputs.tag }}
           name: ${{ steps.notes.outputs.title }}
-          bodyFile: ${{ steps.notes.outputs.body_file }}
+          body_path: ${{ steps.notes.outputs.body_file }}
+          files: |
+            ./artifacts/windows/**
+            ./artifacts/linux/**
+            ./artifacts/macos/**
+            ./artifacts/apk/*.apk
           prerelease: ${{ steps.notes.outputs.prerelease == 'true' }}
-          artifacts: |
-            pan123next-linux/**
-            pan123next-windows/**
-            pan123next-macos/**
-            pan123next-apk/*.apk
-          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: false
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
