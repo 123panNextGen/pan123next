@@ -2,6 +2,7 @@ import 'package:pan123next/common/api/device.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/user.dart';
+import 'package:pan123next/common/downloader/session.dart';
 import 'package:uuid/uuid.dart';
 
 Map<String, dynamic> getUserInfo() {
@@ -23,6 +24,7 @@ Future<ApiReturnModel> login(
   bool rememberPassword,
 ) async {
   final NetSession session = NetSession();
+  final DownloadSession downloadSession = DownloadSession();
   UserDb db = UserDb();
   UserInfoModel model = db.getUserInfo();
 
@@ -53,6 +55,7 @@ Future<ApiReturnModel> login(
   }
 
   session.setUserInformation(model);
+  downloadSession.setUserInformation(model);
 
   ApiReturnModel returnModel = await session.login();
   if (returnModel.apiCodeEnum == ApiCode.success) {

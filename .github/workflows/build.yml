@@ -23,11 +23,20 @@ on:
       release_title:
         description: 'Release 标题'
         required: false
-        default: '新版本发布'
+        default: 'Pan123 Next Release Version'
       release_body:
         description: 'Release 描述内容'
         required: false
         default: '本次更新包含以下内容：\n\n- 修复已知问题\n- 性能优化'
+      auto_generate:
+        description: '是否自动生成更新内容 (基于 git log)'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  packages: read
 
 jobs:
   build:
@@ -36,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
           - os: ubuntu-latest
             target: linux
@@ -53,12 +62,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+
+      - name: Install Linux dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libnotify-dev \
+          libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+          ninja-build
 
       - name: Install dependencies
         run: flutter pub get
@@ -76,7 +93,7 @@ jobs:
         run: flutter build macos --release
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact }}
@@ -87,7 +104,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -101,74 +118,106 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pan123next-apk
           path: build/app/outputs/apk/release/app-release.apk
 
-  build-ios:
-    name: Build iOS
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.x'
-          channel: stable
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS
-        run: flutter build ios --release --no-codesign
-
-      - name: Upload iOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pan123next-ios
-          path: build/ios/iphoneos/Runner.app
-
   release:
-    name: Create Release
-    needs: [build, build-apk, build-ios]
+    name: Create GitHub Release
+    needs: [ build, build-apk ]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          python-version-file: ".python-version"
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip zip
+          uv sync
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
+
+      - name: Set version for manual trigger
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+
+      - name: Set version for push trigger
+        if: github.event_name == 'push'
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
 
       - name: Prepare release notes
         id: notes
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "title=Pan123Next ${{ github.event.inputs.release_title }}" >> $GITHUB_OUTPUT
-            echo "body=${{ github.event.inputs.release_body }}" >> $GITHUB_OUTPUT
-            echo "tag=v${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            # 手动触发
+            VERSION="${{ github.event.inputs.version }}"
+            IS_PREVIEW="${{ github.event.inputs.preview }}"
+            RELEASE_TITLE="${{ github.event.inputs.release_title }}"
+            RELEASE_BODY="${{ github.event.inputs.release_body }}"
+            AUTO_GENERATE="${{ github.event.inputs.auto_generate }}"
           else
-            echo "title=Pan123Next Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "body=自动构建发布\n\n**版本**: ${{ github.ref_name }}\n\n**更新内容**:\n- 自动构建\n- 基于 ${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            # Tag 推送触发
+            VERSION="${GITHUB_REF_NAME#v}"
+            IS_PREVIEW="false"
+            RELEASE_TITLE="Pan123Next Release $VERSION"
+            RELEASE_BODY=""
+            AUTO_GENERATE="true"
           fi
 
-      - name: Create release
-        uses: ncipollo/release-action@v1
+          # 调用格式化脚本
+          if [ "$AUTO_GENERATE" == "true" ]; then
+            # 自动生成更新内容
+            uv run script/formatRelease.py \
+              --file=doc/ReleaseTemplate.md \
+              --version="$VERSION" \
+              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) > /tmp/release_body.md
+          else
+            # 使用用户输入的内容
+            uv run script/formatRelease.py \
+              --file=doc/ReleaseTemplate.md \
+              --version="$VERSION" \
+              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
+              --message="$RELEASE_BODY" > /tmp/release_body.md
+          fi
+
+          # 设置输出变量
+          echo "title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "prerelease=${IS_PREVIEW:-false}" >> $GITHUB_OUTPUT
+          echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
+
+      - name: Create artifacts
+        run: |
+          mkdir artifacts
+          cp pan123next-apk/app-release.apk artifacts/Pan123Next-Android.apk
+          zip -r artifacts/Pan123Next-Linux.zip pan123next-linux/
+          zip -r artifacts/Pan123Next-Windows.zip pan123next-windows/
+          zip -r artifacts/Pan123Next-macos.zip pan123next-macos/
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ steps.notes.outputs.tag }}
+          tag_name: ${{ steps.notes.outputs.tag }}
           name: ${{ steps.notes.outputs.title }}
-          body: ${{ steps.notes.outputs.body }}
-          prerelease: ${{ github.event.inputs.preview == 'true' }}
-          artifacts: |
-            pan123next-linux/**
-            pan123next-windows/**
-            pan123next-macos/**
-            pan123next-apk/*.apk
-            pan123next-ios/**
-          token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: ${{ steps.notes.outputs.body_file }}
+          files: |
+            ./artifacts/*
+          prerelease: ${{ steps.notes.outputs.prerelease == 'true' }}
+          generate_release_notes: false
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
