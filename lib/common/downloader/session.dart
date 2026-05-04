@@ -39,6 +39,10 @@ class DownloadSession {
     _updateHeaders();
   }
 
+  void addDownloadListListener(Function(List<DownloadItemModel>) listener) {
+    _listController.stream.listen(listener);
+  }
+
   Dio get dio {
     if (_userInformation == null) {
       throw Exception('请先调用 setUserInformation 设置用户信息');
@@ -462,10 +466,7 @@ class DownloadSession {
       item.downloadUrl,
       segPath,
       options: Options(
-        headers: {
-          ...headers,
-          'range': 'bytes=${seg.start}-${seg.end}',
-        },
+        headers: {...headers, 'range': 'bytes=${seg.start}-${seg.end}'},
         responseType: ResponseType.stream,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 300),
@@ -481,9 +482,7 @@ class DownloadSession {
     final actualSize = await segFile.length();
     final expectedSize = seg.end - seg.start + 1;
     if (actualSize != expectedSize) {
-      throw Exception(
-        '分片 ${seg.index} 大小不匹配：期望 $expectedSize，实际 $actualSize',
-      );
+      throw Exception('分片 ${seg.index} 大小不匹配：期望 $expectedSize，实际 $actualSize');
     }
   }
 
@@ -525,11 +524,11 @@ class DownloadSession {
   }
 
   int _segmentCount(int fileSize) {
-    if (fileSize < 10 * 1024 * 1024) return 1;          // < 10MB: 单线程
-    if (fileSize < 100 * 1024 * 1024) return 2;          // 10-100MB: 2片
-    if (fileSize < 512 * 1024 * 1024) return 4;          // 100-512MB: 4片
-    if (fileSize < 2 * 1024 * 1024 * 1024) return 8;     // 512MB-2GB: 8片
-    return 16;                                            // > 2GB: 16片
+    if (fileSize < 10 * 1024 * 1024) return 1; // < 10MB: 单线程
+    if (fileSize < 100 * 1024 * 1024) return 2; // 10-100MB: 2片
+    if (fileSize < 512 * 1024 * 1024) return 4; // 100-512MB: 4片
+    if (fileSize < 2 * 1024 * 1024 * 1024) return 8; // 512MB-2GB: 8片
+    return 16; // > 2GB: 16片
   }
 
   List<_SegmentInfo> _calculateSegments(int fileSize, int count) {
@@ -663,9 +662,5 @@ class _SegmentInfo {
   int downloaded = 0;
   CancelToken? cancelToken;
 
-  _SegmentInfo({
-    required this.index,
-    required this.start,
-    required this.end,
-  });
+  _SegmentInfo({required this.index, required this.start, required this.end});
 }
