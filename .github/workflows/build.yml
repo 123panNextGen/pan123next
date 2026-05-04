@@ -117,6 +117,7 @@ jobs:
         with:
           name: pan123next-apk
           path: build/app/outputs/apk/release/app-release.apk
+
   release:
     name: Create Release
     needs: [build, build-apk]
@@ -129,33 +130,101 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          python-version-file: ".python-version"
+
+      - name: Install dependencies
+        working-directory: src
+        run: |
+          uv sync --locked --all-extras --all-groups --dev
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
       - name: Prepare release notes
         id: notes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          INPUTS_VERSION: ${{ github.event.inputs.version }}
+          INPUTS_PREVIEW: ${{ github.event.inputs.preview }}
+          INPUTS_RELEASE_TITLE: ${{ github.event.inputs.release_title }}
+          INPUTS_RELEASE_BODY: ${{ github.event.inputs.release_body }}
         run: |
+          # 创建临时模板文件
+          cat > /tmp/release_template.md << 'TEMPLATE_EOF'
+          # Pan123 Next Release ${{ Version }}
+
+          ${{ isPreVersion : start }}
+          > [!WARNING]
+          > 该版本仍处于预览版本
+          ${{ end }}
+
+          ## 更新说明
+
+          ${{ UpdateMessage }}
+          TEMPLATE_EOF
+
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "title=Pan123Next ${{ github.event.inputs.release_title }}" >> $GITHUB_OUTPUT
-            echo "body=${{ github.event.inputs.release_body }}" >> $GITHUB_OUTPUT
-            echo "tag=v${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            # 手动触发：使用用户输入的内容
+            VERSION="${{ github.event.inputs.version }}"
+            IS_PREVIEW="${{ github.event.inputs.preview }}"
+            RELEASE_TITLE="Pan123Next ${{ github.event.inputs.release_title }}"
+            RELEASE_BODY="${{ github.event.inputs.release_body }}"
+            
+            if [ "$IS_PREVIEW" == "true" ]; then
+              PREVIEW_ARG="--pre"
+            else
+              PREVIEW_ARG="--no-pre"
+            fi
+            
+            # 调用格式化脚本
+            FORMATTED_BODY=$(python .github/scripts/md_formatter.py \
+              --file=/tmp/release_template.md \
+              --version="$VERSION" \
+              $PREVIEW_ARG \
+              --message="$RELEASE_BODY")
           else
-            echo "title=Pan123Next Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "body=自动构建发布\n\n**版本**: ${{ github.ref_name }}\n\n**更新内容**:\n- 自动构建\n- 基于 ${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            # Tag 推送触发：使用 tag 信息
+            VERSION="${{ github.ref_name }}"
+            IS_PREVIEW="false"
+            RELEASE_TITLE="Pan123Next Release $VERSION"
+            RELEASE_BODY="自动构建发布\n\n**版本**: $VERSION\n\n**提交**: ${{ github.sha }}\n\n**更新内容**:\n- 自动构建版本"
+            
+            # 调用格式化脚本
+            FORMATTED_BODY=$(python ./script/formatRelease.py \
+              --file=/tmp/release_template.md \
+              --version="$VERSION" \
+              --no-pre \
+              --message="$RELEASE_BODY")
           fi
+          
+          # 设置输出变量
+          echo "title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "prerelease=${IS_PREVIEW:-false}" >> $GITHUB_OUTPUT
+          
+          # 将格式化的内容写入文件，避免特殊字符问题
+          echo "$FORMATTED_BODY" > /tmp/release_body.md
+          echo "body_file=/tmp/release_body.md" >> $GITHUB_OUTPUT
 
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.notes.outputs.tag }}
           name: ${{ steps.notes.outputs.title }}
-          body: ${{ steps.notes.outputs.body }}
-          prerelease: ${{ github.event.inputs.preview == 'true' }}
+          bodyFile: ${{ steps.notes.outputs.body_file }}
+          prerelease: ${{ steps.notes.outputs.prerelease == 'true' }}
           artifacts: |
             pan123next-linux/**
             pan123next-windows/**
             pan123next-macos/**
             pan123next-apk/*.apk
-            pan123next-ios/**
           token: ${{ secrets.GITHUB_TOKEN }}
