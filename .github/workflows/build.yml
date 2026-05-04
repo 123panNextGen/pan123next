@@ -63,14 +63,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-      
+
       - name: Install Linux dependencies
         if: matrix.target == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libnotify-dev \
-            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-            ninja-build
+          libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+          ninja-build
 
       - name: Install dependencies
         run: flutter pub get
@@ -149,48 +149,34 @@ jobs:
       - name: Prepare release notes
         id: notes
         run: |
-          # 创建临时模板文件（使用安全的占位符，避免与 GitHub Actions 语法冲突）
-          cat > /tmp/release_template.md << 'TEMPLATE_EOF'
-          # Pan123 Next Release __VERSION__
-          
-          __PREVIEW_BLOCK_START__
-          > [!WARNING]
-          > 该版本仍处于预览版本
-          __PREVIEW_BLOCK_END__
-          
-          ## 更新说明
-          
-          __UPDATE_MESSAGE__
-          TEMPLATE_EOF
-          
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             # 手动触发：使用用户输入的内容
             VERSION="${{ github.event.inputs.version }}"
             IS_PREVIEW="${{ github.event.inputs.preview }}"
             RELEASE_TITLE="${{ github.event.inputs.release_title }}"
             RELEASE_BODY="${{ github.event.inputs.release_body }}"
-            
+
             # 调用格式化脚本
-            python .github/scripts/md_formatter.py \
-              --file=/tmp/release_template.md \
-              --version="$VERSION" \
-              $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
-              --message="$RELEASE_BODY" > /tmp/release_body.md
-              
+            uv run script/formatRelease.py \
+            --file=doc/ReleaseTemplate.md \
+            --version="$VERSION" \
+            $( [ "$IS_PREVIEW" == "true" ] && echo "--pre" || echo "--no-pre" ) \
+            --message="$RELEASE_BODY" > /tmp/release_body.md
+
           else
             # Tag 推送触发：使用 tag 信息
             VERSION="${{ github.ref_name }}"
             RELEASE_TITLE="Pan123Next Release $VERSION"
             RELEASE_BODY="自动构建发布\n\n**版本**: $VERSION\n\n**提交**: ${{ github.sha }}\n\n**更新内容**:\n- 自动构建版本"
-            
+
             # 调用格式化脚本
-            python script/formatRelease.py \
-              --file=/tmp/release_template.md \
-              --version="$VERSION" \
-              --no-pre \
-              --message="$RELEASE_BODY" > /tmp/release_body.md
+            uv run script/formatRelease.py \
+            --file=/tmp/release_template.md \
+            --version="$VERSION" \
+            --no-pre \
+            --message="$RELEASE_BODY" > /tmp/release_body.md
           fi
-          
+
           # 设置输出变量
           echo "title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
