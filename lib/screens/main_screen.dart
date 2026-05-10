@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
+import 'package:pan123next/common/downloader/model.dart';
+import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/pages/transfer/view.dart';
 import 'package:pan123next/pages/file_list/view.dart';
@@ -16,6 +18,21 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int topIndex = 0;
+  int downloadCount = 0;
+
+  void updateDownloadCount(List<DownloadItemModel> downloadList) {
+    // 选择下载中的任务数量
+    downloadCount = downloadList
+        .where((element) => element.status != DownloadStatus.completed)
+        .length;
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    DownloadSession().addDownloadListListener(updateDownloadCount);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +68,9 @@ class _MainScreenState extends State<MainScreen> {
           PaneItem(
             icon: const Icon(FluentIcons.arrow_download_24_regular),
             title: const Text('下载'),
+            infoBadge: downloadCount > 0
+                ? InfoBadge(source: Text(downloadCount.toString()))
+                : const SizedBox(),
             body: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
