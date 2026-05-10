@@ -4,60 +4,100 @@
 import re
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import click
 from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
 
 # 初始化 Rich console
 console = Console()
 
 
+# ---------------------------------------------------------------------------
+# 模板处理
+# ---------------------------------------------------------------------------
+
+
+def process_conditional_blocks(content: str, flags: Dict[str, bool]) -> str:
+    """处理条件块 ${{ <name> : start }} ... ${{ end }}
+
+    支持的条件名由 flags 字典提供。每个 key 对应一个布尔值，True 表示
+    保留块内的内容，False 则整段移除。
+
+    示例：
+        ${{ isPreVersion : start }} ... ${{ end }}
+        ${{ hasChangeLog : start }} ... ${{ end }}
+    """
+
+    pattern = re.compile(
+        r"\$\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*start\s*\}\}"
+        r"(.*?)"
+        r"\$\{\{\s*end\s*\}\}",
+        flags=re.DOTALL,
+    )
+
+    def replace_block(match: re.Match) -> str:
+        name = match.group(1)
+        body = match.group(2)
+        # 未注册的条件名按"始终移除"处理，避免模板出现未替换占位符
+        if not flags.get(name, False):
+            return ""
+        # 去除块两端首尾的纯空白行（保留内部缩进）
+        return body.strip("\n")
+
+    # 反复处理以支持简单嵌套（最多 5 次足够）
+    for _ in range(5):
+        new_content, n = pattern.subn(replace_block, content)
+        content = new_content
+        if n == 0:
+            break
+    return content
+
+
 def process_template(
     content: str,
+    *,
     version: str,
     is_pre: bool,
     message: str,
+    changelog: str,
+    commit: str,
+    repository: str,
+    date: str,
 ) -> str:
-    """处理模板内容，替换占位符"""
+    """处理模板内容，替换占位符与条件块"""
 
-    # 替换版本号
-    content = content.replace("${{ Version }}", version)
+    # 条件块在替换占位符之前处理：被裁掉的块里包含的占位符无需替换
+    flags = {
+        "isPreVersion": is_pre,
+        "hasMessage": bool(message.strip()),
+        "hasChangeLog": bool(changelog.strip()),
+        "hasCommit": bool(commit.strip()),
+        "hasRepository": bool(repository.strip()),
+        "hasDate": bool(date.strip()),
+    }
+    content = process_conditional_blocks(content, flags)
 
-    # 处理预览版本的条件块
-    content = process_conditional_blocks(content, is_pre)
-
-    # 替换更新说明
-    content = content.replace("${{ UpdateMessage }}", message)
+    # 简单字符串占位符
+    replacements = {
+        "${{ Version }}": version,
+        "${{ UpdateMessage }}": message,
+        "${{ ChangeLog }}": changelog,
+        "${{ Commit }}": commit,
+        "${{ ShortCommit }}": commit[:7] if commit else "",
+        "${{ Repository }}": repository,
+        "${{ Date }}": date,
+    }
+    for key, value in replacements.items():
+        content = content.replace(key, value)
 
     return content
 
 
-def process_conditional_blocks(content: str, is_pre: bool) -> str:
-    """处理条件块 ${{ isPreVersion : start }} ... ${{ end }}"""
-
-    # 匹配条件块的正则表达式
-    pattern = r"\$\{\{\s*isPreVersion\s*:\s*start\s*\}\}(.*?)\$\{\{\s*end\s*\}\}"
-
-    def replace_block(match):
-        if is_pre:
-            # 如果是预览版本，保留内容（去除缩进）
-            return match.group(1).strip()
-        else:
-            # 如果不是预览版本，移除整个块
-            return ""
-
-    # 使用正则替换，支持跨行匹配
-    return re.sub(pattern, replace_block, content, flags=re.DOTALL)
-
-
 def format_output(content: str) -> str:
-    """清理输出内容，去除多余的空行"""
-    # 去除连续的空行（保留最多一个空行）
+    """清理输出内容：折叠多余空行，去除首尾空行"""
     lines = content.split("\n")
-    result_lines = []
+    result_lines: list[str] = []
     prev_empty = False
 
     for line in lines:
@@ -67,15 +107,25 @@ def format_output(content: str) -> str:
         result_lines.append(line)
         prev_empty = is_empty
 
-    # 去除开头的空行
     while result_lines and not result_lines[0].strip():
         result_lines.pop(0)
-
-    # 去除结尾的空行
     while result_lines and not result_lines[-1].strip():
         result_lines.pop()
 
     return "\n".join(result_lines)
+
+
+def _read_text(path: Path, label: str) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except Exception as exc:  # pragma: no cover - 直接报错退出
+        console.print(f"[red]错误：无法读取{label} {path} - {exc}[/red]")
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# CLI 入口
+# ---------------------------------------------------------------------------
 
 
 @click.command()
@@ -98,78 +148,93 @@ def format_output(content: str) -> str:
 @click.option(
     "--message",
     default="",
-    help="输入更新说明内容，支持 \\n 换行符",
+    help="更新说明内容，支持 \\n 换行符；与 --changelog-file 同时存在时被覆盖",
 )
-def main(file: Optional[Path], version: str, pre: bool, message: str):
-    """格式化 Markdown 发布说明模板
+@click.option(
+    "--changelog-file",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=False,
+    help="ChangeLog 文件路径，整段内容会注入 ${{ ChangeLog }} 与 ${{ UpdateMessage }}",
+)
+@click.option(
+    "--commit",
+    default="",
+    help="构建对应的 commit SHA，用于 ${{ Commit }} / ${{ ShortCommit }}",
+)
+@click.option(
+    "--repository",
+    default="",
+    help="仓库地址（如 https://github.com/owner/repo），用于 ${{ Repository }}",
+)
+@click.option(
+    "--date",
+    default="",
+    help="发布日期字符串，用于 ${{ Date }}",
+)
+def main(
+    file: Optional[Path],
+    version: str,
+    pre: bool,
+    message: str,
+    changelog_file: Optional[Path],
+    commit: str,
+    repository: str,
+    date: str,
+):
+    """格式化 Markdown 发布说明模板。
 
-    支持处理以下占位符：
-    - ${{ Version }} - 版本号
-    - ${{ UpdateMessage }} - 更新说明
-    - ${{ isPreVersion : start }}...${{ end }} - 条件块
+    支持的占位符：
+      ${{ Version }}        版本号
+      ${{ UpdateMessage }}  更新说明（优先 --changelog-file，其次 --message）
+      ${{ ChangeLog }}      ChangeLog 文件原始内容
+      ${{ Commit }}         构建 commit
+      ${{ ShortCommit }}    构建 commit 前 7 位
+      ${{ Repository }}     仓库地址
+      ${{ Date }}           发布日期
+
+    支持的条件块（${{ <name> : start }}...${{ end }}）：
+      isPreVersion / hasMessage / hasChangeLog / hasCommit / hasRepository / hasDate
     """
 
-    # 读取模板文件或使用直接输入的 message
+    # 1. 加载模板
     if file:
-        try:
-            template_content = file.read_text(encoding="utf-8")
-        except Exception as e:
-            console.print(f"[red]错误：无法读取文件 {file} - {e}[/red]")
-            sys.exit(1)
+        template_content = _read_text(file, "模板文件")
+    elif message.strip():
+        template_content = message
     else:
-        # 如果没有指定文件，使用 message 作为模板内容
-        # 这种情况下，message 应该包含完整的模板
-        if not message.strip():
-            console.print(
-                "[yellow]警告：未指定 --file 且 --message 为空，将使用默认模板[/yellow]"
-            )
-            template_content = "# Pan123 Next Release ${{ Version }}\n\n## 更新说明\n\n${{ UpdateMessage }}"
-        else:
-            template_content = message
-
-    # 处理消息中的转义换行符
-    # 如果 message 是作为单独参数传入的，需要处理其中的 \n
-    actual_message = (
-        message.replace("\\n", "\n")
-        if not file
-        else message.replace(
-            "\\n",
-            "\n",
+        console.print(
+            "[yellow]警告：未指定 --file 且 --message 为空，将使用默认模板[/yellow]"
         )
-    )
+        template_content = (
+            "# Pan123 Next Release ${{ Version }}\n\n## 更新说明\n\n${{ UpdateMessage }}"
+        )
 
-    # 处理模板
+    # 2. 加载 ChangeLog 内容
+    changelog_text = ""
+    if changelog_file:
+        changelog_text = _read_text(changelog_file, "ChangeLog 文件").strip()
+
+    # 3. UpdateMessage 与 ChangeLog 互不替代：模板内通过条件块选用其一
+    actual_message = message.replace("\\n", "\n")
+
+    # 4. 处理模板
     try:
         output_content = process_template(
-            template_content, version, pre, actual_message
+            template_content,
+            version=version,
+            is_pre=pre,
+            message=actual_message,
+            changelog=changelog_text,
+            commit=commit,
+            repository=repository,
+            date=date,
         )
         formatted_output = format_output(output_content)
-    except Exception as e:
-        console.print(f"[red]处理模板时出错：{e}[/red]")
+    except Exception as exc:
+        console.print(f"[red]处理模板时出错：{exc}[/red]")
         sys.exit(1)
 
-    # 使用 Rich 显示输出
-    # console.print("\n[bold cyan]📝 生成的 Markdown 内容：[/bold cyan]\n")
-
-    # 使用 Syntax 高亮显示 Markdown
-    syntax = Syntax(
-        formatted_output,
-        "markdown",
-        theme="monokai",
-        line_numbers=False,
-    )
-    # console.print(Panel(syntax, border_style="green", title="输出结果"))
-
-    # 同时打印原始文本（方便复制）
-    # console.print("\n[bold cyan]📋 纯文本输出（可直接复制）：[/bold cyan]\n")
     print(formatted_output)
-
-    # 输出详细信息
-    # console.print("\n[dim]---[/dim]")
-    # console.print(f"[dim]版本：{version}[/dim]")
-    # console.print(f"[dim]预览版：{'是' if pre else '否'}[/dim]")
-    # if file:
-    #     console.print(f"[dim]模板文件：{file}[/dim]")
 
 
 if __name__ == "__main__":
