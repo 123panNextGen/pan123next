@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/app_session.dart';
+import 'package:pan123next/pages/transfer/dialog.dart';
 import 'package:pan123next/widgets/downloader_tile.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 
@@ -18,6 +19,8 @@ class DownloaderPage extends StatefulWidget {
 class _DownloaderPageState extends State<DownloaderPage> {
   final AppSession appSession = Get.find();
   List<DownloadItemModel> _downloadList = [];
+  // 上传功能暂未实现，先用空列表占位
+  final List<DownloadItemModel> _uploadList = [];
   StreamSubscription<List<DownloadItemModel>>? _listSubscription;
   StreamSubscription<DownloadItemModel>? _progressSubscription;
   final Set<int> _notifiedCompletedIds = {};
@@ -56,18 +59,57 @@ class _DownloaderPageState extends State<DownloaderPage> {
     super.dispose();
   }
 
+  Future<void> _showAddDownloadDialog() async {
+    final result = await showDialog<AddDownloadResult>(
+      context: context,
+      builder: (_) => const AddDownloadDialog(),
+    );
+    if (result == null || !mounted) return;
+    try {
+      await DownloadSession().addExternalDownload(
+        url: result.url,
+        savePath: result.savePath,
+      );
+      if (!mounted) return;
+      // 切换到下载列表，确保用户能看到刚添加的任务
+      if (_filterType == '上传') {
+        setState(() => _filterType = '全部');
+      }
+      showInfoBar(context, '已添加', '下载任务已开始', InfoBarSeverity.success);
+    } catch (e) {
+      if (!mounted) return;
+      showInfoBar(context, '添加失败', e.toString(), InfoBarSeverity.error);
+    }
+  }
+
   List<DownloadItemModel> get _filteredList {
-    return _downloadList.where((item) {
-      if (_filterType == '下载' && item.status == DownloadStatus.completed) {
-        return false;
-      }
-      if (_searchController.text.isNotEmpty) {
-        return item.file.fileName.toLowerCase().contains(
-          _searchController.text.toLowerCase(),
-        );
-      }
-      return true;
-    }).toList();
+    final List<DownloadItemModel> base;
+    switch (_filterType) {
+      case '下载':
+        base = List.of(_downloadList);
+        break;
+      case '上传':
+        base = List.of(_uploadList);
+        break;
+      default: // '全部'
+        base = [..._downloadList, ..._uploadList];
+    }
+
+    // 按任务创建时间（startTime）升序排序；缺失视为最新（排在末尾）
+    base.sort((a, b) {
+      final ta = a.startTime;
+      final tb = b.startTime;
+      if (ta == null && tb == null) return 0;
+      if (ta == null) return 1;
+      if (tb == null) return -1;
+      return ta.compareTo(tb);
+    });
+
+    final keyword = _searchController.text.toLowerCase();
+    if (keyword.isEmpty) return base;
+    return base
+        .where((item) => item.file.fileName.toLowerCase().contains(keyword))
+        .toList();
   }
 
   @override
@@ -133,7 +175,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                       ),
                       const SizedBox(width: 10),
                       FilledButton(
-                        onPressed: () {},
+                        onPressed: _showAddDownloadDialog,
                         child: Row(
                           children: [
                             Icon(FluentIcons.add_24_regular),
@@ -145,7 +187,17 @@ class _DownloaderPageState extends State<DownloaderPage> {
                     ],
                   ),
                   if (list.isEmpty)
-                    const Expanded(child: Center(child: Text('暂无下载任务')))
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          _filterType == '上传'
+                              ? '暂无上传任务'
+                              : _filterType == '下载'
+                                  ? '暂无下载任务'
+                                  : '暂无任务',
+                        ),
+                      ),
+                    )
                   else
                     Expanded(
                       child: ListView.builder(

@@ -1,0 +1,33 @@
+import 'package:fluent_ui/fluent_ui.dart';
+
+class SettingCard extends StatefulWidget {
+  const SettingCard({
+    super.key,
+    required this.child,
+    this.margin,
+    this.backgroundColor,
+    this.borderColor,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding = const EdgeInsetsDirectional.all(12);
+  final EdgeInsetsGeometry? margin;
+  final Color? backgroundColor;
+  final Color? borderColor;
+
+  @override
+  State<SettingCard> createState() => _SettingCardState();
+}
+
+class _SettingCardState extends State<SettingCard> {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      borderRadius: BorderRadius.circular(6),
+      margin: widget.margin,
+      backgroundColor: widget.backgroundColor,
+      borderColor: widget.borderColor,
+      child: widget.child,
+    );
+  }
+}

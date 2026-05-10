@@ -23,6 +23,7 @@ class _FileListViewState extends State<FileListView> {
   FileItemModel? _selectedFile;
   int _currentParentId = 0;
   bool _isLoading = false;
+  bool _isLoadFailed = false;
 
   final List<String> _breadItemIds = ['0'];
   final List<FileItemModel> _breadItemModels = [];
@@ -69,8 +70,12 @@ class _FileListViewState extends State<FileListView> {
       });
     } catch (e) {
       debugPrint('加载文件列表失败: $e');
+      setState(() => _isLoadFailed = true);
+      if (!mounted) return;
+      showInfoBar(context, '错误', '加载文件列表失败', InfoBarSeverity.error);
     } finally {
       setState(() => _isLoading = false);
+      setState(() => _isLoadFailed = false);
     }
   }
 
@@ -195,15 +200,21 @@ class _FileListViewState extends State<FileListView> {
         savePath = '$savePath/${file.fileName}';
       }
     } else {
+      String defaultDownloadPath =
+          UserDb().getValue('set.defaultDownloadPath') ??
+          await getDownloadsDirectory().then((dir) => dir?.path ?? '');
+
       if (file.isFolder) {
         fileResult = await FilePicker.saveFile(
           dialogTitle: '选择保存路径:',
           fileName: '${file.fileName}.zip',
+          initialDirectory: defaultDownloadPath,
         );
       } else {
         fileResult = await FilePicker.saveFile(
           dialogTitle: '选择保存路径:',
           fileName: file.fileName,
+          initialDirectory: defaultDownloadPath,
         );
       }
 
@@ -433,19 +444,23 @@ class _FileListViewState extends State<FileListView> {
             child: Column(
               children: [
                 _buildCommandBar(),
-                !_isLoading
-                    ? (_fileList.isNotEmpty
-                          ? Expanded(
-                              child: ListView.builder(
-                                itemCount: _fileList.length,
-                                itemBuilder: (context, index) =>
-                                    _buildFileItem(_fileList[index]),
-                              ),
-                            )
+                !_isLoadFailed
+                    ? (!_isLoading
+                          ? (_fileList.isNotEmpty
+                                ? Expanded(
+                                    child: ListView.builder(
+                                      itemCount: _fileList.length,
+                                      itemBuilder: (context, index) =>
+                                          _buildFileItem(_fileList[index]),
+                                    ),
+                                  )
+                                : const Expanded(
+                                    child: Center(child: Text('空空如也呢...')),
+                                  ))
                           : const Expanded(
-                              child: Center(child: Text('空空如也呢...')),
+                              child: Center(child: ProgressRing()),
                             ))
-                    : const Expanded(child: Center(child: ProgressRing())),
+                    : const Expanded(child: Center(child: Text('加载失败呜...'))),
               ],
             ),
           ),

@@ -20,6 +20,8 @@ class _SettingsViewState extends State<SettingsView> {
   late String accentColor;
   late bool askDownload;
 
+  bool _picking = false;
+
   @override
   void initState() {
     super.initState();
@@ -177,8 +179,21 @@ class _SettingsViewState extends State<SettingsView> {
                       ),
                       const SizedBox(width: 10),
                       FilledButton(
-                        child: const Text('选择'),
+                        child: _picking
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: ProgressRing(strokeWidth: 2),
+                              )
+                            : Row(
+                                children: const [
+                                  Icon(FluentIcons.folder_open_24_regular),
+                                  SizedBox(width: 6),
+                                  Text('选择'),
+                                ],
+                              ),
                         onPressed: () async {
+                          setState(() => _picking = true);
                           final path = await FilePicker.getDirectoryPath();
                           if (path != null) {
                             UserDb().setValue(
@@ -186,8 +201,8 @@ class _SettingsViewState extends State<SettingsView> {
                               path,
                               'string',
                             );
-                            setState(() {});
                           }
+                          setState(() => _picking = false);
                         },
                       ),
                     ],
