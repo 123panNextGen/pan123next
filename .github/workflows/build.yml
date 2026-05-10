@@ -170,6 +170,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          # 拉取完整历史与所有 tag，以便计算上一个版本 tag
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -199,9 +203,19 @@ jobs:
             RELEASE_TITLE="${{ github.event.inputs.release_title }}"
             RELEASE_BODY="${{ github.event.inputs.release_body }}"
             AUTO_GENERATE="${{ github.event.inputs.auto_generate }}"
+            CURRENT_TAG="v${VERSION}"
           else
-            VERSION="${GITHUB_REF_NAME#v}"
-            IS_PREVIEW="false"
+            # 真实 tag 字面量，允许带 (pre) 后缀，例如 v1.0.4(pre) → 预览版
+            CURRENT_TAG="${GITHUB_REF_NAME}"
+            if [[ "$CURRENT_TAG" == *"(pre)" ]]; then
+              IS_PREVIEW="true"
+              # 剥离尾部 (pre) 与前缀 v，得到纯版本号
+              VERSION="${CURRENT_TAG%\(pre\)}"
+              VERSION="${VERSION#v}"
+            else
+              IS_PREVIEW="false"
+              VERSION="${CURRENT_TAG#v}"
+            fi
             RELEASE_TITLE="Pan123Next Release $VERSION"
             RELEASE_BODY=""
             AUTO_GENERATE="true"
@@ -211,15 +225,30 @@ jobs:
           REPO_URL="${{ github.server_url }}/${{ github.repository }}"
           COMMIT_SHA="${{ github.sha }}"
 
+          # 计算上一个 v* tag：优先取当前 tag commit 的祖先 tag；
+          # 若当前 tag 尚未创建（手动触发场景），则取仓库内排序最新的 v* tag。
+          PREV_TAG=""
+          if git rev-parse -q --verify "refs/tags/$CURRENT_TAG" >/dev/null; then
+            PREV_TAG=$(git describe --tags --abbrev=0 --match='v*' "$CURRENT_TAG^" 2>/dev/null || true)
+          else
+            PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1 || true)
+          fi
+          # 如果取到的就是当前版本，视为没有上一个 tag
+          if [ "$PREV_TAG" = "$CURRENT_TAG" ]; then
+            PREV_TAG=""
+          fi
+          echo "Previous tag resolved to: '${PREV_TAG}'"
+
           {
             echo "version=$VERSION"
             echo "title=$RELEASE_TITLE"
-            echo "tag=v${VERSION}"
+            echo "tag=$CURRENT_TAG"
             echo "is_preview=$IS_PREVIEW"
             echo "auto_generate=$AUTO_GENERATE"
             echo "build_date=$BUILD_DATE"
             echo "repo_url=$REPO_URL"
             echo "commit_sha=$COMMIT_SHA"
+            echo "previous_tag=$PREV_TAG"
           } >> "$GITHUB_OUTPUT"
 
           # release body 单独通过 multiline 输出
@@ -233,12 +262,14 @@ jobs:
         id: notes
         env:
           REL_VERSION: ${{ steps.meta.outputs.version }}
+          REL_TAG: ${{ steps.meta.outputs.tag }}
           REL_PRE: ${{ steps.meta.outputs.is_preview }}
           REL_AUTO: ${{ steps.meta.outputs.auto_generate }}
           REL_BODY: ${{ steps.meta.outputs.release_body }}
           REL_DATE: ${{ steps.meta.outputs.build_date }}
           REL_REPO: ${{ steps.meta.outputs.repo_url }}
           REL_COMMIT: ${{ steps.meta.outputs.commit_sha }}
+          REL_PREV_TAG: ${{ steps.meta.outputs.previous_tag }}
         run: |
           set -euo pipefail
 
@@ -247,11 +278,16 @@ jobs:
           ARGS=(
             --file=doc/ReleaseTemplate.md
             --version="$REL_VERSION"
+            --tag="$REL_TAG"
             "$PRE_FLAG"
             --commit="$REL_COMMIT"
             --repository="$REL_REPO"
             --date="$REL_DATE"
           )
+
+          if [ -n "$REL_PREV_TAG" ]; then
+            ARGS+=( --previous-tag="$REL_PREV_TAG" )
+          fi
 
           if [ "$REL_AUTO" == "true" ] && [ -f doc/ChangeLog.md ]; then
             ARGS+=( --changelog-file=doc/ChangeLog.md )

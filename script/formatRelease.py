@@ -64,8 +64,13 @@ def process_template(
     commit: str,
     repository: str,
     date: str,
+    previous_tag: str,
+    tag: str,
 ) -> str:
     """处理模板内容，替换占位符与条件块"""
+
+    # tag 为空时回退到 v<Version>，确保下载/对比链接始终可拼接
+    actual_tag = tag.strip() or f"v{version}"
 
     # 条件块在替换占位符之前处理：被裁掉的块里包含的占位符无需替换
     flags = {
@@ -75,18 +80,22 @@ def process_template(
         "hasCommit": bool(commit.strip()),
         "hasRepository": bool(repository.strip()),
         "hasDate": bool(date.strip()),
+        # 比对链接同时依赖上一个 tag 与仓库地址，否则链接无意义
+        "hasPreviousTag": bool(previous_tag.strip()) and bool(repository.strip()),
     }
     content = process_conditional_blocks(content, flags)
 
     # 简单字符串占位符
     replacements = {
         "${{ Version }}": version,
+        "${{ Tag }}": actual_tag,
         "${{ UpdateMessage }}": message,
         "${{ ChangeLog }}": changelog,
         "${{ Commit }}": commit,
         "${{ ShortCommit }}": commit[:7] if commit else "",
         "${{ Repository }}": repository,
         "${{ Date }}": date,
+        "${{ PreviousTag }}": previous_tag,
     }
     for key, value in replacements.items():
         content = content.replace(key, value)
@@ -171,6 +180,16 @@ def _read_text(path: Path, label: str) -> str:
     default="",
     help="发布日期字符串，用于 ${{ Date }}",
 )
+@click.option(
+    "--previous-tag",
+    default="",
+    help="上一个版本 tag（如 v0.1.9），用于渲染比对链接 ${{ PreviousTag }}",
+)
+@click.option(
+    "--tag",
+    default="",
+    help="当前 tag 字面量（如 v1.0.4(pre)）；为空时回退到 v<Version>",
+)
 def main(
     file: Optional[Path],
     version: str,
@@ -180,20 +199,24 @@ def main(
     commit: str,
     repository: str,
     date: str,
+    previous_tag: str,
+    tag: str,
 ):
     """格式化 Markdown 发布说明模板。
 
     支持的占位符：
-      ${{ Version }}        版本号
+      ${{ Version }}        版本号（如 1.0.4）
+      ${{ Tag }}            tag 字面量（如 v1.0.4(pre)，缺省回退到 v<Version>）
       ${{ UpdateMessage }}  更新说明（优先 --changelog-file，其次 --message）
       ${{ ChangeLog }}      ChangeLog 文件原始内容
       ${{ Commit }}         构建 commit
       ${{ ShortCommit }}    构建 commit 前 7 位
       ${{ Repository }}     仓库地址
       ${{ Date }}           发布日期
+      ${{ PreviousTag }}    上一个 tag（用于比对链接）
 
     支持的条件块（${{ <name> : start }}...${{ end }}）：
-      isPreVersion / hasMessage / hasChangeLog / hasCommit / hasRepository / hasDate
+      isPreVersion / hasMessage / hasChangeLog / hasCommit / hasRepository / hasDate / hasPreviousTag
     """
 
     # 1. 加载模板
@@ -228,6 +251,8 @@ def main(
             commit=commit,
             repository=repository,
             date=date,
+            previous_tag=previous_tag,
+            tag=tag,
         )
         formatted_output = format_output(output_content)
     except Exception as exc:

@@ -13,6 +13,10 @@ ${{ hasCommit : start }}
 > 构建提交：[`${{ ShortCommit }}`](${{ Repository }}/commit/${{ Commit }})
 ${{ end }}
 
+${{ hasPreviousTag : start }}
+> 与上版本比对：[${{ PreviousTag }}...${{ Tag }}](${{ Repository }}/compare/${{ PreviousTag }}...${{ Tag }})
+${{ end }}
+
 ## 更新内容
 
 ${{ hasChangeLog : start }}
@@ -27,10 +31,10 @@ ${{ end }}
 
 | 平台 | 文件 |
 | --- | --- |
-| Android | [`Pan123Next-Android.apk`](${{ Repository }}/releases/download/v${{ Version }}/Pan123Next-Android.apk) |
-| Windows | [`Pan123Next-Windows.zip`](${{ Repository }}/releases/download/v${{ Version }}/Pan123Next-Windows.zip) |
-| macOS   | [`Pan123Next-macos.zip`](${{ Repository }}/releases/download/v${{ Version }}/Pan123Next-macos.zip) |
-| Linux   | [`Pan123Next-Linux.zip`](${{ Repository }}/releases/download/v${{ Version }}/Pan123Next-Linux.zip) |
+| Android | [`Pan123Next-Android.apk`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Android.apk) |
+| Windows | [`Pan123Next-Windows.zip`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Windows.zip) |
+| macOS   | [`Pan123Next-macos.zip`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-macos.zip) |
+| Linux   | [`Pan123Next-Linux.zip`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Linux.zip) |
 
 ## 安装与使用
 
