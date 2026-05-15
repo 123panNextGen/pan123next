@@ -2,14 +2,15 @@ import 'package:get/get.dart' hide Response;
 
 class AppTranslations extends Translations {
   @override
-  Map<String, Map<String, String>> get keys => {'zh_CN': zhCn};
+  Map<String, Map<String, String>> get keys => {
+    'zh_CN': zhCn,
+    'en_US': enUs,
+  };
 
   static const Map<String, String> zhCn = {
-    // App
     'app.title': '123网盘 Next',
     'app.subtitle': 'Preview',
 
-    // Login screen
     'login.header': '登录',
     'login.tab.password': '用户名/密码 登录',
     'login.tab.qrcode': '二维码 登录',
@@ -25,13 +26,11 @@ class AppTranslations extends Translations {
     'login.empty.credentials': '用户名或密码不能为空',
     'login.success': '登录成功',
 
-    // Main screen
     'main.header': '主界面',
     'main.tab.files': '文件列表',
     'main.tab.downloads': '下载',
     'main.tab.settings': '设置',
 
-    // File list
     'file.list.title': '文件列表',
     'file.list.root': '根目录',
     'file.list.back': '上一级',
@@ -55,7 +54,6 @@ class AppTranslations extends Translations {
     'file.list.folder.format': '文件夹 - {size}',
     'file.list.save.path.title': '选择保存路径:',
 
-    // File list dialogs
     'dialog.new.folder.title': '新建文件夹',
     'dialog.new.folder.label': '在当前目录下新建文件夹',
     'dialog.new.folder.placeholder': '请输入文件夹名',
@@ -75,7 +73,6 @@ class AppTranslations extends Translations {
     'dialog.link.copy': '复制',
     'dialog.link.confirm': '确定',
 
-    // Transfer page
     'transfer.title': '传输',
     'transfer.filter.all': '全部',
     'transfer.filter.downloading': '下载',
@@ -91,7 +88,6 @@ class AppTranslations extends Translations {
     'transfer.add.failed': '添加失败',
     'transfer.complete.title': '下载完成',
 
-    // Add download dialog
     'add.download.title': '添加新下载',
     'add.download.url.label': '下载链接',
     'add.download.url.placeholder': 'https://example.com/file.zip',
@@ -104,7 +100,6 @@ class AppTranslations extends Translations {
     'add.download.select.path': '请选择保存路径',
     'add.download.select.file': '请选择文件',
 
-    // Settings
     'settings.title': '设置',
     'settings.theme.header': '切换主题',
     'settings.theme.label': '主题',
@@ -119,7 +114,6 @@ class AppTranslations extends Translations {
     'settings.version.loading': '获取版本中...',
     'settings.language': '语言',
 
-    // Theme & color labels
     'theme.dark': '暗色',
     'theme.light': '亮色',
     'color.purple': '紫色',
@@ -130,7 +124,6 @@ class AppTranslations extends Translations {
     'color.orange': '橙色',
     'color.teal': '青色',
 
-    // Downloader error messages (hardcoded, not from server)
     'downloader.error.remote.changed': '远端文件已变化，请删除任务后重新下载',
     'downloader.error.no.size': '无法获取文件大小',
     'downloader.error.resume.failed': '断点续传失败：HTTP {code}',
@@ -138,7 +131,6 @@ class AppTranslations extends Translations {
     'downloader.error.remote.size.changed': '远端文件大小已变化（{remote} != {local}），请重新下载',
     'downloader.error.remote.etag.changed': '远端文件已修改（ETag 不一致），请重新下载',
 
-    // API hardcoded messages
     'api.login.failed': '登录失败',
     'api.delete.failed': '删除失败',
     'api.get.link.failed': '获取文件链接失败',
@@ -147,7 +139,142 @@ class AppTranslations extends Translations {
     'api.create.success': '创建成功',
     'api.delete.success': '删除成功',
 
-    // Languages
+    'lang.zh.cn': '中文 (简体)',
+    'lang.en.us': 'English',
+  };
+
+  static const Map<String, String> enUs = {
+    'app.title': '123Drive Next',
+    'app.subtitle': 'Preview',
+
+    'login.header': 'Login',
+    'login.tab.password': 'Username / Password',
+    'login.tab.qrcode': 'QR Code',
+    'login.qrcode.placeholder': 'Coming soon...',
+    'login.welcome': 'Welcome!',
+    'login.username.placeholder': 'Username (email/phone)',
+    'login.password.placeholder': 'Password',
+    'login.remember.password': 'Remember password',
+    'login.auto.login': 'Auto login',
+    'login.button': 'Login',
+    'login.cancel': 'Cancel',
+    'login.failed': 'Login failed',
+    'login.empty.credentials': 'Username or password cannot be empty',
+    'login.success': 'Login successful',
+
+    'main.header': 'Home',
+    'main.tab.files': 'Files',
+    'main.tab.downloads': 'Downloads',
+    'main.tab.settings': 'Settings',
+
+    'file.list.title': 'Files',
+    'file.list.root': 'Root',
+    'file.list.back': 'Back',
+    'file.list.refresh': 'Refresh',
+    'file.list.refresh.tooltip': 'Refresh file list',
+    'file.list.new.folder': 'New folder',
+    'file.list.new.folder.tooltip': 'Create new folder',
+    'file.list.delete': 'Delete',
+    'file.list.delete.tooltip': 'Delete selected file',
+    'file.list.add.folder': 'Add folder',
+    'file.list.delete.current': 'Delete current folder',
+    'file.list.get.link': 'Get download link',
+    'file.list.download': 'Download',
+    'file.list.empty': 'Nothing here...',
+    'file.list.load.failed': 'Load failed...',
+    'file.list.error': 'Error',
+    'file.list.token.expired': 'Token expired, please login again',
+    'file.list.load.error': 'Failed to load file list',
+    'file.list.success': 'Success',
+    'file.list.download.success': 'Downloaded: {name}',
+    'file.list.folder.format': 'Folder - {size}',
+    'file.list.save.path.title': 'Choose save location:',
+
+    'dialog.new.folder.title': 'New Folder',
+    'dialog.new.folder.label': 'Create folder in current directory',
+    'dialog.new.folder.placeholder': 'Enter folder name',
+    'dialog.new.folder.cancel': 'Cancel',
+    'dialog.new.folder.create': 'Create',
+    'dialog.trash.file.title': 'Delete',
+    'dialog.trash.file.content': 'Are you sure you want to delete this file?\nIt will be moved to trash.',
+    'dialog.trash.file.cancel': 'Cancel',
+    'dialog.trash.file.confirm': 'Delete',
+    'dialog.trash.current.title': 'Delete',
+    'dialog.trash.current.content': 'Are you sure you want to delete this folder?\nIt will be moved to trash.',
+    'dialog.trash.current.cancel': 'Cancel',
+    'dialog.trash.current.confirm': 'Delete',
+    'dialog.link.title': 'Download Link',
+    'dialog.link.file.name': 'File: ',
+    'dialog.link.result': 'Result',
+    'dialog.link.copy': 'Copy',
+    'dialog.link.confirm': 'OK',
+
+    'transfer.title': 'Transfers',
+    'transfer.filter.all': 'All',
+    'transfer.filter.downloading': 'Downloading',
+    'transfer.filter.uploading': 'Uploading',
+    'transfer.filter.label': 'Filter: ',
+    'transfer.search.placeholder': 'File name',
+    'transfer.add.download': 'Add download',
+    'transfer.empty.all': 'No tasks',
+    'transfer.empty.downloading': 'No download tasks',
+    'transfer.empty.uploading': 'No upload tasks',
+    'transfer.added.title': 'Added',
+    'transfer.added.message': 'Download task started',
+    'transfer.add.failed': 'Add failed',
+    'transfer.complete.title': 'Download complete',
+
+    'add.download.title': 'Add Download',
+    'add.download.url.label': 'Download URL',
+    'add.download.url.placeholder': 'https://example.com/file.zip',
+    'add.download.path.label': 'Save Path',
+    'add.download.path.placeholder': 'Not selected',
+    'add.download.choose': 'Browse',
+    'add.download.cancel': 'Cancel',
+    'add.download.start': 'Start Download',
+    'add.download.invalid.url': 'Please enter a valid URL (http/https)',
+    'add.download.select.path': 'Please select a save path',
+    'add.download.select.file': 'Please select a file',
+
+    'settings.title': 'Settings',
+    'settings.theme.header': 'Theme',
+    'settings.theme.label': 'Theme',
+    'settings.color.label': 'Accent Color',
+    'settings.download.header': 'Download',
+    'settings.download.ask': 'Ask for save location',
+    'settings.download.default.path': 'Default download path',
+    'settings.download.path.placeholder': 'Enter default download path',
+    'settings.choose': 'Browse',
+    'settings.about.section': '123Pan Next',
+    'settings.current.version': 'Version: {version}',
+    'settings.version.loading': 'Loading...',
+    'settings.language': 'Language',
+
+    'theme.dark': 'Dark',
+    'theme.light': 'Light',
+    'color.purple': 'Purple',
+    'color.blue': 'Blue',
+    'color.yellow': 'Yellow',
+    'color.red': 'Red',
+    'color.green': 'Green',
+    'color.orange': 'Orange',
+    'color.teal': 'Teal',
+
+    'downloader.error.remote.changed': 'Remote file changed, please re-add the task',
+    'downloader.error.no.size': 'Cannot determine file size',
+    'downloader.error.resume.failed': 'Resume failed: HTTP {code}',
+    'downloader.error.incomplete': 'Incomplete download: {downloaded} / {total}',
+    'downloader.error.remote.size.changed': 'Remote file size changed ({remote} != {local}), please re-download',
+    'downloader.error.remote.etag.changed': 'Remote file modified (ETag mismatch), please re-download',
+
+    'api.login.failed': 'Login failed',
+    'api.delete.failed': 'Delete failed',
+    'api.get.link.failed': 'Failed to get download link',
+    'api.link.not.found': 'Download link not found',
+    'api.create.failed': 'Create failed',
+    'api.create.success': 'Created successfully',
+    'api.delete.success': 'Deleted successfully',
+
     'lang.zh.cn': '中文 (简体)',
     'lang.en.us': 'English',
   };

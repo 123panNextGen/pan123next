@@ -8,6 +8,7 @@ import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 
 import 'app.dart';
 
@@ -44,6 +45,7 @@ Future<void> main() async {
   Get.put(downloaderDb);
   Get.put(NetSession());
   Get.put(DownloadSession());
+  Get.put(TranslationService());
 
   await DownloadSession().initialize();
 

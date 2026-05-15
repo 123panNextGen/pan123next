@@ -243,12 +243,12 @@ class _SettingsViewState extends State<SettingsView> {
                       Expanded(child: Text('settings.language'.i)),
                       ComboBox<String>(
                         value: language,
-                        items: const [
+                        items: [
                           ComboBoxItem(
                             value: 'zh_CN',
-                            child: Text('Chinese Simplified (简体中文)'),
+                            child: Text('lang.zh.cn'.i),
                           ),
-                          ComboBoxItem(value: 'en_US', child: Text('English')),
+                          ComboBoxItem(value: 'en_US', child: Text('lang.en.us'.i)),
                         ],
                         onChanged: (v) {
                           if (v != null) {

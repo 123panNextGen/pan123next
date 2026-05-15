@@ -6,7 +6,6 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/data/user.dart';
-import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AddDownloadResult {
@@ -71,29 +70,25 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
     return 'download_${DateTime.now().millisecondsSinceEpoch}';
   }
 
-  Future<void> _pickSavePath() async {
-    final url = _validatedUrl(_urlController.text);
-    if (url == null) {
-      setState(() => _urlError = 'add.download.invalid.url'.i);
-      return;
-    }
+  Future<void> _pickSaveFolder() async {
     setState(() {
       _picking = true;
       _urlError = null;
     });
 
-    String defaultDownloadPath =
-        Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
-        await getDownloadsDirectory().then((dir) => dir?.path ?? '');
-
     try {
-      final path = await FilePicker.saveFile(
+      final baseDir = _savePathController.text.isNotEmpty
+          ? (File(_savePathController.text).parent.path)
+          : (Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
+              await getDownloadsDirectory().then((dir) => dir?.path ?? ''));
+
+      final dir = await FilePicker.getDirectoryPath(
         dialogTitle: 'file.list.save.path.title'.i,
-        fileName: _suggestedFileName(url),
-        initialDirectory: defaultDownloadPath,
+        initialDirectory: baseDir,
       );
-      if (path != null && path.isNotEmpty) {
-        setState(() => _savePathController.text = path);
+      if (dir != null && dir.isNotEmpty) {
+        final fileName = _suggestedFileName(_urlController.text);
+        setState(() => _savePathController.text = '$dir/$fileName');
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -108,10 +103,6 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
     }
     if (_savePathController.text.isEmpty) {
       setState(() => _urlError = 'add.download.select.path'.i);
-      return;
-    }
-    if (FileSystemEntity.isDirectorySync(_savePathController.text)) {
-      showInfoBar(context, 'file.list.error'.i, 'add.download.select.file'.i, InfoBarSeverity.error);
       return;
     }
 
@@ -144,7 +135,7 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
               },
               onSubmitted: (_) {
                 if (_savePathController.text.isEmpty) {
-                  _pickSavePath();
+                  _pickSaveFolder();
                 } else {
                   _submit();
                 }
@@ -174,7 +165,7 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
                 ),
                 const SizedBox(width: 8),
                 Button(
-                  onPressed: _picking ? null : _pickSavePath,
+                  onPressed: _picking ? null : _pickSaveFolder,
                   child: _picking
                       ? const SizedBox(
                           width: 16,
