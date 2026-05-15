@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
@@ -21,7 +22,6 @@ class _MainScreenState extends State<MainScreen> {
   int downloadCount = 0;
 
   void updateDownloadCount(List<DownloadItemModel> downloadList) {
-    // 选择下载中的任务数量
     downloadCount = downloadList
         .where((element) => element.status != DownloadStatus.completed)
         .length;
@@ -51,12 +51,12 @@ class _MainScreenState extends State<MainScreen> {
         onChanged: (index) => setState(() => topIndex = index),
         displayMode: getPaneDisplayMode(),
         indicator: StickyNavigationIndicator(),
-        header: const Text('主界面'),
+        header: Text('main.header'.i),
 
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.list_24_regular),
-            title: const Text('文件列表'),
+            title: Text('main.tab.files'.i),
             body: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -67,7 +67,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           PaneItem(
             icon: const Icon(FluentIcons.arrow_download_24_regular),
-            title: const Text('下载'),
+            title: Text('main.tab.downloads'.i),
             infoBadge: downloadCount > 0
                 ? InfoBadge(source: Text(downloadCount.toString()))
                 : const SizedBox(),
@@ -84,7 +84,7 @@ class _MainScreenState extends State<MainScreen> {
         footerItems: [
           PaneItem(
             icon: const Icon(FluentIcons.settings_24_regular),
-            title: const Text('设置'),
+            title: Text('main.tab.settings'.i),
             body: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,

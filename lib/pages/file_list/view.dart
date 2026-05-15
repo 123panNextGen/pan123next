@@ -1,4 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
+import 'package:get/get.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/user.dart';
@@ -18,7 +20,7 @@ class FileListView extends StatefulWidget {
 }
 
 class _FileListViewState extends State<FileListView> {
-  final NetSession _session = NetSession();
+  final NetSession _session = Get.find();
   List<FileItemModel> _fileList = [];
   FileItemModel? _selectedFile;
   int _currentParentId = 0;
@@ -28,7 +30,7 @@ class _FileListViewState extends State<FileListView> {
   final List<String> _breadItemIds = ['0'];
   final List<FileItemModel> _breadItemModels = [];
   final _breadItems = <BreadcrumbItem<int>>[
-    BreadcrumbItem(label: Text('根目录'), value: 0),
+    BreadcrumbItem(label: Text('file.list.root'.i), value: 0),
   ];
 
   final commandBarKey = GlobalKey<CommandBarState>();
@@ -45,7 +47,7 @@ class _FileListViewState extends State<FileListView> {
     _loadFileList('0');
   }
 
-  Future<void> _loadFileList(String fileId) async {
+  Future<void> _loadFileList(String fileId, {int retryCount = 0}) async {
     setState(() {
       _isLoading = true;
       _currentParentId = int.parse(fileId);
@@ -55,27 +57,41 @@ class _FileListViewState extends State<FileListView> {
     try {
       final response = await _session.getFileList(fileId);
       if (response.apiCode != 200) {
+        if (retryCount >= 1) {
+          if (!mounted) return;
+          showInfoBar(
+            context,
+            'file.list.error'.i,
+            'file.list.token.expired'.i,
+            InfoBarSeverity.error,
+          );
+          return;
+        }
         final loginResponse = await _session.login();
         if (loginResponse.apiCode != 200) {
           if (!mounted) return;
-          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
-          return;
-        } else {
-          _loadFileList(fileId);
+          showInfoBar(
+            context,
+            'file.list.error'.i,
+            'file.list.token.expired'.i,
+            InfoBarSeverity.error,
+          );
           return;
         }
+        _loadFileList(fileId, retryCount: retryCount + 1);
+        return;
       }
       setState(() {
         _fileList = response.data.data.infoList;
+        _isLoadFailed = false;
       });
     } catch (e) {
       debugPrint('加载文件列表失败: $e');
       setState(() => _isLoadFailed = true);
       if (!mounted) return;
-      showInfoBar(context, '错误', '加载文件列表失败', InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, 'file.list.load.error'.i, InfoBarSeverity.error);
     } finally {
       setState(() => _isLoading = false);
-      setState(() => _isLoadFailed = false);
     }
   }
 
@@ -147,7 +163,7 @@ class _FileListViewState extends State<FileListView> {
       _loadFileList(_currentParentId.toString());
       setState(() => _selectedFile = null);
     } else {
-      showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, returnModel.msg, InfoBarSeverity.error);
     }
   }
 
@@ -161,9 +177,7 @@ class _FileListViewState extends State<FileListView> {
 
     if (!mounted || !(result ?? false)) return;
 
-    // 从面包屑中获取当前 fileModel
     final currentFile = _breadItemModels.last;
-    // 删除当前目录
     ApiReturnModel returnModel = await _session.trashFile(currentFile);
     if (!mounted) return;
 
@@ -181,7 +195,7 @@ class _FileListViewState extends State<FileListView> {
         );
       });
     } else {
-      showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, returnModel.msg, InfoBarSeverity.error);
     }
   }
 
@@ -189,9 +203,9 @@ class _FileListViewState extends State<FileListView> {
     String savePath;
     late String? fileResult;
 
-    if (!UserDb().getValue('set.askDownload')) {
+    if (!Get.find<UserDb>().getValue('set.askDownload')) {
       savePath =
-          UserDb().getValue('set.defaultDownloadPath') ??
+          Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
           await getDownloadsDirectory().then((dir) => dir?.path ?? '');
 
       if (file.isFolder) {
@@ -201,18 +215,18 @@ class _FileListViewState extends State<FileListView> {
       }
     } else {
       String defaultDownloadPath =
-          UserDb().getValue('set.defaultDownloadPath') ??
+          Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
           await getDownloadsDirectory().then((dir) => dir?.path ?? '');
 
       if (file.isFolder) {
         fileResult = await FilePicker.saveFile(
-          dialogTitle: '选择保存路径:',
+          dialogTitle: 'file.list.save.path.title'.i,
           fileName: '${file.fileName}.zip',
           initialDirectory: defaultDownloadPath,
         );
       } else {
         fileResult = await FilePicker.saveFile(
-          dialogTitle: '选择保存路径:',
+          dialogTitle: 'file.list.save.path.title'.i,
           fileName: file.fileName,
           initialDirectory: defaultDownloadPath,
         );
@@ -230,11 +244,11 @@ class _FileListViewState extends State<FileListView> {
 
     if (result.apiCodeEnum == ApiCode.fail) {
       if (!mounted) return;
-      showInfoBar(context, '错误', result.msg, InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, result.msg, InfoBarSeverity.error);
       return;
     }
 
-    await DownloadSession().addDownload(
+    await Get.find<DownloadSession>().addDownload(
       file: file,
       downloadUrl: result.data,
       savePath: savePath,
@@ -243,8 +257,8 @@ class _FileListViewState extends State<FileListView> {
     if (!mounted) return;
     showInfoBar(
       context,
-      '成功',
-      '已成功下载: ${file.fileName}',
+      'file.list.success'.i,
+      'file.list.download.success'.iParams({'name': file.fileName}),
       InfoBarSeverity.success,
     );
   }
@@ -255,7 +269,7 @@ class _FileListViewState extends State<FileListView> {
 
     if (result.apiCodeEnum == ApiCode.fail) {
       if (!mounted) return;
-      showInfoBar(context, '错误', result.msg, InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, result.msg, InfoBarSeverity.error);
       return;
     }
 
@@ -285,7 +299,7 @@ class _FileListViewState extends State<FileListView> {
                 items: [
                   MenuFlyoutItem(
                     leading: const Icon(FluentIcons.folder_add_24_regular),
-                    text: const Text('添加文件夹'),
+                    text: Text('file.list.add.folder'.i),
                     onPressed: () {
                       Flyout.of(context).close();
                       _handleAddFolder();
@@ -293,7 +307,7 @@ class _FileListViewState extends State<FileListView> {
                   ),
                   MenuFlyoutItem(
                     leading: const Icon(FluentIcons.delete_24_regular),
-                    text: const Text('删除当前目录'),
+                    text: Text('file.list.delete.current'.i),
                     onPressed: _currentParentId == 0
                         ? null
                         : () {
@@ -317,7 +331,7 @@ class _FileListViewState extends State<FileListView> {
       title: Text(file.fileName),
       subtitle: Text(
         file.isFolder
-            ? '文件夹 - ${formatSize(file.size)}'
+            ? 'file.list.folder.format'.iParams({'size': formatSize(file.size)})
             : formatSize(file.size),
       ),
       trailing: FlyoutTarget(
@@ -339,7 +353,7 @@ class _FileListViewState extends State<FileListView> {
                   items: [
                     MenuFlyoutItem(
                       leading: const Icon(FluentIcons.delete_24_regular),
-                      text: const Text('删除'),
+                      text: Text('file.list.delete'.i),
                       onPressed: () {
                         Flyout.of(context).close();
                         _handleDelete();
@@ -348,7 +362,7 @@ class _FileListViewState extends State<FileListView> {
                     MenuFlyoutSeparator(),
                     MenuFlyoutItem(
                       leading: const Icon(FluentIcons.link_24_regular),
-                      text: const Text('获取下载链接'),
+                      text: Text('file.list.get.link'.i),
                       onPressed: () {
                         Flyout.of(context).close();
                         getFileDownloadLink(file);
@@ -358,7 +372,7 @@ class _FileListViewState extends State<FileListView> {
                       leading: const Icon(
                         FluentIcons.arrow_download_24_regular,
                       ),
-                      text: const Text('下载'),
+                      text: Text('file.list.download'.i),
                       onPressed: () {
                         Flyout.of(context).close();
                         downloadFile(file);
@@ -383,20 +397,20 @@ class _FileListViewState extends State<FileListView> {
       primaryItems: [
         CommandBarButton(
           icon: const Icon(FluentIcons.arrow_repeat_all_24_regular),
-          label: const Text('刷新'),
-          tooltip: '刷新文件列表',
+          label: Text('file.list.refresh'.i),
+          tooltip: 'file.list.refresh.tooltip'.i,
           onPressed: () => _loadFileList(_currentParentId.toString()),
         ),
         CommandBarButton(
           icon: const Icon(FluentIcons.folder_add_24_regular),
-          label: const Text('新建文件夹'),
-          tooltip: '新建文件夹',
+          label: Text('file.list.new.folder'.i),
+          tooltip: 'file.list.new.folder.tooltip'.i,
           onPressed: _handleAddFolder,
         ),
         CommandBarButton(
           icon: const Icon(FluentIcons.delete_24_regular),
-          label: const Text('删除'),
-          tooltip: '删除选中文件',
+          label: Text('file.list.delete'.i),
+          tooltip: 'file.list.delete.tooltip'.i,
           onPressed: _selectedFile != null ? _handleDelete : null,
         ),
       ],
@@ -408,8 +422,8 @@ class _FileListViewState extends State<FileListView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          '文件列表',
+        Text(
+          'file.list.title'.i,
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -418,11 +432,11 @@ class _FileListViewState extends State<FileListView> {
             children: [
               Button(
                 onPressed: _breadItems.length > 1 ? _handleBack : null,
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(FluentIcons.arrow_left_24_regular),
-                    SizedBox(width: 4),
-                    Text('上一级'),
+                    const Icon(FluentIcons.arrow_left_24_regular),
+                    const SizedBox(width: 4),
+                    Text('file.list.back'.i),
                   ],
                 ),
               ),
@@ -454,13 +468,13 @@ class _FileListViewState extends State<FileListView> {
                                           _buildFileItem(_fileList[index]),
                                     ),
                                   )
-                                : const Expanded(
-                                    child: Center(child: Text('空空如也呢...')),
+                                : Expanded(
+                                    child: Center(child: Text('file.list.empty'.i)),
                                   ))
                           : const Expanded(
                               child: Center(child: ProgressRing()),
                             ))
-                    : const Expanded(child: Center(child: Text('加载失败呜...'))),
+                    : Expanded(child: Center(child: Text('file.list.load.failed'.i))),
               ],
             ),
           ),

@@ -1,38 +1,22 @@
 import 'package:pan123next/common/api/model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pan123next/common/data/base_db.dart';
 import 'package:path_provider/path_provider.dart';
 
-class UserDb {
+class UserDb extends BaseDb {
+  @override
+  String get prefix => 'user';
+
   static final UserDb _instance = UserDb._internal();
   factory UserDb() => _instance;
   UserDb._internal();
-
-  SharedPreferences? _prefs;
-
-  Future<void> initDb() async {
-    if (_prefs != null) return;
-
-    _prefs = await SharedPreferences.getInstance();
-    try {
-      if (!(_prefs!.getBool('user.initialed') ?? false)) _firstInitDb();
-    } catch (e) {
-      _firstInitDb();
-    }
-  }
-
-  SharedPreferences get prefs {
-    if (_prefs == null) {
-      throw Exception('请先调用 initDb() 初始化数据库');
-    }
-    return _prefs!;
-  }
 
   Future<String> getDownloadPath() async {
     final directory = await getApplicationDocumentsDirectory();
     return directory.path;
   }
 
-  Future<void> _firstInitDb() async {
+  @override
+  Future<void> firstInitDb() async {
     prefs.setString('user.userName', '');
     prefs.setString('user.password', '');
     prefs.setString('user.uuid', '');
@@ -69,29 +53,5 @@ class UserDb {
         type: prefs.getString('user.type') ?? '',
       ),
     );
-  }
-
-  dynamic getValue(String key) {
-    if (key.isEmpty) return;
-    return prefs.get('user.$key');
-  }
-
-  void setValue(String key, dynamic value, String type) {
-    if (key.isEmpty) return;
-    String realKey = 'user.$key';
-
-    switch (type) {
-      case 'string':
-        prefs.setString(realKey, value);
-        break;
-      case 'bool':
-        prefs.setBool(realKey, value);
-        break;
-      case 'int':
-        prefs.setInt(realKey, value);
-        break;
-      default:
-        break;
-    }
   }
 }

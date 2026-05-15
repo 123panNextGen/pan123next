@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:get/get.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/app_session.dart';
@@ -19,31 +20,31 @@ class DownloaderPage extends StatefulWidget {
 class _DownloaderPageState extends State<DownloaderPage> {
   final AppSession appSession = Get.find();
   List<DownloadItemModel> _downloadList = [];
-  // 上传功能暂未实现，先用空列表占位
   final List<DownloadItemModel> _uploadList = [];
   StreamSubscription<List<DownloadItemModel>>? _listSubscription;
   StreamSubscription<DownloadItemModel>? _progressSubscription;
   final Set<int> _notifiedCompletedIds = {};
 
-  String _filterType = '全部';
+  String _filterType = 'transfer.filter.all'.i;
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _downloadList = DownloadSession().downloadList;
-    _listSubscription = DownloadSession().listStream.listen((list) {
+    _downloadList = Get.find<DownloadSession>().downloadList;
+    _listSubscription = Get.find<DownloadSession>().listStream.listen((list) {
       if (mounted) {
         setState(() => _downloadList = list);
       }
     });
-    _progressSubscription = DownloadSession().progressStream.listen((item) {
+    _progressSubscription =
+        Get.find<DownloadSession>().progressStream.listen((item) {
       if (item.status == DownloadStatus.completed &&
           _notifiedCompletedIds.add(item.file.fileId)) {
         if (!mounted) return;
         showInfoBar(
           context,
-          '下载完成',
+          'transfer.complete.title'.i,
           item.file.fileName,
           InfoBarSeverity.success,
         );
@@ -66,36 +67,34 @@ class _DownloaderPageState extends State<DownloaderPage> {
     );
     if (result == null || !mounted) return;
     try {
-      await DownloadSession().addExternalDownload(
+      await Get.find<DownloadSession>().addExternalDownload(
         url: result.url,
         savePath: result.savePath,
       );
       if (!mounted) return;
-      // 切换到下载列表，确保用户能看到刚添加的任务
-      if (_filterType == '上传') {
-        setState(() => _filterType = '全部');
+      if (_filterType == 'transfer.filter.uploading'.i) {
+        setState(() => _filterType = 'transfer.filter.all'.i);
       }
-      showInfoBar(context, '已添加', '下载任务已开始', InfoBarSeverity.success);
+      showInfoBar(context, 'transfer.added.title'.i, 'transfer.added.message'.i, InfoBarSeverity.success);
     } catch (e) {
       if (!mounted) return;
-      showInfoBar(context, '添加失败', e.toString(), InfoBarSeverity.error);
+      showInfoBar(context, 'transfer.add.failed'.i, e.toString(), InfoBarSeverity.error);
     }
   }
 
   List<DownloadItemModel> get _filteredList {
     final List<DownloadItemModel> base;
     switch (_filterType) {
-      case '下载':
+      case var v when v == 'transfer.filter.downloading'.i:
         base = List.of(_downloadList);
         break;
-      case '上传':
+      case var v when v == 'transfer.filter.uploading'.i:
         base = List.of(_uploadList);
         break;
-      default: // '全部'
+      default:
         base = [..._downloadList, ..._uploadList];
     }
 
-    // 按任务创建时间（startTime）升序排序；缺失视为最新（排在末尾）
     base.sort((a, b) {
       final ta = a.startTime;
       final tb = b.startTime;
@@ -120,8 +119,8 @@ class _DownloaderPageState extends State<DownloaderPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '传输',
+          Text(
+            'transfer.title'.i,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -134,26 +133,26 @@ class _DownloaderPageState extends State<DownloaderPage> {
                       ComboBox(
                         value: _filterType,
                         items: [
-                          ComboBoxItem(value: '全部', child: Text('全部')),
+                          ComboBoxItem(value: 'transfer.filter.all'.i, child: Text('transfer.filter.all'.i)),
                           ComboBoxItem(
-                            value: '下载',
+                            value: 'transfer.filter.downloading'.i,
                             child: Row(
                               children: [
                                 const Icon(
                                   FluentIcons.arrow_download_24_regular,
                                 ),
                                 const SizedBox(width: 5),
-                                Text('下载'),
+                                Text('transfer.filter.downloading'.i),
                               ],
                             ),
                           ),
                           ComboBoxItem(
-                            value: '上传',
+                            value: 'transfer.filter.uploading'.i,
                             child: Row(
                               children: [
                                 const Icon(FluentIcons.arrow_upload_24_regular),
                                 const SizedBox(width: 5),
-                                Text('上传'),
+                                Text('transfer.filter.uploading'.i),
                               ],
                             ),
                           ),
@@ -165,11 +164,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                         },
                       ),
                       const SizedBox(width: 10),
-                      const Text('过滤: '),
+                      Text('transfer.filter.label'.i),
                       Expanded(
                         child: TextBox(
                           controller: _searchController,
-                          placeholder: '文件名',
+                          placeholder: 'transfer.search.placeholder'.i,
                           onChanged: (_) => setState(() {}),
                         ),
                       ),
@@ -180,7 +179,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                           children: [
                             Icon(FluentIcons.add_24_regular),
                             const SizedBox(width: 4),
-                            Text('添加新下载'),
+                            Text('transfer.add.download'.i),
                           ],
                         ),
                       ),
@@ -190,11 +189,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                     Expanded(
                       child: Center(
                         child: Text(
-                          _filterType == '上传'
-                              ? '暂无上传任务'
-                              : _filterType == '下载'
-                                  ? '暂无下载任务'
-                                  : '暂无任务',
+                          _filterType == 'transfer.filter.uploading'.i
+                              ? 'transfer.empty.uploading'.i
+                              : _filterType == 'transfer.filter.downloading'.i
+                                  ? 'transfer.empty.downloading'.i
+                                  : 'transfer.empty.all'.i,
                         ),
                       ),
                     )

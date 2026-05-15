@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/pages/login/control.dart' as control;
 import 'package:pan123next/widgets/show_info_bar.dart';
@@ -15,39 +16,36 @@ class LoginInputPage extends StatefulWidget {
 class _LoginInputPageState extends State<LoginInputPage> {
   bool autoLogin = false;
   bool rememberPassword = false;
-  TextEditingController userNameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  final userNameController = TextEditingController();
+  final passwordController = TextEditingController();
 
   bool isLogin = false;
 
-  void login() {
-    isLogin = true;
-    setState(() {});
+  Future<void> login() async {
+    setState(() => isLogin = true);
 
     if (userNameController.text.isEmpty || passwordController.text.isEmpty) {
-      showInfoBar(context, '登录失败', '用户名或密码不能为空', InfoBarSeverity.error);
+      showInfoBar(context, 'login.failed'.i, 'login.empty.credentials'.i, InfoBarSeverity.error);
       setState(() => isLogin = false);
       return;
     }
 
-    control
-        .login(
-          userNameController.text,
-          passwordController.text,
-          autoLogin,
-          rememberPassword,
-        )
-        .then((value) {
-          if (value.apiCodeEnum == ApiCode.success) {
-            widget.onLoginSuccess();
-          } else {
-            if (!mounted) return;
-            showInfoBar(context, '登录失败', value.msg, InfoBarSeverity.error);
-          }
-        });
-
-    isLogin = false;
-    setState(() {});
+    try {
+      final value = await control.login(
+        userNameController.text,
+        passwordController.text,
+        autoLogin,
+        rememberPassword,
+      );
+      if (!mounted) return;
+      if (value.apiCodeEnum == ApiCode.success) {
+        widget.onLoginSuccess();
+      } else {
+        showInfoBar(context, 'login.failed'.i, value.msg, InfoBarSeverity.error);
+      }
+    } finally {
+      if (mounted) setState(() => isLogin = false);
+    }
   }
 
   @override
@@ -74,17 +72,17 @@ class _LoginInputPageState extends State<LoginInputPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '欢迎!',
+                  'login.welcome'.i,
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
                 TextBox(
-                  placeholder: '用户名(邮箱/手机号)',
+                  placeholder: 'login.username.placeholder'.i,
                   controller: userNameController,
                 ),
                 const SizedBox(height: 10),
-                PasswordBox(placeholder: '密码', controller: passwordController),
+                PasswordBox(placeholder: 'login.password.placeholder'.i, controller: passwordController),
 
                 const SizedBox(height: 10),
                 Row(
@@ -95,7 +93,7 @@ class _LoginInputPageState extends State<LoginInputPage> {
                           setState(() => rememberPassword = !rememberPassword),
                     ),
                     const SizedBox(width: 5),
-                    Text('保存密码'),
+                    Text('login.remember.password'.i),
 
                     const SizedBox(width: 15),
                     Checkbox(
@@ -108,7 +106,7 @@ class _LoginInputPageState extends State<LoginInputPage> {
                       }),
                     ),
                     const SizedBox(width: 5),
-                    const Text('自动登录'),
+                    Text('login.auto.login'.i),
                   ],
                 ),
 
@@ -116,11 +114,11 @@ class _LoginInputPageState extends State<LoginInputPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    FilledButton(onPressed: login, child: Text('登录')),
+                    FilledButton(onPressed: login, child: Text('login.button'.i)),
                     SizedBox(width: 5),
                     Button(
                       onPressed: () => Navigator.pop(context),
-                      child: Text('取消'),
+                      child: Text('login.cancel'.i),
                     ),
                   ],
                 ),

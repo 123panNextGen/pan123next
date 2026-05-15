@@ -1,16 +1,38 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/data/app.dart';
+import 'package:pan123next/common/data/user.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 
 class AppSession extends GetxController {
-  final Rx<Brightness> theme = AppDb().getValue('theme') == 'dark'
-      ? Brightness.dark.obs
-      : Brightness.light.obs;
-  final Rx<AccentColor> accentColor = AppDb().getAccentColor().obs;
+  late final Rx<Brightness> theme;
+  late final Rx<AccentColor> accentColor;
+  final Rx<Locale> appLocale = const Locale('zh', 'CN').obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final appDb = Get.find<AppDb>();
+    theme = (appDb.getValue('theme') == 'dark'
+        ? Brightness.dark
+        : Brightness.light)
+        .obs;
+    accentColor = appDb.getAccentColor().obs;
+
+    final savedLocale = Get.find<UserDb>().getValue('set.language') as String?;
+    if (savedLocale != null && savedLocale.isNotEmpty) {
+      final parts = savedLocale.split('_');
+      if (parts.length == 2) {
+        appLocale.value = Locale(parts[0], parts[1]);
+        TranslationService.to.switchLocale(savedLocale);
+      }
+    }
+    Get.locale = appLocale.value;
+  }
 
   void updateTheme(Brightness value) {
     theme.value = value;
-    AppDb().setValue(
+    Get.find<AppDb>().setValue(
       'theme',
       value == Brightness.dark ? 'dark' : 'light',
       'string',
@@ -18,8 +40,17 @@ class AppSession extends GetxController {
   }
 
   void updateAccentColor(String value) {
-    AppDb().setValue('accentColor', value, 'string');
-    accentColor.value = AppDb().getAccentColor();
+    Get.find<AppDb>().setValue('accentColor', value, 'string');
+    accentColor.value = Get.find<AppDb>().getAccentColor();
+  }
+
+  void updateLocale(String languageTag) {
+    final parts = languageTag.split('_');
+    final locale = Locale(parts[0], parts[1]);
+    appLocale.value = locale;
+    Get.locale = locale;
+    TranslationService.to.switchLocale(languageTag);
+    Get.find<UserDb>().setValue('set.language', languageTag, 'string');
   }
 
   String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
@@ -30,7 +61,11 @@ class AppSession extends GetxController {
   )['value'];
 
   void clearSession() {
-    updateTheme(Brightness.dark);
-    updateAccentColor('purple');
+    final userDb = Get.find<UserDb>();
+    userDb.setValue('password', '', 'string');
+    userDb.setValue('authorization', '', 'string');
+    userDb.setValue('uuid', '', 'string');
+    userDb.setValue('autoLogin', false, 'bool');
+    userDb.setValue('rememberPassword', false, 'bool');
   }
 }

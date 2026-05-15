@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/data/downloader.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:window_manager/window_manager.dart';
@@ -7,13 +8,13 @@ import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 
 import 'app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 对桌面端标题栏自定义
   if (isDesktop()) {
     WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
@@ -26,15 +27,25 @@ Future<void> main() async {
       windowButtonVisibility: false,
     );
 
-    // 窗口显示之前将上边的显示参数应用到组件
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.setAsFrameless();
     });
   }
 
-  await UserDb().initDb();
-  await AppDb().initDb();
-  await DownloaderDb().initDb();
+  final appDb = AppDb();
+  final userDb = UserDb();
+  final downloaderDb = DownloaderDb();
+
+  await appDb.initDb();
+  await userDb.initDb();
+  await downloaderDb.initDb();
+
+  Get.put(appDb);
+  Get.put(userDb);
+  Get.put(downloaderDb);
+  Get.put(NetSession());
+  Get.put(DownloadSession());
+  Get.put(TranslationService());
 
   await DownloadSession().initialize();
 

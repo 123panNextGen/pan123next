@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
@@ -19,6 +20,7 @@ class _SettingsViewState extends State<SettingsView> {
   late String theme;
   late String accentColor;
   late bool askDownload;
+  late String language;
 
   bool _picking = false;
 
@@ -27,9 +29,8 @@ class _SettingsViewState extends State<SettingsView> {
     super.initState();
     theme = appSession.getTheme();
     accentColor = appSession.getAccentColor();
-    askDownload = UserDb().getValue('set.askDownload') ?? true;
-
-    debugPrint('theme: $theme, accentColor: $accentColor');
+    askDownload = Get.find<UserDb>().getValue('set.askDownload') ?? true;
+    language = Get.find<UserDb>().getValue('set.language') ?? 'zh_CN';
   }
 
   @override
@@ -37,13 +38,13 @@ class _SettingsViewState extends State<SettingsView> {
     return FutureBuilder<String>(
       future: getVersion(),
       builder: (context, snapshot) {
-        final version = snapshot.data ?? '获取版本中...';
+        final version = snapshot.data ?? 'settings.version.loading'.i;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              '设置',
+            Text(
+              'settings.title'.i,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
@@ -52,17 +53,20 @@ class _SettingsViewState extends State<SettingsView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(FluentIcons.dark_theme_24_regular),
-                      SizedBox(width: 8.0),
-                      Text('切换主题', style: TextStyle(fontSize: 16)),
+                      const Icon(FluentIcons.dark_theme_24_regular),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        'settings.theme.header'.i,
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16.0),
                   Row(
                     children: [
-                      Expanded(child: const Text('主题')),
+                      Expanded(child: Text('settings.theme.label'.i)),
                       ComboBox<String>(
                         value: theme,
                         items: themes
@@ -88,7 +92,7 @@ class _SettingsViewState extends State<SettingsView> {
                   const SizedBox(height: 16.0),
                   Row(
                     children: [
-                      Expanded(child: const Text('颜色')),
+                      Expanded(child: Text('settings.color.label'.i)),
                       ComboBox<String>(
                         value: accentColor,
                         items: accentColors
@@ -133,20 +137,23 @@ class _SettingsViewState extends State<SettingsView> {
                 children: [
                   Row(
                     children: [
-                      Icon(FluentIcons.arrow_download_24_regular),
-                      SizedBox(width: 8.0),
-                      Text('下载设置', style: TextStyle(fontSize: 16)),
+                      const Icon(FluentIcons.arrow_download_24_regular),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        'settings.download.header'.i,
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16.0),
                   Row(
                     children: [
-                      Expanded(child: const Text('是否询问下载位置')),
+                      Expanded(child: Text('settings.download.ask'.i)),
                       ToggleSwitch(
                         checked: askDownload,
                         onChanged: (v) {
                           askDownload = !askDownload;
-                          UserDb().setValue(
+                          Get.find<UserDb>().setValue(
                             'set.askDownload',
                             askDownload,
                             'bool',
@@ -159,17 +166,19 @@ class _SettingsViewState extends State<SettingsView> {
                   const SizedBox(height: 16.0),
                   Row(
                     children: [
-                      Expanded(child: const Text('默认下载位置')),
+                      Expanded(child: Text('settings.download.default.path'.i)),
                       Expanded(
                         child: TextBox(
                           controller: TextEditingController(
                             text:
-                                UserDb().getValue('set.defaultDownloadPath') ??
+                                Get.find<UserDb>().getValue(
+                                  'set.defaultDownloadPath',
+                                ) ??
                                 '',
                           ),
-                          placeholder: '请输入默认下载位置',
+                          placeholder: 'settings.download.path.placeholder'.i,
                           onChanged: (v) {
-                            UserDb().setValue(
+                            Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               v,
                               'string',
@@ -186,17 +195,19 @@ class _SettingsViewState extends State<SettingsView> {
                                 child: ProgressRing(strokeWidth: 2),
                               )
                             : Row(
-                                children: const [
-                                  Icon(FluentIcons.folder_open_24_regular),
-                                  SizedBox(width: 6),
-                                  Text('选择'),
+                                children: [
+                                  const Icon(
+                                    FluentIcons.folder_open_24_regular,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text('settings.choose'.i),
                                 ],
                               ),
                         onPressed: () async {
                           setState(() => _picking = true);
                           final path = await FilePicker.getDirectoryPath();
                           if (path != null) {
-                            UserDb().setValue(
+                            Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               path,
                               'string',
@@ -218,13 +229,57 @@ class _SettingsViewState extends State<SettingsView> {
                 children: [
                   Row(
                     children: [
+                      const Icon(FluentIcons.local_language_24_regular),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        'settings.language'.i,
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Expanded(child: Text('settings.language'.i)),
+                      ComboBox<String>(
+                        value: language,
+                        items: [
+                          ComboBoxItem(
+                            value: 'zh_CN',
+                            child: Text('lang.zh.cn'.i),
+                          ),
+                          ComboBoxItem(value: 'en_US', child: Text('lang.en.us'.i)),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            language = v;
+                            setState(() {});
+                            appSession.updateLocale(v);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16.0),
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
                       const Icon(FluentIcons.info_24_regular),
                       const SizedBox(width: 8.0),
-                      const Text('123Pan Next'),
+                      Text('settings.about.section'.i),
                     ],
                   ),
                   const SizedBox(height: 8.0),
-                  Text('当前版本: $version'),
+                  Text(
+                    'settings.current.version'.iParams({'version': version}),
+                  ),
                 ],
               ),
             ),

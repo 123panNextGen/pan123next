@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/services.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 
 class AddFolderDialog extends StatefulWidget {
@@ -32,7 +33,7 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
   void _createFile() async {
     final fileName = _fileNameController.text;
     if (fileName.isEmpty) {
-      showInfoBar(context, '错误', '请输入文件夹名', InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, 'dialog.new.folder.placeholder'.i, InfoBarSeverity.error);
       return;
     }
     Navigator.pop(context, fileName);
@@ -41,15 +42,15 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
   @override
   Widget build(BuildContext context) {
     return ContentDialog(
-      title: const Text('新建文件夹'),
+      title: Text('dialog.new.folder.title'.i),
       content: InfoLabel(
-        label: '在当前目录下新建文件夹',
+        label: 'dialog.new.folder.label'.i,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextBox(
               controller: _fileNameController,
-              placeholder: '请输入文件夹名',
+              placeholder: 'dialog.new.folder.placeholder'.i,
               focusNode: _fileNameFocusNode,
               onSubmitted: (_) => _createFile(),
             ),
@@ -59,10 +60,10 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
 
       actions: [
         FilledButton(
-          child: const Text('取消'),
+          child: Text('dialog.new.folder.cancel'.i),
           onPressed: () => Navigator.pop(context),
         ),
-        Button(onPressed: _createFile, child: Text('新建')),
+        Button(onPressed: _createFile, child: Text('dialog.new.folder.create'.i)),
       ],
     );
   }
@@ -79,16 +80,16 @@ class _TrashContentDialogState extends State<TrashContentDialog> {
   @override
   Widget build(BuildContext context) {
     return ContentDialog(
-      title: const Text('删除'),
-      content: const Text('确认删除选中文件吗?\n删除后的文件将会放入回收站中'),
+      title: Text('dialog.trash.file.title'.i),
+      content: Text('dialog.trash.file.content'.i),
       actions: [
         FilledButton(
-          child: const Text('取消'),
+          child: Text('dialog.trash.file.cancel'.i),
           onPressed: () => Navigator.pop(context, false),
         ),
         Button(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('删除'),
+          child: Text('dialog.trash.file.confirm'.i),
         ),
       ],
     );
@@ -106,16 +107,16 @@ class _TrashCurrentDialogState extends State<TrashCurrentDialog> {
   @override
   Widget build(BuildContext context) {
     return ContentDialog(
-      title: const Text('删除'),
-      content: const Text('确认删除当前目录吗?\n删除后的文件将会放入回收站中'),
+      title: Text('dialog.trash.current.title'.i),
+      content: Text('dialog.trash.current.content'.i),
       actions: [
         FilledButton(
-          child: const Text('取消'),
+          child: Text('dialog.trash.current.cancel'.i),
           onPressed: () => Navigator.pop(context, false),
         ),
         Button(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('删除'),
+          child: Text('dialog.trash.current.confirm'.i),
         ),
       ],
     );
@@ -144,7 +145,7 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
     final theme = FluentTheme.of(context);
 
     return ContentDialog(
-      title: const Text('获取下载链接结果'),
+      title: Text('dialog.link.title'.i),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +153,7 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
           children: [
             Row(
               children: [
-                const Text('获取文件名: ', style: TextStyle(fontSize: 16)),
+                Text('dialog.link.file.name'.i, style: TextStyle(fontSize: 16)),
                 Card(
                   padding: EdgeInsetsGeometry.symmetric(
                     horizontal: 8,
@@ -165,7 +166,7 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
             const SizedBox(height: 16),
             Card(
               child: InfoLabel(
-                label: '结果',
+                label: 'dialog.link.result'.i,
                 child: Column(
                   children: [
                     Button(
@@ -193,11 +194,11 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
                                   ),
                                 ],
                               )
-                            : const Row(
+                            : Row(
                                 children: [
                                   Icon(FluentIcons.copy_24_regular),
                                   SizedBox(width: 6),
-                                  Text('复制'),
+                                  Text('dialog.link.copy'.i),
                                 ],
                               ),
                       ),
@@ -227,7 +228,7 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
       ),
       actions: [
         FilledButton(
-          child: const Text('确定'),
+          child: Text('dialog.link.confirm'.i),
           onPressed: () => Navigator.pop(context),
         ),
       ],

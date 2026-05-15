@@ -23,7 +23,8 @@ class _DownloaderTileState extends State<DownloaderTile> {
   @override
   void initState() {
     super.initState();
-    _progressSubscription = DownloadSession().progressStream.listen((item) {
+    _progressSubscription =
+        Get.find<DownloadSession>().progressStream.listen((item) {
       if (item.file.fileId == widget.file.file.fileId && mounted) {
         setState(() {});
       }
@@ -85,17 +86,17 @@ class _DownloaderTileState extends State<DownloaderTile> {
           if (file.status == DownloadStatus.downloading)
             IconButton(
               icon: Icon(FluentIcons.pause_24_regular),
-              onPressed: () => DownloadSession().pauseDownload(file),
+              onPressed: () => Get.find<DownloadSession>().pauseDownload(file),
             ),
           if (file.status == DownloadStatus.paused ||
               file.status == DownloadStatus.failed)
             IconButton(
               icon: Icon(FluentIcons.play_24_regular),
-              onPressed: () => DownloadSession().startDownload(file),
+              onPressed: () => Get.find<DownloadSession>().startDownload(file),
             ),
           IconButton(
             icon: Icon(FluentIcons.dismiss_24_regular),
-            onPressed: () => DownloadSession().removeDownload(file),
+            onPressed: () => Get.find<DownloadSession>().removeDownload(file),
           ),
           IconButton(
             icon: Icon(FluentIcons.more_vertical_24_regular),

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 
 class NetSession {
   static final NetSession _instance = NetSession._internal();
@@ -111,11 +112,10 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: returnCode,
           apiCodeEnum: ApiCode.fail,
-          msg: content['message'] ?? '登录失败',
+          msg: content['message'] ?? 'api.login.failed'.i,
         );
       }
 
-      // 更新用户信息
       _userInformation!.authorization = 'Bearer ${content['data']['token']}';
 
       _updateHeaders();
@@ -123,7 +123,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: returnCode,
         apiCodeEnum: ApiCode.success,
-        msg: content['message'] ?? '登录成功',
+        msg: content['message'] ?? 'login.success'.i,
       );
     }
 
@@ -131,7 +131,7 @@ class NetSession {
       code: response.statusCode ?? 0,
       apiCode: returnCode,
       apiCodeEnum: ApiCode.fail,
-      msg: '登录失败',
+      msg: 'api.login.failed'.i,
     );
   }
 
@@ -219,7 +219,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.fail,
-        msg: response.data['message'] ?? '创建失败',
+        msg: response.data['message'] ?? 'api.create.failed'.i,
       );
     }
 
@@ -227,7 +227,7 @@ class NetSession {
       code: response.statusCode ?? 0,
       apiCode: response.data['code'],
       apiCodeEnum: ApiCode.success,
-      msg: response.data['message'] ?? '创建成功',
+      msg: response.data['message'] ?? 'api.create.success'.i,
     );
   }
 
@@ -249,7 +249,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.fail,
-        msg: response.data['message'] ?? '删除失败',
+        msg: response.data['message'] ?? 'api.delete.failed'.i,
         data: response.data,
       );
     }
@@ -258,7 +258,7 @@ class NetSession {
       code: response.statusCode ?? 0,
       apiCode: response.data['code'],
       apiCodeEnum: ApiCode.success,
-      msg: response.data['message'] ?? '删除成功',
+      msg: response.data['message'] ?? 'api.delete.success'.i,
       data: response.data,
     );
   }
@@ -295,7 +295,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.fail,
-        msg: response.data['message'] ?? '获取文件链接失败',
+        msg: response.data['message'] ?? 'api.get.link.failed'.i,
       );
     }
 
@@ -315,7 +315,7 @@ class NetSession {
       code: response.statusCode ?? 0,
       apiCode: 404,
       apiCodeEnum: ApiCode.fail,
-      msg: '文件链接不存在',
+      msg: 'api.link.not.found'.i,
     );
   }
 }
