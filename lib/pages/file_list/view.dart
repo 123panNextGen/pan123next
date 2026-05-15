@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
+import 'package:get/get.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/user.dart';
@@ -18,7 +19,7 @@ class FileListView extends StatefulWidget {
 }
 
 class _FileListViewState extends State<FileListView> {
-  final NetSession _session = NetSession();
+  final NetSession _session = Get.find();
   List<FileItemModel> _fileList = [];
   FileItemModel? _selectedFile;
   int _currentParentId = 0;
@@ -45,7 +46,7 @@ class _FileListViewState extends State<FileListView> {
     _loadFileList('0');
   }
 
-  Future<void> _loadFileList(String fileId) async {
+  Future<void> _loadFileList(String fileId, {int retryCount = 0}) async {
     setState(() {
       _isLoading = true;
       _currentParentId = int.parse(fileId);
@@ -55,18 +56,33 @@ class _FileListViewState extends State<FileListView> {
     try {
       final response = await _session.getFileList(fileId);
       if (response.apiCode != 200) {
+        if (retryCount >= 1) {
+          if (!mounted) return;
+          showInfoBar(
+            context,
+            '错误',
+            'Token 已过期且无法正常获取',
+            InfoBarSeverity.error,
+          );
+          return;
+        }
         final loginResponse = await _session.login();
         if (loginResponse.apiCode != 200) {
           if (!mounted) return;
-          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
-          return;
-        } else {
-          _loadFileList(fileId);
+          showInfoBar(
+            context,
+            '错误',
+            'Token 已过期且无法正常获取',
+            InfoBarSeverity.error,
+          );
           return;
         }
+        _loadFileList(fileId, retryCount: retryCount + 1);
+        return;
       }
       setState(() {
         _fileList = response.data.data.infoList;
+        _isLoadFailed = false;
       });
     } catch (e) {
       debugPrint('加载文件列表失败: $e');
@@ -75,7 +91,6 @@ class _FileListViewState extends State<FileListView> {
       showInfoBar(context, '错误', '加载文件列表失败', InfoBarSeverity.error);
     } finally {
       setState(() => _isLoading = false);
-      setState(() => _isLoadFailed = false);
     }
   }
 
@@ -161,9 +176,7 @@ class _FileListViewState extends State<FileListView> {
 
     if (!mounted || !(result ?? false)) return;
 
-    // 从面包屑中获取当前 fileModel
     final currentFile = _breadItemModels.last;
-    // 删除当前目录
     ApiReturnModel returnModel = await _session.trashFile(currentFile);
     if (!mounted) return;
 
@@ -189,9 +202,9 @@ class _FileListViewState extends State<FileListView> {
     String savePath;
     late String? fileResult;
 
-    if (!UserDb().getValue('set.askDownload')) {
+    if (!Get.find<UserDb>().getValue('set.askDownload')) {
       savePath =
-          UserDb().getValue('set.defaultDownloadPath') ??
+          Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
           await getDownloadsDirectory().then((dir) => dir?.path ?? '');
 
       if (file.isFolder) {
@@ -201,7 +214,7 @@ class _FileListViewState extends State<FileListView> {
       }
     } else {
       String defaultDownloadPath =
-          UserDb().getValue('set.defaultDownloadPath') ??
+          Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
           await getDownloadsDirectory().then((dir) => dir?.path ?? '');
 
       if (file.isFolder) {
@@ -234,7 +247,7 @@ class _FileListViewState extends State<FileListView> {
       return;
     }
 
-    await DownloadSession().addDownload(
+    await Get.find<DownloadSession>().addDownload(
       file: file,
       downloadUrl: result.data,
       savePath: savePath,

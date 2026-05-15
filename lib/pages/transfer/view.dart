@@ -19,7 +19,6 @@ class DownloaderPage extends StatefulWidget {
 class _DownloaderPageState extends State<DownloaderPage> {
   final AppSession appSession = Get.find();
   List<DownloadItemModel> _downloadList = [];
-  // 上传功能暂未实现，先用空列表占位
   final List<DownloadItemModel> _uploadList = [];
   StreamSubscription<List<DownloadItemModel>>? _listSubscription;
   StreamSubscription<DownloadItemModel>? _progressSubscription;
@@ -31,13 +30,14 @@ class _DownloaderPageState extends State<DownloaderPage> {
   @override
   void initState() {
     super.initState();
-    _downloadList = DownloadSession().downloadList;
-    _listSubscription = DownloadSession().listStream.listen((list) {
+    _downloadList = Get.find<DownloadSession>().downloadList;
+    _listSubscription = Get.find<DownloadSession>().listStream.listen((list) {
       if (mounted) {
         setState(() => _downloadList = list);
       }
     });
-    _progressSubscription = DownloadSession().progressStream.listen((item) {
+    _progressSubscription =
+        Get.find<DownloadSession>().progressStream.listen((item) {
       if (item.status == DownloadStatus.completed &&
           _notifiedCompletedIds.add(item.file.fileId)) {
         if (!mounted) return;
@@ -66,12 +66,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
     );
     if (result == null || !mounted) return;
     try {
-      await DownloadSession().addExternalDownload(
+      await Get.find<DownloadSession>().addExternalDownload(
         url: result.url,
         savePath: result.savePath,
       );
       if (!mounted) return;
-      // 切换到下载列表，确保用户能看到刚添加的任务
       if (_filterType == '上传') {
         setState(() => _filterType = '全部');
       }
@@ -91,11 +90,10 @@ class _DownloaderPageState extends State<DownloaderPage> {
       case '上传':
         base = List.of(_uploadList);
         break;
-      default: // '全部'
+      default:
         base = [..._downloadList, ..._uploadList];
     }
 
-    // 按任务创建时间（startTime）升序排序；缺失视为最新（排在末尾）
     base.sort((a, b) {
       final ta = a.startTime;
       final tb = b.startTime;

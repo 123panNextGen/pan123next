@@ -27,7 +27,7 @@ class _SettingsViewState extends State<SettingsView> {
     super.initState();
     theme = appSession.getTheme();
     accentColor = appSession.getAccentColor();
-    askDownload = UserDb().getValue('set.askDownload') ?? true;
+    askDownload = Get.find<UserDb>().getValue('set.askDownload') ?? true;
 
     debugPrint('theme: $theme, accentColor: $accentColor');
   }
@@ -146,7 +146,7 @@ class _SettingsViewState extends State<SettingsView> {
                         checked: askDownload,
                         onChanged: (v) {
                           askDownload = !askDownload;
-                          UserDb().setValue(
+                          Get.find<UserDb>().setValue(
                             'set.askDownload',
                             askDownload,
                             'bool',
@@ -164,12 +164,12 @@ class _SettingsViewState extends State<SettingsView> {
                         child: TextBox(
                           controller: TextEditingController(
                             text:
-                                UserDb().getValue('set.defaultDownloadPath') ??
+                                Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
                                 '',
                           ),
                           placeholder: '请输入默认下载位置',
                           onChanged: (v) {
-                            UserDb().setValue(
+                            Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               v,
                               'string',
@@ -196,7 +196,7 @@ class _SettingsViewState extends State<SettingsView> {
                           setState(() => _picking = true);
                           final path = await FilePicker.getDirectoryPath();
                           if (path != null) {
-                            UserDb().setValue(
+                            Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               path,
                               'string',

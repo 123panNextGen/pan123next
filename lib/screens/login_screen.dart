@@ -1,4 +1,5 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:pan123next/pages/login/view.dart';
@@ -36,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         items: [
           PaneItem(
-            icon: const Icon(FluentIcons.input_address),
+            icon: const Icon(FluentIcons.password_24_regular),
             title: const Text('用户名/密码 登录'),
             body: Padding(
               padding: const EdgeInsets.symmetric(

@@ -1,5 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pan123next/common/data/base_db.dart';
 
 List<Map> themes = [
   {'value': 'dark', 'label': '暗色', 'result': Brightness.dark},
@@ -15,34 +15,17 @@ List<Map> accentColors = [
   {'value': 'teal', 'label': '青色', 'result': Colors.teal},
 ];
 
-class AppDb {
+class AppDb extends BaseDb {
+  @override
+  String get prefix => 'app';
+
   static final AppDb _instance = AppDb._internal();
   factory AppDb() => _instance;
   AppDb._internal();
 
-  SharedPreferences? _prefs;
-
-  Future<void> initDb() async {
-    if (_prefs != null) return;
-
-    _prefs = await SharedPreferences.getInstance();
-    try {
-      if (!(_prefs!.getBool('app.initialed') ?? false)) _firstInitDb();
-    } catch (e) {
-      _firstInitDb();
-    }
-  }
-
-  SharedPreferences get prefs {
-    if (_prefs == null) {
-      throw Exception('请先调用 initDb() 初始化数据库');
-    }
-    return _prefs!;
-  }
-
-  void _firstInitDb() {
+  @override
+  Future<void> firstInitDb() async {
     prefs.setString('app.theme', 'light');
-
     prefs.setBool('app.initialed', true);
   }
 
@@ -51,31 +34,7 @@ class AppDb {
   AccentColor getAccentColor() {
     return accentColors.firstWhere(
       (e) => e['value'] == getValue('accentColor'),
-      orElse: () => accentColors.first, // 当找不到匹配时返回紫色
+      orElse: () => accentColors.first,
     )['result'];
-  }
-
-  dynamic getValue(String key) {
-    if (key.isEmpty) return;
-    return prefs.get('app.$key');
-  }
-
-  void setValue(String key, dynamic value, String type) {
-    if (key.isEmpty) return;
-    String realKey = 'app.$key';
-
-    switch (type) {
-      case 'string':
-        prefs.setString(realKey, value);
-        break;
-      case 'bool':
-        prefs.setBool(realKey, value);
-        break;
-      case 'int':
-        prefs.setInt(realKey, value);
-        break;
-      default:
-        break;
-    }
   }
 }

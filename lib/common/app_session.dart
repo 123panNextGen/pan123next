@@ -1,16 +1,26 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/data/app.dart';
+import 'package:pan123next/common/data/user.dart';
 
 class AppSession extends GetxController {
-  final Rx<Brightness> theme = AppDb().getValue('theme') == 'dark'
-      ? Brightness.dark.obs
-      : Brightness.light.obs;
-  final Rx<AccentColor> accentColor = AppDb().getAccentColor().obs;
+  late final Rx<Brightness> theme;
+  late final Rx<AccentColor> accentColor;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final appDb = Get.find<AppDb>();
+    theme = (appDb.getValue('theme') == 'dark'
+        ? Brightness.dark
+        : Brightness.light)
+        .obs;
+    accentColor = appDb.getAccentColor().obs;
+  }
 
   void updateTheme(Brightness value) {
     theme.value = value;
-    AppDb().setValue(
+    Get.find<AppDb>().setValue(
       'theme',
       value == Brightness.dark ? 'dark' : 'light',
       'string',
@@ -18,8 +28,8 @@ class AppSession extends GetxController {
   }
 
   void updateAccentColor(String value) {
-    AppDb().setValue('accentColor', value, 'string');
-    accentColor.value = AppDb().getAccentColor();
+    Get.find<AppDb>().setValue('accentColor', value, 'string');
+    accentColor.value = Get.find<AppDb>().getAccentColor();
   }
 
   String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
@@ -30,7 +40,11 @@ class AppSession extends GetxController {
   )['value'];
 
   void clearSession() {
-    updateTheme(Brightness.dark);
-    updateAccentColor('purple');
+    final userDb = Get.find<UserDb>();
+    userDb.setValue('password', '', 'string');
+    userDb.setValue('authorization', '', 'string');
+    userDb.setValue('uuid', '', 'string');
+    userDb.setValue('autoLogin', false, 'bool');
+    userDb.setValue('rememberPassword', false, 'bool');
   }
 }

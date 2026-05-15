@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:get/get.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -26,8 +27,6 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
   final TextEditingController _savePathController = TextEditingController();
   final FocusNode _urlFocusNode = FocusNode();
 
-  final UserDb userDb = UserDb();
-
   String? _urlError;
   bool _picking = false;
 
@@ -37,7 +36,8 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _urlFocusNode.requestFocus();
     });
-    _savePathController.text = userDb.getValue('set.defaultDownloadPath') ?? '';
+    _savePathController.text =
+        Get.find<UserDb>().getValue('set.defaultDownloadPath') ?? '';
   }
 
   @override
@@ -47,7 +47,6 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
     super.dispose();
   }
 
-  /// 校验 URL 合法性，返回归一化后的 URL；非法返回 null。
   String? _validatedUrl(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
@@ -83,7 +82,7 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
     });
 
     String defaultDownloadPath =
-        UserDb().getValue('set.defaultDownloadPath') ??
+        Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
         await getDownloadsDirectory().then((dir) => dir?.path ?? '');
 
     try {
@@ -169,7 +168,6 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
                 Expanded(
                   child: TextBox(
                     controller: _savePathController,
-                    // readOnly: true,
                     placeholder: '尚未选择',
                   ),
                 ),

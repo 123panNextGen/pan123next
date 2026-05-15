@@ -15,14 +15,13 @@ class LoginInputPage extends StatefulWidget {
 class _LoginInputPageState extends State<LoginInputPage> {
   bool autoLogin = false;
   bool rememberPassword = false;
-  TextEditingController userNameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  final userNameController = TextEditingController();
+  final passwordController = TextEditingController();
 
   bool isLogin = false;
 
-  void login() {
-    isLogin = true;
-    setState(() {});
+  Future<void> login() async {
+    setState(() => isLogin = true);
 
     if (userNameController.text.isEmpty || passwordController.text.isEmpty) {
       showInfoBar(context, '登录失败', '用户名或密码不能为空', InfoBarSeverity.error);
@@ -30,24 +29,22 @@ class _LoginInputPageState extends State<LoginInputPage> {
       return;
     }
 
-    control
-        .login(
-          userNameController.text,
-          passwordController.text,
-          autoLogin,
-          rememberPassword,
-        )
-        .then((value) {
-          if (value.apiCodeEnum == ApiCode.success) {
-            widget.onLoginSuccess();
-          } else {
-            if (!mounted) return;
-            showInfoBar(context, '登录失败', value.msg, InfoBarSeverity.error);
-          }
-        });
-
-    isLogin = false;
-    setState(() {});
+    try {
+      final value = await control.login(
+        userNameController.text,
+        passwordController.text,
+        autoLogin,
+        rememberPassword,
+      );
+      if (!mounted) return;
+      if (value.apiCodeEnum == ApiCode.success) {
+        widget.onLoginSuccess();
+      } else {
+        showInfoBar(context, '登录失败', value.msg, InfoBarSeverity.error);
+      }
+    } finally {
+      if (mounted) setState(() => isLogin = false);
+    }
   }
 
   @override
