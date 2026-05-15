@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:pan123next/pages/login/view.dart';
@@ -33,12 +34,12 @@ class _LoginScreenState extends State<LoginScreen> {
         onChanged: (index) => setState(() => topIndex = index),
         displayMode: PaneDisplayMode.top,
         indicator: StickyNavigationIndicator(),
-        header: const Text('登录'),
+        header: Text('login.header'.i),
 
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.password_24_regular),
-            title: const Text('用户名/密码 登录'),
+            title: Text('login.tab.password'.i),
             body: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -49,8 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           PaneItem(
             icon: const Icon(WindowsIcons.q_r_code),
-            title: const Text('二维码 登录'),
-            body: Center(child: Text('作者其实很懒，什么都没有做呢~')),
+            title: Text('login.tab.qrcode'.i),
+            body: Center(child: Text('login.qrcode.placeholder'.i)),
           ),
         ],
       ),

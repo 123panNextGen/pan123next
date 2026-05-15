@@ -26,6 +26,7 @@ class _MainAppState extends State<MainApp> {
         return FluentApp(
           debugShowCheckedModeBanner: false,
           title: appName,
+          locale: appSession.appLocale.value,
           theme: FluentThemeData(
             brightness: appSession.theme.value,
             accentColor: appSession.accentColor.value,

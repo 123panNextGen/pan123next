@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:get/get.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -73,7 +74,7 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
   Future<void> _pickSavePath() async {
     final url = _validatedUrl(_urlController.text);
     if (url == null) {
-      setState(() => _urlError = '请先输入合法的 URL（http/https）');
+      setState(() => _urlError = 'add.download.invalid.url'.i);
       return;
     }
     setState(() {
@@ -87,7 +88,7 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
 
     try {
       final path = await FilePicker.saveFile(
-        dialogTitle: '选择保存路径:',
+        dialogTitle: 'file.list.save.path.title'.i,
         fileName: _suggestedFileName(url),
         initialDirectory: defaultDownloadPath,
       );
@@ -102,15 +103,15 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
   void _submit() {
     final url = _validatedUrl(_urlController.text);
     if (url == null) {
-      setState(() => _urlError = '请输入合法的 URL（http/https）');
+      setState(() => _urlError = 'add.download.invalid.url'.i);
       return;
     }
     if (_savePathController.text.isEmpty) {
-      setState(() => _urlError = '请选择保存路径');
+      setState(() => _urlError = 'add.download.select.path'.i);
       return;
     }
     if (FileSystemEntity.isDirectorySync(_savePathController.text)) {
-      showInfoBar(context, '错误', '请选择文件', InfoBarSeverity.error);
+      showInfoBar(context, 'file.list.error'.i, 'add.download.select.file'.i, InfoBarSeverity.error);
       return;
     }
 
@@ -126,17 +127,17 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
 
     return ContentDialog(
       constraints: const BoxConstraints(maxWidth: 560),
-      title: const Text('添加新下载'),
+      title: Text('add.download.title'.i),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InfoLabel(
-            label: '下载链接',
+            label: 'add.download.url.label'.i,
             child: TextBox(
               controller: _urlController,
               focusNode: _urlFocusNode,
-              placeholder: 'https://example.com/file.zip',
+              placeholder: 'add.download.url.placeholder'.i,
               maxLines: 1,
               onChanged: (_) {
                 if (_urlError != null) setState(() => _urlError = null);
@@ -162,13 +163,13 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
           ],
           const SizedBox(height: 12),
           InfoLabel(
-            label: '保存路径',
+            label: 'add.download.path.label'.i,
             child: Row(
               children: [
                 Expanded(
                   child: TextBox(
                     controller: _savePathController,
-                    placeholder: '尚未选择',
+                    placeholder: 'add.download.path.placeholder'.i,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -182,10 +183,10 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
                         )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(FluentIcons.folder_open_24_regular),
-                            SizedBox(width: 6),
-                            Text('选择'),
+                          children: [
+                            const Icon(FluentIcons.folder_open_24_regular),
+                            const SizedBox(width: 6),
+                            Text('add.download.choose'.i),
                           ],
                         ),
                 ),
@@ -196,10 +197,10 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
       ),
       actions: [
         Button(
-          child: const Text('取消'),
+          child: Text('add.download.cancel'.i),
           onPressed: () => Navigator.pop(context),
         ),
-        FilledButton(onPressed: _submit, child: const Text('开始下载')),
+        FilledButton(onPressed: _submit, child: Text('add.download.start'.i)),
       ],
     );
   }

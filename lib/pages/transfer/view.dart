@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:get/get.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/app_session.dart';
@@ -24,7 +25,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   StreamSubscription<DownloadItemModel>? _progressSubscription;
   final Set<int> _notifiedCompletedIds = {};
 
-  String _filterType = '全部';
+  String _filterType = 'transfer.filter.all'.i;
   final _searchController = TextEditingController();
 
   @override
@@ -43,7 +44,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
         if (!mounted) return;
         showInfoBar(
           context,
-          '下载完成',
+          'transfer.complete.title'.i,
           item.file.fileName,
           InfoBarSeverity.success,
         );
@@ -71,23 +72,23 @@ class _DownloaderPageState extends State<DownloaderPage> {
         savePath: result.savePath,
       );
       if (!mounted) return;
-      if (_filterType == '上传') {
-        setState(() => _filterType = '全部');
+      if (_filterType == 'transfer.filter.uploading'.i) {
+        setState(() => _filterType = 'transfer.filter.all'.i);
       }
-      showInfoBar(context, '已添加', '下载任务已开始', InfoBarSeverity.success);
+      showInfoBar(context, 'transfer.added.title'.i, 'transfer.added.message'.i, InfoBarSeverity.success);
     } catch (e) {
       if (!mounted) return;
-      showInfoBar(context, '添加失败', e.toString(), InfoBarSeverity.error);
+      showInfoBar(context, 'transfer.add.failed'.i, e.toString(), InfoBarSeverity.error);
     }
   }
 
   List<DownloadItemModel> get _filteredList {
     final List<DownloadItemModel> base;
     switch (_filterType) {
-      case '下载':
+      case var v when v == 'transfer.filter.downloading'.i:
         base = List.of(_downloadList);
         break;
-      case '上传':
+      case var v when v == 'transfer.filter.uploading'.i:
         base = List.of(_uploadList);
         break;
       default:
@@ -118,8 +119,8 @@ class _DownloaderPageState extends State<DownloaderPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '传输',
+          Text(
+            'transfer.title'.i,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -132,26 +133,26 @@ class _DownloaderPageState extends State<DownloaderPage> {
                       ComboBox(
                         value: _filterType,
                         items: [
-                          ComboBoxItem(value: '全部', child: Text('全部')),
+                          ComboBoxItem(value: 'transfer.filter.all'.i, child: Text('transfer.filter.all'.i)),
                           ComboBoxItem(
-                            value: '下载',
+                            value: 'transfer.filter.downloading'.i,
                             child: Row(
                               children: [
                                 const Icon(
                                   FluentIcons.arrow_download_24_regular,
                                 ),
                                 const SizedBox(width: 5),
-                                Text('下载'),
+                                Text('transfer.filter.downloading'.i),
                               ],
                             ),
                           ),
                           ComboBoxItem(
-                            value: '上传',
+                            value: 'transfer.filter.uploading'.i,
                             child: Row(
                               children: [
                                 const Icon(FluentIcons.arrow_upload_24_regular),
                                 const SizedBox(width: 5),
-                                Text('上传'),
+                                Text('transfer.filter.uploading'.i),
                               ],
                             ),
                           ),
@@ -163,11 +164,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                         },
                       ),
                       const SizedBox(width: 10),
-                      const Text('过滤: '),
+                      Text('transfer.filter.label'.i),
                       Expanded(
                         child: TextBox(
                           controller: _searchController,
-                          placeholder: '文件名',
+                          placeholder: 'transfer.search.placeholder'.i,
                           onChanged: (_) => setState(() {}),
                         ),
                       ),
@@ -178,7 +179,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                           children: [
                             Icon(FluentIcons.add_24_regular),
                             const SizedBox(width: 4),
-                            Text('添加新下载'),
+                            Text('transfer.add.download'.i),
                           ],
                         ),
                       ),
@@ -188,11 +189,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                     Expanded(
                       child: Center(
                         child: Text(
-                          _filterType == '上传'
-                              ? '暂无上传任务'
-                              : _filterType == '下载'
-                                  ? '暂无下载任务'
-                                  : '暂无任务',
+                          _filterType == 'transfer.filter.uploading'.i
+                              ? 'transfer.empty.uploading'.i
+                              : _filterType == 'transfer.filter.downloading'.i
+                                  ? 'transfer.empty.downloading'.i
+                                  : 'transfer.empty.all'.i,
                         ),
                       ),
                     )

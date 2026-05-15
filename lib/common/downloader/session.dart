@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide Response;
 import 'package:path_provider/path_provider.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/data/downloader.dart';
+import 'package:pan123next/common/i18n/i18n.dart';
 import 'model.dart';
 
 /// 单分片最多重试次数（不含首次尝试）。
@@ -408,7 +409,7 @@ class DownloadSession {
       final ok = await _verifyRemoteFile(item);
       if (!ok) {
         item.status = DownloadStatus.failed;
-        item.errorMessage ??= '远端文件已变化，请删除任务后重新下载';
+        item.errorMessage ??= 'downloader.error.remote.changed'.i;
         _notifyProgress(item);
         await _persistFlush(item);
         _notifyListChange();
@@ -482,7 +483,7 @@ class DownloadSession {
 
       if (item.totalSize <= 0) {
         item.status = DownloadStatus.failed;
-        item.errorMessage = '无法获取文件大小';
+        item.errorMessage = 'downloader.error.no.size'.i;
         _notifyProgress(item);
         await _persistFlush(item);
         _notifyListChange();
@@ -619,7 +620,7 @@ class DownloadSession {
         // 未预期的状态码
         await tempFile.delete();
         item.status = DownloadStatus.failed;
-        item.errorMessage = '断点续传失败：HTTP $statusCode';
+        item.errorMessage = 'downloader.error.resume.failed'.iParams({'code': '$statusCode'});
         _speedTrackers.remove(id);
         _notifyProgress(item);
         await _persistFlush(item);
@@ -631,7 +632,7 @@ class DownloadSession {
       final finalSize = await file.length();
       if (finalSize < item.totalSize) {
         item.status = DownloadStatus.failed;
-        item.errorMessage = '下载不完整：$finalSize / ${item.totalSize}';
+        item.errorMessage = 'downloader.error.incomplete'.iParams({'downloaded': '$finalSize', 'total': '${item.totalSize}'});
         _speedTrackers.remove(id);
         _notifyProgress(item);
         await _persistFlush(item);
@@ -941,8 +942,7 @@ class DownloadSession {
       if (contentLength != null &&
           item.totalSize > 0 &&
           contentLength != item.totalSize) {
-        item.errorMessage =
-            '远端文件大小已变化（$contentLength != ${item.totalSize}），请重新下载';
+        item.errorMessage = 'downloader.error.remote.size.changed'.iParams({'remote': '$contentLength', 'local': '${item.totalSize}'});
         return false;
       }
 
@@ -952,7 +952,7 @@ class DownloadSession {
           remoteEtag != null &&
           remoteEtag.isNotEmpty &&
           remoteEtag != item.etag) {
-        item.errorMessage = '远端文件已修改（ETag 不一致），请重新下载';
+        item.errorMessage = 'downloader.error.remote.etag.changed'.i;
         return false;
       }
 
