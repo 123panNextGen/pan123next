@@ -68,20 +68,26 @@ def get_latest_tag() -> Optional[str]:
     return tag if tag else None
 
 
-def get_commits_between(from_ref: str, to_ref: str) -> List[Tuple[str, str]]:
+_SEP = "\x1f"
+
+
+def get_commits_between(
+    from_ref: str, to_ref: str
+) -> List[Tuple[str, str, str]]:
     raw = _git(
         "log",
-        "--oneline",
+        f"--format=%h{_SEP}%an{_SEP}%s",
         "--no-merges",
         f"{from_ref}..{to_ref}",
     )
-    result: List[Tuple[str, str]] = []
+    result: List[Tuple[str, str, str]] = []
     for line in raw.strip().split("\n"):
         line = line.strip()
         if not line:
             continue
-        sha, _, message = line.partition(" ")
-        result.append((sha, message))
+        parts = line.split(_SEP, 2)
+        if len(parts) == 3:
+            result.append((parts[0], parts[1], parts[2]))
     return result
 
 
@@ -93,6 +99,11 @@ def get_commits_between(from_ref: str, to_ref: str) -> List[Tuple[str, str]]:
 _CONVENTIONAL_RE = re.compile(
     r"^(?P<type>[a-zA-Z_-]+)" r"(?:\((?P<scope>[^)]*)\))?" r":\s*(?P<desc>.+)$"
 )
+
+
+def author_initials(name: str) -> str:
+    parts = name.split()
+    return "".join(p[0].upper() for p in parts[:2] if p)
 
 
 def classify_message(message: str) -> Tuple[str, str]:
@@ -110,15 +121,19 @@ def classify_message(message: str) -> Tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 
-def format_grouped(entries: List[Tuple[str, str]]) -> str:
+def _format_item(desc: str, initials: str) -> str:
+    return f"- {desc} ({initials})" if initials else f"- {desc}"
+
+
+def format_grouped(entries: List[Tuple[str, str, str]]) -> str:
     groups: dict[str, List[str]] = {}
     order: list[str] = []
 
-    for section, desc in entries:
+    for section, desc, initials in entries:
         if section not in groups:
             groups[section] = []
             order.append(section)
-        groups[section].append(desc)
+        groups[section].append(_format_item(desc, initials))
 
     lines: List[str] = []
     for section in order:
@@ -126,7 +141,7 @@ def format_grouped(entries: List[Tuple[str, str]]) -> str:
         lines.append(f"### {section}")
         if items:
             for item in items:
-                lines.append(f"- {item}")
+                lines.append(item)
         lines.append("")
 
     while lines and not lines[-1].strip():
@@ -135,8 +150,8 @@ def format_grouped(entries: List[Tuple[str, str]]) -> str:
     return "\n".join(lines)
 
 
-def format_plain(entries: List[Tuple[str, str]]) -> str:
-    lines = [f"- {desc}" for _, desc in entries]
+def format_plain(entries: List[Tuple[str, str, str]]) -> str:
+    lines = [_format_item(desc, initials) for _, desc, initials in entries]
     return "\n".join(lines) + "\n"
 
 
@@ -195,10 +210,11 @@ def main(
         )
         sys.exit(1)
 
-    entries: List[Tuple[str, str]] = []
-    for sha, message in commits:
+    entries: List[Tuple[str, str, str]] = []
+    for sha, author, message in commits:
         section, desc = classify_message(message)
-        entries.append((section, desc))
+        initials = author_initials(author)
+        entries.append((section, desc, initials))
 
     output = format_plain(entries) if no_group else format_grouped(entries)
     print(output, end="")
