@@ -144,10 +144,10 @@ class NetSession {
   // Pan API
 
   Future<ApiReturnModel> getFileList(
-    String fileId, [
+    String fileId, {
     bool reverse = false,
     bool trashed = false,
-  ]) async {
+  }) async {
     int page = 1;
     String next = '';
     List<FileItemModel> allFiles = [];
@@ -201,6 +201,13 @@ class NetSession {
         ),
       ),
     );
+  }
+
+  Future<ApiReturnModel> getTrashList(
+    String fileId, {
+    bool reverse = false,
+  }) async {
+    return await getFileList(fileId, trashed: true, reverse: reverse);
   }
 
   Future<ApiReturnModel> createDir(String fileName, String fileId) async {
@@ -323,5 +330,39 @@ class NetSession {
       apiCodeEnum: ApiCode.fail,
       msg: 'api.link.not.found'.i,
     );
+  }
+
+  Future<ApiReturnModel> renameFile(String fileId, String newName) {
+    return dio.post(
+      '/a/api/file/rename',
+      data: {
+        'driveId': '0',
+        'fileId': fileId,
+        'fileName': newName,
+      },
+    ).then((response) {
+      if (response.data['code'] != 0) {
+        return ApiReturnModel(
+          code: response.statusCode ?? 0,
+          apiCode: response.data['code'],
+          apiCodeEnum: ApiCode.fail,
+          msg: response.data['message'] ?? 'api.rename.failed'.i,
+        );
+      }
+
+      return ApiReturnModel(
+        code: response.statusCode ?? 0,
+        apiCode: response.data['code'],
+        apiCodeEnum: ApiCode.success,
+        msg: response.data['message'] ?? 'api.rename.success'.i,
+      );
+    }).catchError((error) {
+      return ApiReturnModel(
+        code: error.response?.statusCode ?? 0,
+        apiCode: error.response?.data['code'] ?? 0,
+        apiCodeEnum: ApiCode.fail,
+        msg: error.response?.data['message'] ?? 'api.rename.failed'.i,
+      );
+    });
   }
 }

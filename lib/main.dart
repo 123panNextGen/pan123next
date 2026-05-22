@@ -20,16 +20,15 @@ Future<void> main() async {
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
-      center: false,
-      backgroundColor: Colors.transparent,
+      size: Size(1200, 800),
+      minimumSize: Size(800, 600),
+      center: true,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.hidden,
       windowButtonVisibility: false,
     );
 
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.setAsFrameless();
-    });
+    windowManager.waitUntilReadyToShow(windowOptions, () async {});
   }
 
   final appDb = AppDb();
