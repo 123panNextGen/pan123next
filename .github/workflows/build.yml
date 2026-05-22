@@ -257,6 +257,18 @@ jobs:
             echo "__EOF__"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Generate ChangeLog
+        if: steps.meta.outputs.auto_generate == 'true' && steps.meta.outputs.previous_tag != ''
+        env:
+          PREV_TAG: ${{ steps.meta.outputs.previous_tag }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          uv run script/gitlog.py "$PREV_TAG" "$TAG" > doc/ChangeLog.md
+          echo "----- generated ChangeLog -----"
+          cat doc/ChangeLog.md
+          echo "----- end -----"
+
       - name: Render release notes
         id: notes
         env:

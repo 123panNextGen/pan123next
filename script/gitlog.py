@@ -5,10 +5,9 @@ import re
 import subprocess
 import sys
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import click
-
 
 # ---------------------------------------------------------------------------
 # 类型分组枚举（conventional commit type -> changelog section）
@@ -92,9 +91,7 @@ def get_commits_between(from_ref: str, to_ref: str) -> List[Tuple[str, str]]:
 
 
 _CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>[a-zA-Z_-]+)"
-    r"(?:\((?P<scope>[^)]*)\))?"
-    r":\s*(?P<desc>.+)$"
+    r"^(?P<type>[a-zA-Z_-]+)" r"(?:\((?P<scope>[^)]*)\))?" r":\s*(?P<desc>.+)$"
 )
 
 
@@ -173,7 +170,11 @@ def format_plain(entries: List[Tuple[str, str]]) -> str:
     default=False,
     help="不按类型分组，以平铺列表输出",
 )
-def main(from_ref: Optional[str], to_ref: Optional[str], no_group: bool) -> None:
+def main(
+    from_ref: Optional[str],
+    to_ref: Optional[str],
+    no_group: bool,
+) -> None:
     # 解析引用
     if from_ref is None:
         latest = get_latest_tag()
