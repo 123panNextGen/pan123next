@@ -78,6 +78,7 @@ class _FileListViewState extends State<FileListView> {
           );
           return;
         }
+        if (!mounted) return;
         _loadFileList(fileId, retryCount: retryCount + 1);
         return;
       }

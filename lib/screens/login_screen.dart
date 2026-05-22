@@ -4,6 +4,7 @@ import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:pan123next/pages/login/view.dart';
+import 'package:window_manager/window_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.onLoginSuccess});
@@ -28,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: Text(appName),
         subtitle: const Text('Preview'),
         captionControls: const WindowButtons(),
+        onDragStarted: () => windowManager.startDragging(),
       ),
       pane: NavigationPane(
         selected: topIndex,

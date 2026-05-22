@@ -76,21 +76,27 @@ class NetSession {
 
   void _updateHeaders() {
     if (_userInformation == null) return;
+    headers = buildHeadersForUser(_userInformation!);
+  }
 
-    headers = {
-      'user-agent': '123pan/v2.4.0(${_userInformation!.device.os};Xiaomi)',
-      'authorization': _userInformation!.authorization,
+  static Map<String, dynamic> buildHeadersForUser(UserInfoModel userInfo) {
+    final headers = <String, dynamic>{
+      'user-agent': '123pan/v2.4.0(${userInfo.device.os};Xiaomi)',
       'accept-encoding': 'gzip',
       'content-type': 'application/json',
-      'osversion': _userInformation!.device.os,
-      'loginuuid': _userInformation!.uuid,
+      'osversion': userInfo.device.os,
+      'loginuuid': userInfo.uuid,
       'platform': 'android',
-      'devicetype': _userInformation!.device.type,
+      'devicetype': userInfo.device.type,
       'devicename': 'Xiaomi',
       'host': 'www.123pan.com',
       'app-version': '61',
       'x-app-version': '2.4.0',
     };
+    if (userInfo.authorization.isNotEmpty) {
+      headers['authorization'] = userInfo.authorization;
+    }
+    return headers;
   }
 
   Future<ApiReturnModel> login() async {

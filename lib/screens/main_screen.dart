@@ -9,6 +9,7 @@ import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:window_manager/window_manager.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -45,6 +46,7 @@ class _MainScreenState extends State<MainScreen> {
         title: Text(appName),
         subtitle: const Text('Preview'),
         captionControls: const WindowButtons(),
+        onDragStarted: () => windowManager.startDragging(),
       ),
       pane: NavigationPane(
         selected: topIndex,
