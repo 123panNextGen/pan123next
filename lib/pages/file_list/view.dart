@@ -78,6 +78,7 @@ class _FileListViewState extends State<FileListView> {
           );
           return;
         }
+        if (!mounted) return;
         _loadFileList(fileId, retryCount: retryCount + 1);
         return;
       }
@@ -89,7 +90,12 @@ class _FileListViewState extends State<FileListView> {
       debugPrint('加载文件列表失败: $e');
       setState(() => _isLoadFailed = true);
       if (!mounted) return;
-      showInfoBar(context, 'file.list.error'.i, 'file.list.load.error'.i, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        'file.list.load.error'.i,
+        InfoBarSeverity.error,
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -163,7 +169,12 @@ class _FileListViewState extends State<FileListView> {
       _loadFileList(_currentParentId.toString());
       setState(() => _selectedFile = null);
     } else {
-      showInfoBar(context, 'file.list.error'.i, returnModel.msg, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        returnModel.msg,
+        InfoBarSeverity.error,
+      );
     }
   }
 
@@ -195,7 +206,26 @@ class _FileListViewState extends State<FileListView> {
         );
       });
     } else {
-      showInfoBar(context, 'file.list.error'.i, returnModel.msg, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        returnModel.msg,
+        InfoBarSeverity.error,
+      );
+    }
+  }
+
+  Future<void> _handleRenameFile() async {
+    if (_selectedFile == null) return;
+
+    String? result = await showDialog<String>(
+      context: context,
+      builder: (context) => RenameFileDialog(fileName: _selectedFile!.fileName),
+    );
+
+    if (result != null) {
+      await _session.renameFile(_selectedFile!.fileId.toString(), result);
+      _loadFileList(_currentParentId.toString());
     }
   }
 
@@ -244,7 +274,12 @@ class _FileListViewState extends State<FileListView> {
 
     if (result.apiCodeEnum == ApiCode.fail) {
       if (!mounted) return;
-      showInfoBar(context, 'file.list.error'.i, result.msg, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        result.msg,
+        InfoBarSeverity.error,
+      );
       return;
     }
 
@@ -269,7 +304,12 @@ class _FileListViewState extends State<FileListView> {
 
     if (result.apiCodeEnum == ApiCode.fail) {
       if (!mounted) return;
-      showInfoBar(context, 'file.list.error'.i, result.msg, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        result.msg,
+        InfoBarSeverity.error,
+      );
       return;
     }
 
@@ -359,6 +399,14 @@ class _FileListViewState extends State<FileListView> {
                         _handleDelete();
                       },
                     ),
+                    MenuFlyoutItem(
+                      leading: const Icon(FluentIcons.rename_24_regular),
+                      text: Text('file.list.rename'.i),
+                      onPressed: () {
+                        Flyout.of(context).close();
+                        _handleRenameFile();
+                      },
+                    ),
                     MenuFlyoutSeparator(),
                     MenuFlyoutItem(
                       leading: const Icon(FluentIcons.link_24_regular),
@@ -412,6 +460,12 @@ class _FileListViewState extends State<FileListView> {
           label: Text('file.list.delete'.i),
           tooltip: 'file.list.delete.tooltip'.i,
           onPressed: _selectedFile != null ? _handleDelete : null,
+        ),
+        CommandBarButton(
+          icon: const Icon(FluentIcons.rename_24_regular),
+          label: Text('file.list.rename'.i),
+          tooltip: 'file.list.rename.tooltip'.i,
+          onPressed: _selectedFile != null ? _handleRenameFile : null,
         ),
       ],
     );
@@ -469,12 +523,16 @@ class _FileListViewState extends State<FileListView> {
                                     ),
                                   )
                                 : Expanded(
-                                    child: Center(child: Text('file.list.empty'.i)),
+                                    child: Center(
+                                      child: Text('file.list.empty'.i),
+                                    ),
                                   ))
                           : const Expanded(
                               child: Center(child: ProgressRing()),
                             ))
-                    : Expanded(child: Center(child: Text('file.list.load.failed'.i))),
+                    : Expanded(
+                        child: Center(child: Text('file.list.load.failed'.i)),
+                      ),
               ],
             ),
           ),

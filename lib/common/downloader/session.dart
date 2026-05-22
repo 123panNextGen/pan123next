@@ -29,7 +29,7 @@ const Map<String, String> _kExternalHeaders = {
   'accept-encoding': 'gzip',
 };
 
-class DownloadSession {
+class DownloadSession extends GetxController {
   static final DownloadSession _instance = DownloadSession._internal();
   factory DownloadSession() => _instance;
   DownloadSession._internal();
@@ -128,21 +128,7 @@ class DownloadSession {
 
   void _updateHeaders() {
     if (_userInformation == null) return;
-
-    headers = {
-      'user-agent': '123pan/v2.4.0(${_userInformation!.device.os};Xiaomi)',
-      'authorization': _userInformation!.authorization,
-      'accept-encoding': 'gzip',
-      'content-type': 'application/json',
-      'osversion': _userInformation!.device.os,
-      'loginuuid': _userInformation!.uuid,
-      'platform': 'android',
-      'devicetype': _userInformation!.device.type,
-      'devicename': 'Xiaomi',
-      'host': 'www.123pan.com',
-      'app-version': '61',
-      'x-app-version': '2.4.0',
-    };
+    headers = NetSession.buildHeadersForUser(_userInformation!);
   }
 
   // ---------------------------------------------------------------------------
@@ -537,6 +523,13 @@ class DownloadSession {
   // ---------------------------------------------------------------------------
 
   Future<void> _resumeDownload(DownloadItemModel item) async {
+    if (!item.supportsResume) {
+      item.downloadedSize = 0;
+      item.segments = [];
+      await _startNewDownload(item);
+      return;
+    }
+
     final cancelToken = CancelToken();
     final id = item.file.fileId.toString();
     _cancelTokens[id] = [cancelToken];
@@ -1094,7 +1087,8 @@ class DownloadSession {
     }
   }
 
-  void dispose() {
+  @override
+  void onClose() {
     pauseAllDownloads();
     for (final t in _persistTimers.values) {
       t.cancel();
@@ -1102,6 +1096,7 @@ class DownloadSession {
     _persistTimers.clear();
     _progressController.close();
     _listController.close();
+    super.onClose();
   }
 }
 

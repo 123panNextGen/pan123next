@@ -76,21 +76,27 @@ class NetSession {
 
   void _updateHeaders() {
     if (_userInformation == null) return;
+    headers = buildHeadersForUser(_userInformation!);
+  }
 
-    headers = {
-      'user-agent': '123pan/v2.4.0(${_userInformation!.device.os};Xiaomi)',
-      'authorization': _userInformation!.authorization,
+  static Map<String, dynamic> buildHeadersForUser(UserInfoModel userInfo) {
+    final headers = <String, dynamic>{
+      'user-agent': '123pan/v2.4.0(${userInfo.device.os};Xiaomi)',
       'accept-encoding': 'gzip',
       'content-type': 'application/json',
-      'osversion': _userInformation!.device.os,
-      'loginuuid': _userInformation!.uuid,
+      'osversion': userInfo.device.os,
+      'loginuuid': userInfo.uuid,
       'platform': 'android',
-      'devicetype': _userInformation!.device.type,
+      'devicetype': userInfo.device.type,
       'devicename': 'Xiaomi',
       'host': 'www.123pan.com',
       'app-version': '61',
       'x-app-version': '2.4.0',
     };
+    if (userInfo.authorization.isNotEmpty) {
+      headers['authorization'] = userInfo.authorization;
+    }
+    return headers;
   }
 
   Future<ApiReturnModel> login() async {
@@ -138,10 +144,10 @@ class NetSession {
   // Pan API
 
   Future<ApiReturnModel> getFileList(
-    String fileId, [
+    String fileId, {
     bool reverse = false,
     bool trashed = false,
-  ]) async {
+  }) async {
     int page = 1;
     String next = '';
     List<FileItemModel> allFiles = [];
@@ -195,6 +201,13 @@ class NetSession {
         ),
       ),
     );
+  }
+
+  Future<ApiReturnModel> getTrashList(
+    String fileId, {
+    bool reverse = false,
+  }) async {
+    return await getFileList(fileId, trashed: true, reverse: reverse);
   }
 
   Future<ApiReturnModel> createDir(String fileName, String fileId) async {
@@ -317,5 +330,39 @@ class NetSession {
       apiCodeEnum: ApiCode.fail,
       msg: 'api.link.not.found'.i,
     );
+  }
+
+  Future<ApiReturnModel> renameFile(String fileId, String newName) {
+    return dio.post(
+      '/a/api/file/rename',
+      data: {
+        'driveId': '0',
+        'fileId': fileId,
+        'fileName': newName,
+      },
+    ).then((response) {
+      if (response.data['code'] != 0) {
+        return ApiReturnModel(
+          code: response.statusCode ?? 0,
+          apiCode: response.data['code'],
+          apiCodeEnum: ApiCode.fail,
+          msg: response.data['message'] ?? 'api.rename.failed'.i,
+        );
+      }
+
+      return ApiReturnModel(
+        code: response.statusCode ?? 0,
+        apiCode: response.data['code'],
+        apiCodeEnum: ApiCode.success,
+        msg: response.data['message'] ?? 'api.rename.success'.i,
+      );
+    }).catchError((error) {
+      return ApiReturnModel(
+        code: error.response?.statusCode ?? 0,
+        apiCode: error.response?.data['code'] ?? 0,
+        apiCodeEnum: ApiCode.fail,
+        msg: error.response?.data['message'] ?? 'api.rename.failed'.i,
+      );
+    });
   }
 }

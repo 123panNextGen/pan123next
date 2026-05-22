@@ -1,4 +1,4 @@
-# Pan123 Next Release ${{ Version }}
+<!--# Pan123 Next Release ${{ Version }}-->
 
 ${{ isPreVersion : start }}
 > [!WARNING]
@@ -31,10 +31,10 @@ ${{ end }}
 
 | 平台 | 文件 |
 | --- | --- |
-| Android | [`Pan123Next-Android.apk`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Android.apk) |
-| Windows | [`Pan123Next-Windows.zip`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Windows.zip) |
-| macOS   | [`Pan123Next-macos.zip`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-macos.zip) |
-| Linux   | [`Pan123Next-Linux.zip`](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Linux.zip) |
+| Android | [![Android Download](https://img.shields.io/badge/Android-Any-brightgreen?style=for-the-badge&logo=android)](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Android.apk) |
+| Windows | [![Windows Download](https://img.shields.io/badge/Windows-Any-0078D1?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU%2BV2luZG93czwvdGl0bGU%2BPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTAsMEgxMS4zNzdWMTEuMzcySDBaTTEyLjYyMywwSDI0VjExLjM3MkgxMi42MjNaTTAsMTIuNjIzSDExLjM3N1YyNEgwWm0xMi42MjMsMEgyNFYyNEgxMi42MjMiLz48L3N2Zz4%3D)](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Windows.zip) |
+| macOS   | [![MacOS Download](https://img.shields.io/badge/Windows-Any-white?style=for-the-badge&logo=apple)](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-macos.zip) |
+| Linux   | [![Linux Download](https://img.shields.io/badge/Windows-Any-white?style=for-the-badge&logo=linux&logoColor=white)](${{ Repository }}/releases/download/${{ Tag }}/Pan123Next-Linux.zip) |
 
 ## 安装与使用
 

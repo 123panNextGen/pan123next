@@ -33,7 +33,12 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
   void _createFile() async {
     final fileName = _fileNameController.text;
     if (fileName.isEmpty) {
-      showInfoBar(context, 'file.list.error'.i, 'dialog.new.folder.placeholder'.i, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        'dialog.new.folder.placeholder'.i,
+        InfoBarSeverity.error,
+      );
       return;
     }
     Navigator.pop(context, fileName);
@@ -63,7 +68,10 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
           child: Text('dialog.new.folder.cancel'.i),
           onPressed: () => Navigator.pop(context),
         ),
-        Button(onPressed: _createFile, child: Text('dialog.new.folder.create'.i)),
+        Button(
+          onPressed: _createFile,
+          child: Text('dialog.new.folder.create'.i),
+        ),
       ],
     );
   }
@@ -117,6 +125,72 @@ class _TrashCurrentDialogState extends State<TrashCurrentDialog> {
         Button(
           onPressed: () => Navigator.pop(context, true),
           child: Text('dialog.trash.current.confirm'.i),
+        ),
+      ],
+    );
+  }
+}
+
+class RenameFileDialog extends StatefulWidget {
+  const RenameFileDialog({super.key, required this.fileName});
+
+  final String fileName;
+
+  @override
+  State<RenameFileDialog> createState() => _RenameFileDialogState();
+}
+
+class _RenameFileDialogState extends State<RenameFileDialog> {
+  final TextEditingController _fileNameController = TextEditingController();
+
+  void _renameFile() async {
+    final fileName = _fileNameController.text;
+    if (fileName.isEmpty) {
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        'dialog.rename.file.placeholder'.i,
+        InfoBarSeverity.error,
+      );
+      return;
+    }
+    if (fileName == widget.fileName) {
+      showInfoBar(
+        context,
+        'file.list.error'.i,
+        'dialog.rename.file.conflict'.i,
+        InfoBarSeverity.error,
+      );
+      return;
+    }
+
+    Navigator.pop(context, fileName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ContentDialog(
+      title: Text('dialog.rename.file.title'.i),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('dialog.rename.file.content'.i),
+          const SizedBox(height: 16),
+          TextBox(
+            controller: _fileNameController,
+            placeholder: 'dialog.rename.file.placeholder'.i,
+          ),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          child: Text('dialog.rename.file.cancel'.i),
+          onPressed: () => Navigator.pop(context, null),
+        ),
+        Button(
+          onPressed: _renameFile,
+          child: Text('dialog.rename.file.confirm'.i),
         ),
       ],
     );

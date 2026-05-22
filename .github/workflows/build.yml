@@ -182,7 +182,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-          python-version-file: ".python-version"
 
       - name: Install dependencies
         run: |
@@ -191,7 +190,7 @@ jobs:
           uv sync
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
 
       - name: Resolve release metadata
         id: meta
@@ -258,6 +257,18 @@ jobs:
             echo "__EOF__"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Generate ChangeLog
+        if: steps.meta.outputs.auto_generate == 'true' && steps.meta.outputs.previous_tag != ''
+        env:
+          PREV_TAG: ${{ steps.meta.outputs.previous_tag }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          uv run script/gitlog.py "$PREV_TAG" "$TAG" > doc/ChangeLog.md
+          echo "----- generated ChangeLog -----"
+          cat doc/ChangeLog.md
+          echo "----- end -----"
+
       - name: Render release notes
         id: notes
         env:
@@ -311,7 +322,7 @@ jobs:
           zip -r artifacts/Pan123Next-macos.zip pan123next-macos/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: ${{ steps.meta.outputs.title }}

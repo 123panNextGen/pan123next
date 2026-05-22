@@ -5,7 +5,34 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
     'zh_CN': zhCn,
     'en_US': enUs,
+    'zh_NY': zhNy,
   };
+
+  static Map<String, String> get zhNy {
+    if (_zhNyCache != null) return _zhNyCache!;
+    _zhNyCache = zhCn.map((key, value) => MapEntry(key, _toNya(value)));
+    return _zhNyCache!;
+  }
+
+  static Map<String, String>? _zhNyCache;
+
+  static String _toNya(String text) {
+    var s = text
+        .replaceAll('吗', '喵')
+        .replaceAll('呢', '喵')
+        .replaceAll('啊', '呀')
+        .replaceAll('哦', '喵')
+        .replaceAll('了', '啦')
+        .replaceAll('嘛', '嘛喵')
+        .replaceAll('吧', '吧喵')
+        .replaceAll('呀', '呀喵')
+        .replaceAll('的', 'の')
+        .replaceAllMapped(
+          RegExp(r'([^。！？\n])(?=[。！？\n]|$)'),
+          (m) => '${m[1]}喵',
+        );
+    return s;
+  }
 
   static const Map<String, String> zhCn = {
     'app.title': '123网盘 Next',
@@ -53,6 +80,8 @@ class AppTranslations extends Translations {
     'file.list.download.success': '已成功下载: {name}',
     'file.list.folder.format': '文件夹 - {size}',
     'file.list.save.path.title': '选择保存路径:',
+    'file.list.rename': '重命名',
+    'file.list.rename.tooltip': '重命名选中文件',
 
     'dialog.new.folder.title': '新建文件夹',
     'dialog.new.folder.label': '在当前目录下新建文件夹',
@@ -72,6 +101,12 @@ class AppTranslations extends Translations {
     'dialog.link.result': '结果',
     'dialog.link.copy': '复制',
     'dialog.link.confirm': '确定',
+    'dialog.rename.file.title': '重命名文件',
+    'dialog.rename.file.content': '请输入新文件名',
+    'dialog.rename.file.cancel': '取消',
+    'dialog.rename.file.confirm': '重命名',
+    'dialog.rename.file.placeholder': '请输入新文件名',
+    'dialog.rename.file.conflict': '新文件名不能与当前文件名相同',
 
     'transfer.title': '传输',
     'transfer.filter.all': '全部',
@@ -128,7 +163,8 @@ class AppTranslations extends Translations {
     'downloader.error.no.size': '无法获取文件大小',
     'downloader.error.resume.failed': '断点续传失败：HTTP {code}',
     'downloader.error.incomplete': '下载不完整：{downloaded} / {total}',
-    'downloader.error.remote.size.changed': '远端文件大小已变化（{remote} != {local}），请重新下载',
+    'downloader.error.remote.size.changed':
+        '远端文件大小已变化（{remote} != {local}），请重新下载',
     'downloader.error.remote.etag.changed': '远端文件已修改（ETag 不一致），请重新下载',
 
     'api.login.failed': '登录失败',
@@ -138,9 +174,12 @@ class AppTranslations extends Translations {
     'api.create.failed': '创建失败',
     'api.create.success': '创建成功',
     'api.delete.success': '删除成功',
+    'api.rename.failed': '重命名失败',
+    'api.rename.success': '重命名成功',
 
     'lang.zh.cn': '中文 (简体)',
     'lang.en.us': 'English',
+    'lang.zh.ny': '喵喵语',
   };
 
   static const Map<String, String> enUs = {
@@ -189,6 +228,8 @@ class AppTranslations extends Translations {
     'file.list.download.success': 'Downloaded: {name}',
     'file.list.folder.format': 'Folder - {size}',
     'file.list.save.path.title': 'Choose save location:',
+    'file.list.rename': 'Rename',
+    'file.list.rename.tooltip': 'Rename selected file',
 
     'dialog.new.folder.title': 'New Folder',
     'dialog.new.folder.label': 'Create folder in current directory',
@@ -196,11 +237,13 @@ class AppTranslations extends Translations {
     'dialog.new.folder.cancel': 'Cancel',
     'dialog.new.folder.create': 'Create',
     'dialog.trash.file.title': 'Delete',
-    'dialog.trash.file.content': 'Are you sure you want to delete this file?\nIt will be moved to trash.',
+    'dialog.trash.file.content':
+        'Are you sure you want to delete this file?\nIt will be moved to trash.',
     'dialog.trash.file.cancel': 'Cancel',
     'dialog.trash.file.confirm': 'Delete',
     'dialog.trash.current.title': 'Delete',
-    'dialog.trash.current.content': 'Are you sure you want to delete this folder?\nIt will be moved to trash.',
+    'dialog.trash.current.content':
+        'Are you sure you want to delete this folder?\nIt will be moved to trash.',
     'dialog.trash.current.cancel': 'Cancel',
     'dialog.trash.current.confirm': 'Delete',
     'dialog.link.title': 'Download Link',
@@ -208,6 +251,13 @@ class AppTranslations extends Translations {
     'dialog.link.result': 'Result',
     'dialog.link.copy': 'Copy',
     'dialog.link.confirm': 'OK',
+    'dialog.rename.file.title': 'Rename File',
+    'dialog.rename.file.content': 'Enter new file name',
+    'dialog.rename.file.cancel': 'Cancel',
+    'dialog.rename.file.confirm': 'Rename',
+    'dialog.rename.file.placeholder': 'Enter new file name',
+    'dialog.rename.file.conflict':
+        'New file name cannot be the same as current name',
 
     'transfer.title': 'Transfers',
     'transfer.filter.all': 'All',
@@ -260,12 +310,16 @@ class AppTranslations extends Translations {
     'color.orange': 'Orange',
     'color.teal': 'Teal',
 
-    'downloader.error.remote.changed': 'Remote file changed, please re-add the task',
+    'downloader.error.remote.changed':
+        'Remote file changed, please re-add the task',
     'downloader.error.no.size': 'Cannot determine file size',
     'downloader.error.resume.failed': 'Resume failed: HTTP {code}',
-    'downloader.error.incomplete': 'Incomplete download: {downloaded} / {total}',
-    'downloader.error.remote.size.changed': 'Remote file size changed ({remote} != {local}), please re-download',
-    'downloader.error.remote.etag.changed': 'Remote file modified (ETag mismatch), please re-download',
+    'downloader.error.incomplete':
+        'Incomplete download: {downloaded} / {total}',
+    'downloader.error.remote.size.changed':
+        'Remote file size changed ({remote} != {local}), please re-download',
+    'downloader.error.remote.etag.changed':
+        'Remote file modified (ETag mismatch), please re-download',
 
     'api.login.failed': 'Login failed',
     'api.delete.failed': 'Delete failed',
@@ -274,8 +328,11 @@ class AppTranslations extends Translations {
     'api.create.failed': 'Create failed',
     'api.create.success': 'Created successfully',
     'api.delete.success': 'Deleted successfully',
+    'api.rename.failed': 'Rename failed',
+    'api.rename.success': 'Renamed successfully',
 
     'lang.zh.cn': '中文 (简体)',
     'lang.en.us': 'English',
+    'lang.zh.ny': 'Nya',
   };
 }
