@@ -10,26 +10,12 @@
   <img src="doc/img/ScreenShot-1.png" alt="ScreenShot-1">
 </p>
 
-<p align="center">
-  <a href="https://github.com/123panNextGen/pan123next/stargazers">
-    <img src="https://img.shields.io/github/stars/123panNextGen/pan123next" alt="Stars">
-  </a>
-  <a href="https://github.com/123panNextGen/pan123next/issues">
-    <img src="https://img.shields.io/github/issues/123panNextGen/pan123next" alt="Issues">
-  </a>
-  <a href="https://github.com/123panNextGen/pan123next/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-GPL%203.0-blue" alt="License">
-  </a>
-  <a href="https://flutter.dev">
-    <img src="https://img.shields.io/badge/Flutter-3.11+-02569B?logo=flutter" alt="Flutter">
-  </a>
-  <a href="https://github.com/123panNextGen/pan123next/releases/latest">
-    <img src="https://img.shields.io/github/v/release/123panNextGen/pan123next" alt="Release">
-  </a>
-  <a href="https://github.com/123panNextGen/pan123next/releases">
-    <img src="https://img.shields.io/github/downloads/123panNextGen/pan123next/total" alt="Downloads">
-  </a>
-</p>
+[![Stars](https://img.shields.io/github/stars/123panNextGen/pan123next?style=for-the-badge)](https://github.com/123panNextGen/pan123next/stargazers)
+[![Issues](https://img.shields.io/github/issues/123panNextGen/pan123next?style=for-the-badge)](https://github.com/123panNextGen/pan123next/issues)
+[![License](https://img.shields.io/badge/license-GPL%203.0-blue?style=for-the-badge)](https://github.com/123panNextGen/pan123next/blob/main/LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.11+-02569B?style=for-the-badge&logo=flutter)](https://flutter.dev)
+[![Release](https://img.shields.io/github/v/release/123panNextGen/pan123next?style=for-the-badge)](https://github.com/123panNextGen/pan123next/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/123panNextGen/pan123next/total?style=for-the-badge)](https://github.com/123panNextGen/pan123next/releases)
 
 ---
 
