@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Markdown 格式化工具 - 使用模板引擎处理版本发布信息"""
+"""Markdown Release Notes Formatter - Template engine for version release information"""
 
 import re
 import sys
@@ -8,103 +8,194 @@ from typing import Dict, Optional
 
 import click
 from rich.console import Console
+from rich.markdown import Markdown
 
-# 初始化 Rich console
 console = Console()
 
+DEFAULT_MESSAGES = {
+    "en": {
+        "template_engine": "Markdown Template Engine",
+        "error_read": "Error: Cannot read {label} {path} - {exc}",
+        "warning_no_input": "Warning: No --file specified and --message is empty, using default template",
+        "error_template": "Error processing template: {exc}",
+        "pre_release": "Pre-release",
+        "full_release": "Full release",
+        "update_message": "Update Message",
+        "default_template_title": "Pan123 Next Release {version}",
+        "default_template_section": "## Update Notes\n\n{update_message}",
+        "conditional_key_error": "Error: Invalid conditional key '{key}' in template",
+    },
+    "zh": {
+        "template_engine": "Markdown 格式化工具",
+        "error_read": "错误：无法读取{label} {path} - {exc}",
+        "warning_no_input": "警告：未指定 --file 且 --message 为空，将使用默认模板",
+        "error_template": "处理模板时出错：{exc}",
+        "pre_release": "预发布版本",
+        "full_release": "正式版本",
+        "update_message": "更新说明",
+        "default_template_title": "Pan123 Next Release {version}",
+        "default_template_section": "## 更新说明\n\n{update_message}",
+        "conditional_key_error": "错误：模板中存在无效的条件键 '{key}'",
+    },
+}
 
-# ---------------------------------------------------------------------------
-# 模板处理
-# ---------------------------------------------------------------------------
+NESTED_BLOCK_MAX_ITERATIONS = 5
+
+PLACEHOLDERS = [
+    "Version",
+    "Tag",
+    "UpdateMessage",
+    "ChangeLog",
+    "Commit",
+    "ShortCommit",
+    "Repository",
+    "Date",
+    "PreviousTag",
+]
+
+CONDITIONAL_KEYS = [
+    "isPreVersion",
+    "hasMessage",
+    "hasChangeLog",
+    "hasCommit",
+    "hasRepository",
+    "hasDate",
+    "hasPreviousTag",
+]
 
 
-def process_conditional_blocks(content: str, flags: Dict[str, bool]) -> str:
-    """处理条件块 ${{ <name> : start }} ... ${{ end }}
-
-    支持的条件名由 flags 字典提供。每个 key 对应一个布尔值，True 表示
-    保留块内的内容，False 则整段移除。
-
-    示例：
-        ${{ isPreVersion : start }} ... ${{ end }}
-        ${{ hasChangeLog : start }} ... ${{ end }}
-    """
-
-    pattern = re.compile(
-        r"\$\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*start\s*\}\}"
-        r"(.*?)"
-        r"\$\{\{\s*end\s*\}\}",
-        flags=re.DOTALL,
-    )
-
-    def replace_block(match: re.Match) -> str:
-        name = match.group(1)
-        body = match.group(2)
-        # 未注册的条件名按"始终移除"处理，避免模板出现未替换占位符
-        if not flags.get(name, False):
-            return ""
-        # 去除块两端首尾的纯空白行（保留内部缩进）
-        return body.strip("\n")
-
-    # 反复处理以支持简单嵌套（最多 5 次足够）
-    for _ in range(5):
-        new_content, n = pattern.subn(replace_block, content)
-        content = new_content
-        if n == 0:
-            break
-    return content
+def get_message(key: str, lang: str = "en", **kwargs) -> str:
+    """Get localized message with optional format parameters."""
+    messages = DEFAULT_MESSAGES.get(lang, DEFAULT_MESSAGES["en"])
+    template = messages.get(key, DEFAULT_MESSAGES["en"].get(key, key))
+    if kwargs:
+        try:
+            return template.format(**kwargs)
+        except (KeyError, ValueError):
+            return template
+    return template
 
 
-def process_template(
-    content: str,
-    *,
-    version: str,
-    is_pre: bool,
-    message: str,
-    changelog: str,
-    commit: str,
-    repository: str,
-    date: str,
-    previous_tag: str,
-    tag: str,
-) -> str:
-    """处理模板内容，替换占位符与条件块"""
+class MarkdownFormatter:
+    """Markdown template formatter with i18n support."""
 
-    # tag 为空时回退到 v<Version>，确保下载/对比链接始终可拼接
-    actual_tag = tag.strip() or f"v{version}"
+    def __init__(self, lang: str = "en"):
+        self.lang = lang
+        self._validate_lang()
 
-    # 条件块在替换占位符之前处理：被裁掉的块里包含的占位符无需替换
-    flags = {
-        "isPreVersion": is_pre,
-        "hasMessage": bool(message.strip()),
-        "hasChangeLog": bool(changelog.strip()),
-        "hasCommit": bool(commit.strip()),
-        "hasRepository": bool(repository.strip()),
-        "hasDate": bool(date.strip()),
-        # 比对链接同时依赖上一个 tag 与仓库地址，否则链接无意义
-        "hasPreviousTag": bool(previous_tag.strip()) and bool(repository.strip()),
-    }
-    content = process_conditional_blocks(content, flags)
+    def _validate_lang(self):
+        """Ensure language is supported."""
+        if self.lang not in DEFAULT_MESSAGES:
+            available = ", ".join(DEFAULT_MESSAGES.keys())
+            console.print(
+                f"[yellow]Warning: Language '{self.lang}' not supported, falling back to 'en'[/yellow]"
+            )
+            self.lang = "en"
 
-    # 简单字符串占位符
-    replacements = {
-        "${{ Version }}": version,
-        "${{ Tag }}": actual_tag,
-        "${{ UpdateMessage }}": message,
-        "${{ ChangeLog }}": changelog,
-        "${{ Commit }}": commit,
-        "${{ ShortCommit }}": commit[:7] if commit else "",
-        "${{ Repository }}": repository,
-        "${{ Date }}": date,
-        "${{ PreviousTag }}": previous_tag,
-    }
-    for key, value in replacements.items():
-        content = content.replace(key, value)
+    def get_default_template(self, version: str) -> str:
+        """Generate default template with version."""
+        title = get_message("default_template_title", self.lang, version=version)
+        section = get_message(
+            "default_template_section", self.lang, update_message="${{ UpdateMessage }}"
+        )
+        return f"# {title}\n\n{section}"
 
-    return content
+    def process_conditional_blocks(self, content: str, flags: Dict[str, bool]) -> str:
+        """Process conditional blocks ${{ <name> : start }} ... ${{ end }}"""
+        pattern = re.compile(
+            r"\$\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*start\s*\}\}"
+            r"(.*?)"
+            r"\$\{\{\s*end\s*\}\}",
+            flags=re.DOTALL,
+        )
+
+        def replace_block(match: re.Match) -> str:
+            name = match.group(1)
+            body = match.group(2)
+
+            if name not in CONDITIONAL_KEYS:
+                console.print(
+                    f"[yellow]{get_message('conditional_key_error', self.lang, key=name)}[/yellow]"
+                )
+                return ""
+
+            if not flags.get(name, False):
+                return ""
+            return body.strip("\n")
+
+        for _ in range(NESTED_BLOCK_MAX_ITERATIONS):
+            new_content, n = pattern.subn(replace_block, content)
+            content = new_content
+            if n == 0:
+                break
+        return content
+
+    def process_placeholders(self, content: str, data: Dict[str, str]) -> str:
+        """Replace placeholder variables in content."""
+        replacements = {
+            "${{ Version }}": data.get("Version", ""),
+            "${{ Tag }}": data.get("Tag", ""),
+            "${{ UpdateMessage }}": data.get("UpdateMessage", ""),
+            "${{ ChangeLog }}": data.get("ChangeLog", ""),
+            "${{ Commit }}": data.get("Commit", ""),
+            "${{ ShortCommit }}": (
+                data.get("Commit", "")[:7] if data.get("Commit") else ""
+            ),
+            "${{ Repository }}": data.get("Repository", ""),
+            "${{ Date }}": data.get("Date", ""),
+            "${{ PreviousTag }}": data.get("PreviousTag", ""),
+        }
+
+        for placeholder, value in replacements.items():
+            content = content.replace(placeholder, value)
+
+        return content
+
+    def process_template(
+        self,
+        content: str,
+        *,
+        version: str,
+        is_pre: bool,
+        message: str,
+        changelog: str,
+        commit: str,
+        repository: str,
+        date: str,
+        previous_tag: str,
+        tag: str,
+    ) -> str:
+        """Process template content, replace placeholders and conditional blocks."""
+        actual_tag = tag.strip() or f"v{version}"
+
+        flags = {
+            "isPreVersion": is_pre,
+            "hasMessage": bool(message.strip()),
+            "hasChangeLog": bool(changelog.strip()),
+            "hasCommit": bool(commit.strip()),
+            "hasRepository": bool(repository.strip()),
+            "hasDate": bool(date.strip()),
+            "hasPreviousTag": bool(previous_tag.strip()) and bool(repository.strip()),
+        }
+        content = self.process_conditional_blocks(content, flags)
+
+        data = {
+            "Version": version,
+            "Tag": actual_tag,
+            "UpdateMessage": message,
+            "ChangeLog": changelog,
+            "Commit": commit,
+            "Repository": repository,
+            "Date": date,
+            "PreviousTag": previous_tag,
+        }
+        content = self.process_placeholders(content, data)
+
+        return content
 
 
 def format_output(content: str) -> str:
-    """清理输出内容：折叠多余空行，去除首尾空行"""
+    """Clean output content: collapse multiple empty lines, remove leading/trailing whitespace."""
     lines = content.split("\n")
     result_lines: list[str] = []
     prev_empty = False
@@ -124,17 +215,14 @@ def format_output(content: str) -> str:
     return "\n".join(result_lines)
 
 
-def _read_text(path: Path, label: str) -> str:
+def _read_text(path: Path, label: str, lang: str = "en") -> str:
     try:
         return path.read_text(encoding="utf-8")
-    except Exception as exc:  # pragma: no cover - 直接报错退出
-        console.print(f"[red]错误：无法读取{label} {path} - {exc}[/red]")
+    except Exception as exc:
+        console.print(
+            f"[red]{get_message('error_read', lang, label=label, path=path, exc=exc)}[/red]"
+        )
         sys.exit(1)
-
-
-# ---------------------------------------------------------------------------
-# CLI 入口
-# ---------------------------------------------------------------------------
 
 
 @click.command()
@@ -142,53 +230,59 @@ def _read_text(path: Path, label: str) -> str:
     "--file",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     required=False,
-    help="指定输入的 Markdown 模板文件路径",
+    help="Path to input Markdown template file",
 )
 @click.option(
     "--version",
     required=True,
-    help="指定版本号，例如 0.1.0",
+    help="Version number, e.g., 0.1.0",
 )
 @click.option(
     "--pre/--no-pre",
     default=False,
-    help="指定是否为预览版本（默认为 --no-pre）",
+    help="Specify if this is a pre-release version (default: --no-pre)",
 )
 @click.option(
     "--message",
     default="",
-    help="更新说明内容，支持 \\n 换行符；与 --changelog-file 同时存在时被覆盖",
+    help="Update message content, supports \\n for newlines; overridden by --changelog-file if both provided",
 )
 @click.option(
     "--changelog-file",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     required=False,
-    help="ChangeLog 文件路径，整段内容会注入 ${{ ChangeLog }} 与 ${{ UpdateMessage }}",
+    help="ChangeLog file path, content will be injected into ${{ ChangeLog }} and ${{ UpdateMessage }}",
 )
 @click.option(
     "--commit",
     default="",
-    help="构建对应的 commit SHA，用于 ${{ Commit }} / ${{ ShortCommit }}",
+    help="Commit SHA for ${{ Commit }} / ${{ ShortCommit }}",
 )
 @click.option(
     "--repository",
     default="",
-    help="仓库地址（如 https://github.com/owner/repo），用于 ${{ Repository }}",
+    help="Repository URL (e.g., https://github.com/owner/repo) for ${{ Repository }}",
 )
 @click.option(
     "--date",
     default="",
-    help="发布日期字符串，用于 ${{ Date }}",
+    help="Release date string for ${{ Date }}",
 )
 @click.option(
     "--previous-tag",
     default="",
-    help="上一个版本 tag（如 v0.1.9），用于渲染比对链接 ${{ PreviousTag }}",
+    help="Previous version tag (e.g., v0.1.9) for comparison links using ${{ PreviousTag }}",
 )
 @click.option(
     "--tag",
     default="",
-    help="当前 tag 字面量（如 v1.0.4(pre)）；为空时回退到 v<Version>",
+    help="Current tag literal (e.g., v1.0.4(pre)); falls back to v<Version> if empty",
+)
+@click.option(
+    "--lang",
+    default="en",
+    type=click.Choice(["en", "zh"], case_sensitive=False),
+    help="Language for output messages (default: en)",
 )
 def main(
     file: Optional[Path],
@@ -201,48 +295,43 @@ def main(
     date: str,
     previous_tag: str,
     tag: str,
+    lang: str,
 ):
-    """格式化 Markdown 发布说明模板。
+    """Format Markdown release notes template.
 
-    支持的占位符：
-      ${{ Version }}        版本号（如 1.0.4）
-      ${{ Tag }}            tag 字面量（如 v1.0.4(pre)，缺省回退到 v<Version>）
-      ${{ UpdateMessage }}  更新说明（优先 --changelog-file，其次 --message）
-      ${{ ChangeLog }}      ChangeLog 文件原始内容
-      ${{ Commit }}         构建 commit
-      ${{ ShortCommit }}    构建 commit 前 7 位
-      ${{ Repository }}     仓库地址
-      ${{ Date }}           发布日期
-      ${{ PreviousTag }}    上一个 tag（用于比对链接）
+    Supported placeholders:
+      ${{ Version }}        Version number (e.g., 1.0.4)
+      ${{ Tag }}            Tag literal (e.g., v1.0.4(pre), falls back to v<Version> if empty)
+      ${{ UpdateMessage }}  Update message (priority: --changelog-file > --message)
+      ${{ ChangeLog }}      ChangeLog file raw content
+      ${{ Commit }}         Build commit
+      ${{ ShortCommit }}     First 7 characters of build commit
+      ${{ Repository }}     Repository URL
+      ${{ Date }}           Release date
+      ${{ PreviousTag }}    Previous tag (for comparison links)
 
-    支持的条件块（${{ <name> : start }}...${{ end }}）：
+    Supported conditional blocks (${{ <name> : start }}...${{ end }}):
       isPreVersion / hasMessage / hasChangeLog / hasCommit / hasRepository / hasDate / hasPreviousTag
     """
 
-    # 1. 加载模板
+    formatter = MarkdownFormatter(lang)
+
     if file:
-        template_content = _read_text(file, "模板文件")
+        template_content = _read_text(file, "template file", lang)
     elif message.strip():
         template_content = message
     else:
-        console.print(
-            "[yellow]警告：未指定 --file 且 --message 为空，将使用默认模板[/yellow]"
-        )
-        template_content = (
-            "# Pan123 Next Release ${{ Version }}\n\n## 更新说明\n\n${{ UpdateMessage }}"
-        )
+        console.print(f"[yellow]{get_message('warning_no_input', lang)}[/yellow]")
+        template_content = formatter.get_default_template(version)
 
-    # 2. 加载 ChangeLog 内容
     changelog_text = ""
     if changelog_file:
-        changelog_text = _read_text(changelog_file, "ChangeLog 文件").strip()
+        changelog_text = _read_text(changelog_file, "ChangeLog file", lang).strip()
 
-    # 3. UpdateMessage 与 ChangeLog 互不替代：模板内通过条件块选用其一
     actual_message = message.replace("\\n", "\n")
 
-    # 4. 处理模板
     try:
-        output_content = process_template(
+        output_content = formatter.process_template(
             template_content,
             version=version,
             is_pre=pre,
@@ -256,7 +345,7 @@ def main(
         )
         formatted_output = format_output(output_content)
     except Exception as exc:
-        console.print(f"[red]处理模板时出错：{exc}[/red]")
+        console.print(f"[red]{get_message('error_template', lang, exc=exc)}[/red]")
         sys.exit(1)
 
     print(formatted_output)
