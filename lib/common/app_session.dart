@@ -2,7 +2,6 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 
 class AppSession extends GetxController {
   late final Rx<Brightness> theme;
@@ -23,7 +22,7 @@ class AppSession extends GetxController {
       final parts = savedLocale!.split('_');
       if (parts.length == 2) {
         appLocale.value = Locale(parts[0], parts[1]);
-        TranslationService.to.switchLocale(savedLocale);
+        Get.locale = appLocale.value;
       }
     }
     Get.locale = appLocale.value;
@@ -48,7 +47,6 @@ class AppSession extends GetxController {
     final locale = Locale(parts[0], parts[1]);
     appLocale.value = locale;
     Get.locale = locale;
-    TranslationService.to.switchLocale(languageTag);
     Get.find<UserDb>().setValue('set.language', languageTag, 'string');
   }
 

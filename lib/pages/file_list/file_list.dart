@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/user.dart';
@@ -32,7 +31,7 @@ class _FileListWidgetState extends State<FileListWidget> {
   final List<String> _breadItemIds = ['0'];
   final List<FileItemModel> _breadItemModels = [];
   final _breadItems = <BreadcrumbItem<int>>[
-    BreadcrumbItem(label: Text('file.list.root'.i), value: 0),
+    BreadcrumbItem(label: Text('根目录'), value: 0),
   ];
 
   final commandBarKey = GlobalKey<CommandBarState>();
@@ -63,23 +62,13 @@ class _FileListWidgetState extends State<FileListWidget> {
       if (response.apiCode != 200) {
         if (retryCount >= 1) {
           if (!mounted) return;
-          showInfoBar(
-            context,
-            'file.list.error'.i,
-            'file.list.token.expired'.i,
-            InfoBarSeverity.error,
-          );
+          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
           return;
         }
         final loginResponse = await _session.login();
         if (loginResponse.apiCode != 200) {
           if (!mounted) return;
-          showInfoBar(
-            context,
-            'file.list.error'.i,
-            'file.list.token.expired'.i,
-            InfoBarSeverity.error,
-          );
+          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
           return;
         }
         if (!mounted) return;
@@ -94,12 +83,7 @@ class _FileListWidgetState extends State<FileListWidget> {
       debugPrint('加载文件列表失败: $e');
       setState(() => _isLoadFailed = true);
       if (!mounted) return;
-      showInfoBar(
-        context,
-        'file.list.error'.i,
-        'file.list.load.error'.i,
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', '加载文件列表失败', InfoBarSeverity.error);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -173,12 +157,7 @@ class _FileListWidgetState extends State<FileListWidget> {
       _loadFileList(_currentParentId.toString());
       setState(() => _selectedFile = null);
     } else {
-      showInfoBar(
-        context,
-        'file.list.error'.i,
-        returnModel.msg,
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
     }
   }
 
@@ -210,12 +189,7 @@ class _FileListWidgetState extends State<FileListWidget> {
         );
       });
     } else {
-      showInfoBar(
-        context,
-        'file.list.error'.i,
-        returnModel.msg,
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
     }
   }
 
@@ -226,21 +200,11 @@ class _FileListWidgetState extends State<FileListWidget> {
     if (!mounted) return;
 
     if (returnModel.apiCodeEnum == ApiCode.success) {
-      showInfoBar(
-        context,
-        'file.list.success'.i,
-        'file.list.restore.success'.i,
-        InfoBarSeverity.success,
-      );
+      showInfoBar(context, '成功', '已成功恢复文件', InfoBarSeverity.success);
       _loadFileList(_currentParentId.toString());
       setState(() => _selectedFile = null);
     } else {
-      showInfoBar(
-        context,
-        'file.list.error'.i,
-        returnModel.msg,
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', returnModel.msg, InfoBarSeverity.error);
     }
   }
 
@@ -279,13 +243,13 @@ class _FileListWidgetState extends State<FileListWidget> {
 
       if (file.isFolder) {
         fileResult = await FilePicker.saveFile(
-          dialogTitle: 'file.list.save.path.title'.i,
+          dialogTitle: '选择保存路径:',
           fileName: '${file.fileName}.zip',
           initialDirectory: defaultDownloadPath,
         );
       } else {
         fileResult = await FilePicker.saveFile(
-          dialogTitle: 'file.list.save.path.title'.i,
+          dialogTitle: '选择保存路径:',
           fileName: file.fileName,
           initialDirectory: defaultDownloadPath,
         );
@@ -303,12 +267,7 @@ class _FileListWidgetState extends State<FileListWidget> {
 
     if (result.apiCodeEnum == ApiCode.fail) {
       if (!mounted) return;
-      showInfoBar(
-        context,
-        'file.list.error'.i,
-        result.msg,
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', result.msg, InfoBarSeverity.error);
       return;
     }
 
@@ -321,8 +280,8 @@ class _FileListWidgetState extends State<FileListWidget> {
     if (!mounted) return;
     showInfoBar(
       context,
-      'file.list.success'.i,
-      'file.list.download.success'.iParams({'name': file.fileName}),
+      '成功',
+      '已成功下载: ${file.fileName}',
       InfoBarSeverity.success,
     );
   }
@@ -333,12 +292,7 @@ class _FileListWidgetState extends State<FileListWidget> {
 
     if (result.apiCodeEnum == ApiCode.fail) {
       if (!mounted) return;
-      showInfoBar(
-        context,
-        'file.list.error'.i,
-        result.msg,
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', result.msg, InfoBarSeverity.error);
       return;
     }
 
@@ -372,7 +326,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                           leading: const Icon(
                             FluentIcons.folder_add_24_regular,
                           ),
-                          text: Text('file.list.add.folder'.i),
+                          text: const Text('添加文件夹'),
                           onPressed: () {
                             Flyout.of(context).close();
                             _handleAddFolder();
@@ -380,7 +334,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                         ),
                         MenuFlyoutItem(
                           leading: const Icon(FluentIcons.delete_24_regular),
-                          text: Text('file.list.delete.current'.i),
+                          text: const Text('删除当前目录'),
                           onPressed: _currentParentId == 0
                               ? null
                               : () {
@@ -404,7 +358,7 @@ class _FileListWidgetState extends State<FileListWidget> {
       title: Text(file.fileName),
       subtitle: Text(
         file.isFolder
-            ? 'file.list.folder.format'.iParams({'size': formatSize(file.size)})
+            ? '文件夹 - ${formatSize(file.size)}'
             : formatSize(file.size),
       ),
       trailing: FlyoutTarget(
@@ -427,7 +381,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                       ? [
                           MenuFlyoutItem(
                             leading: const Icon(FluentIcons.delete_24_regular),
-                            text: Text('file.list.delete'.i),
+                            text: const Text('删除'),
                             onPressed: () {
                               Flyout.of(context).close();
                               _handleDelete();
@@ -435,7 +389,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                           ),
                           MenuFlyoutItem(
                             leading: const Icon(FluentIcons.rename_24_regular),
-                            text: Text('file.list.rename'.i),
+                            text: const Text('重命名'),
                             onPressed: () {
                               Flyout.of(context).close();
                               _handleRenameFile();
@@ -444,7 +398,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                           MenuFlyoutSeparator(),
                           MenuFlyoutItem(
                             leading: const Icon(FluentIcons.link_24_regular),
-                            text: Text('file.list.get.link'.i),
+                            text: const Text('获取下载链接'),
                             onPressed: () {
                               Flyout.of(context).close();
                               getFileDownloadLink(file);
@@ -454,7 +408,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                             leading: const Icon(
                               FluentIcons.arrow_download_24_regular,
                             ),
-                            text: Text('file.list.download'.i),
+                            text: const Text('下载'),
                             onPressed: () {
                               Flyout.of(context).close();
                               downloadFile(file);
@@ -466,7 +420,7 @@ class _FileListWidgetState extends State<FileListWidget> {
                             leading: const Icon(
                               FluentIcons.arrow_reset_24_regular,
                             ),
-                            text: Text('file.list.restore'.i),
+                            text: const Text('恢复'),
                             onPressed: () {
                               Flyout.of(context).close();
                               _handleRestoreFile();
@@ -492,47 +446,46 @@ class _FileListWidgetState extends State<FileListWidget> {
           ? [
               CommandBarButton(
                 icon: const Icon(FluentIcons.arrow_repeat_all_24_regular),
-                label: Text('file.list.refresh'.i),
-                tooltip: 'file.list.refresh.tooltip'.i,
+                label: const Text('刷新'),
+                tooltip: '刷新文件列表',
                 onPressed: () => _loadFileList(_currentParentId.toString()),
               ),
               CommandBarButton(
                 icon: const Icon(FluentIcons.folder_add_24_regular),
-                label: Text('file.list.new.folder'.i),
-                tooltip: 'file.list.new.folder.tooltip'.i,
+                label: const Text('新建文件夹'),
+                tooltip: '新建文件夹',
                 onPressed: _handleAddFolder,
               ),
               CommandBarButton(
                 icon: const Icon(FluentIcons.delete_24_regular),
-                label: Text('file.list.delete'.i),
-                tooltip: 'file.list.delete.tooltip'.i,
+                label: const Text('删除'),
+                tooltip: '删除选中文件',
                 onPressed: _selectedFile != null ? _handleDelete : null,
               ),
               CommandBarButton(
                 icon: const Icon(FluentIcons.rename_24_regular),
-                label: Text('file.list.rename'.i),
-                tooltip: 'file.list.rename.tooltip'.i,
+                label: const Text('重命名'),
+                tooltip: '重命名选中文件',
                 onPressed: _selectedFile != null ? _handleRenameFile : null,
               ),
             ]
           : [
               CommandBarButton(
                 icon: const Icon(FluentIcons.arrow_repeat_all_24_regular),
-                label: Text('file.list.refresh'.i),
-                tooltip: 'file.list.refresh.tooltip'.i,
+                label: const Text('刷新'),
+                tooltip: '刷新文件列表',
                 onPressed: () => _loadFileList(_currentParentId.toString()),
               ),
               CommandBarButton(
                 icon: const Icon(FluentIcons.arrow_reset_24_regular),
-                label: Text('file.list.restore'.i),
-                tooltip: 'file.list.restore.tooltip'.i,
+                label: const Text('恢复'),
+                tooltip: '恢复回收站中的选中文件',
                 onPressed: _selectedFile != null ? _handleRestoreFile : null,
               ),
-              // 取消选择
               CommandBarButton(
                 icon: const Icon(FluentIcons.select_all_off_24_filled),
-                label: Text('file.list.cancel'.i),
-                tooltip: 'file.list.cancel.tooltip'.i,
+                label: const Text('取消'),
+                tooltip: '取消选择的文件',
                 onPressed: () => setState(() => _selectedFile = null),
               ),
             ],
@@ -544,8 +497,8 @@ class _FileListWidgetState extends State<FileListWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'file.list.title'.i,
+        const Text(
+          '文件列表',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -556,11 +509,11 @@ class _FileListWidgetState extends State<FileListWidget> {
                 onPressed: _breadItems.length > 1 && !widget.isShowTrash
                     ? _handleBack
                     : null,
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(FluentIcons.arrow_left_24_regular),
-                    const SizedBox(width: 4),
-                    Text('file.list.back'.i),
+                    Icon(FluentIcons.arrow_left_24_regular),
+                    SizedBox(width: 4),
+                    Text('上一级'),
                   ],
                 ),
               ),
@@ -592,17 +545,13 @@ class _FileListWidgetState extends State<FileListWidget> {
                                           _buildFileItem(_fileList[index]),
                                     ),
                                   )
-                                : Expanded(
-                                    child: Center(
-                                      child: Text('file.list.empty'.i),
-                                    ),
+                                : const Expanded(
+                                    child: Center(child: Text('空空如也呢...')),
                                   ))
                           : const Expanded(
                               child: Center(child: ProgressRing()),
                             ))
-                    : Expanded(
-                        child: Center(child: Text('file.list.load.failed'.i)),
-                      ),
+                    : const Expanded(child: Center(child: Text('加载失败呜...'))),
               ],
             ),
           ),
@@ -613,13 +562,11 @@ class _FileListWidgetState extends State<FileListWidget> {
 
   @override
   void dispose() {
-    // 清理所有文件对应的 FlyoutController
     for (final controller in _flyoutControllers.values) {
       controller.dispose();
     }
     _flyoutControllers.clear();
 
-    // 清理当前目录的 FlyoutController
     _currentFlyoutController.dispose();
 
     super.dispose();

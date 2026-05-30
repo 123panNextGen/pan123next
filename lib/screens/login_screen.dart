@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:pan123next/pages/login/view.dart';
@@ -22,9 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return NavigationView(
       titleBar: TitleBar(
-        icon: Padding(
+        icon: const Padding(
           padding: EdgeInsetsGeometry.all(2.0),
-          child: Image.asset('assets/image/app_icon.png'),
+          child: Image(image: AssetImage('assets/image/app_icon.png')),
         ),
         title: Text(appName),
         subtitle: const Text('Preview'),
@@ -36,12 +35,12 @@ class _LoginScreenState extends State<LoginScreen> {
         onChanged: (index) => setState(() => topIndex = index),
         displayMode: PaneDisplayMode.top,
         indicator: StickyNavigationIndicator(),
-        header: Text('login.header'.i),
+        header: const Text('登录'),
 
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.password_24_regular),
-            title: Text('login.tab.password'.i),
+            title: const Text('密码登录'),
             body: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -52,8 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           PaneItem(
             icon: const Icon(WindowsIcons.q_r_code),
-            title: Text('login.tab.qrcode'.i),
-            body: Center(child: Text('login.qrcode.placeholder'.i)),
+            title: const Text('扫码登录'),
+            body: const Center(child: Text('二维码登录开发中...')),
           ),
         ],
       ),

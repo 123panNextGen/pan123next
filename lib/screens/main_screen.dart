@@ -1,5 +1,4 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
-import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
@@ -39,9 +38,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return NavigationView(
       titleBar: TitleBar(
-        icon: Padding(
+        icon: const Padding(
           padding: EdgeInsetsGeometry.all(2.0),
-          child: Image.asset('assets/image/app_icon.png'),
+          child: Image(image: AssetImage('assets/image/app_icon.png')),
         ),
         title: Text(appName),
         subtitle: const Text('Preview'),
@@ -53,32 +52,26 @@ class _MainScreenState extends State<MainScreen> {
         onChanged: (index) => setState(() => topIndex = index),
         displayMode: getPaneDisplayMode(),
         indicator: StickyNavigationIndicator(),
-        header: Text('main.header'.i),
+        header: const Text('123云盘'),
 
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.list_24_regular),
-            title: Text('main.tab.files'.i),
-            body: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16.0,
-              ),
+            title: const Text('文件'),
+            body: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
               child: FileListView(),
             ),
           ),
           PaneItem(
             icon: const Icon(FluentIcons.arrow_download_24_regular),
-            title: Text('main.tab.downloads'.i),
+            title: const Text('下载'),
             infoBadge: downloadCount > 0
                 ? InfoBadge(source: Text(downloadCount.toString()))
                 : const SizedBox(),
-            body: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16.0,
-              ),
-              child: const DownloaderPage(),
+            body: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: DownloaderPage(),
             ),
           ),
         ],
@@ -86,13 +79,10 @@ class _MainScreenState extends State<MainScreen> {
         footerItems: [
           PaneItem(
             icon: const Icon(FluentIcons.settings_24_regular),
-            title: Text('main.tab.settings'.i),
-            body: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16.0,
-              ),
-              child: const SettingsView(),
+            title: const Text('设置'),
+            body: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: SettingsView(),
             ),
           ),
         ],

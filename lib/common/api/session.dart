@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:pan123next/common/api/model.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 
 class NetSession {
   static final NetSession _instance = NetSession._internal();
@@ -112,7 +111,7 @@ class NetSession {
             code: response.statusCode ?? 0,
             apiCode: returnCode,
             apiCodeEnum: ApiCode.fail,
-            msg: content['message'] ?? 'api.login.failed'.i,
+            msg: content['message'] ?? '登录失败',
           );
         }
 
@@ -123,7 +122,7 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: returnCode,
           apiCodeEnum: ApiCode.success,
-          msg: content['message'] ?? 'login.success'.i,
+          msg: content['message'] ?? '登录成功',
         );
       }
 
@@ -131,7 +130,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: returnCode,
         apiCodeEnum: ApiCode.fail,
-        msg: 'api.login.failed'.i,
+        msg: '登录失败',
       );
     } catch (e) {
       return ApiReturnModel<void>(
@@ -242,7 +241,7 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: response.data['code'],
           apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? 'api.create.failed'.i,
+          msg: response.data['message'] ?? '创建失败',
         );
       }
 
@@ -250,7 +249,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.success,
-        msg: response.data['message'] ?? 'api.create.success'.i,
+        msg: response.data['message'] ?? '创建成功',
       );
     } catch (e) {
       return ApiReturnModel<void>(
@@ -281,7 +280,7 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: response.data['code'],
           apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? 'api.delete.failed'.i,
+          msg: response.data['message'] ?? '删除失败',
           data: response.data,
         );
       }
@@ -290,7 +289,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.success,
-        msg: response.data['message'] ?? 'api.delete.success'.i,
+        msg: response.data['message'] ?? '删除成功',
         data: response.data,
       );
     } catch (e) {
@@ -340,7 +339,7 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: response.data['code'],
           apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? 'api.get.link.failed'.i,
+          msg: response.data['message'] ?? '获取文件链接失败',
         );
       }
 
@@ -360,7 +359,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: 404,
         apiCodeEnum: ApiCode.fail,
-        msg: 'api.link.not.found'.i,
+        msg: '文件链接不存在',
       );
     } catch (e) {
       return ApiReturnModel<String>(
@@ -384,7 +383,7 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: response.data['code'],
           apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? 'api.rename.failed'.i,
+          msg: response.data['message'] ?? '重命名失败',
         );
       }
 
@@ -392,7 +391,7 @@ class NetSession {
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.success,
-        msg: response.data['message'] ?? 'api.rename.success'.i,
+        msg: response.data['message'] ?? '重命名成功',
       );
     } catch (e) {
       return ApiReturnModel<void>(
