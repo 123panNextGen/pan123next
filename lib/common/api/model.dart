@@ -24,12 +24,12 @@ class UserInfoModel {
 
 enum ApiCode { success, fail }
 
-class ApiReturnModel {
+class ApiReturnModel<T> {
   int code;
   int apiCode;
   ApiCode apiCodeEnum;
   String msg;
-  dynamic data;
+  T? data;
 
   ApiReturnModel({
     required this.code,

@@ -13,15 +13,12 @@ class AppSession extends GetxController {
   void onInit() {
     super.onInit();
     final appDb = Get.find<AppDb>();
-    theme = (appDb.getValue('theme') == 'dark'
-        ? Brightness.dark
-        : Brightness.light)
-        .obs;
+    theme = (appDb.getValue('theme') == 'dark' ? Brightness.dark : Brightness.light).obs;
     accentColor = appDb.getAccentColor().obs;
 
     final savedLocale = Get.find<UserDb>().getValue('set.language') as String?;
-    if (savedLocale != null && savedLocale.isNotEmpty) {
-      final parts = savedLocale.split('_');
+    if (savedLocale?.isNotEmpty == true) {
+      final parts = savedLocale!.split('_');
       if (parts.length == 2) {
         appLocale.value = Locale(parts[0], parts[1]);
         TranslationService.to.switchLocale(savedLocale);

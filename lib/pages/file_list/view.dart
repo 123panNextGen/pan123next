@@ -83,7 +83,7 @@ class _FileListViewState extends State<FileListView> {
         return;
       }
       setState(() {
-        _fileList = response.data.data.infoList;
+        _fileList = response.data?.data.infoList ?? [];
         _isLoadFailed = false;
       });
     } catch (e) {
@@ -539,5 +539,19 @@ class _FileListViewState extends State<FileListView> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    // 清理所有文件对应的 FlyoutController
+    for (final controller in _flyoutControllers.values) {
+      controller.dispose();
+    }
+    _flyoutControllers.clear();
+
+    // 清理当前目录的 FlyoutController
+    _currentFlyoutController.dispose();
+
+    super.dispose();
   }
 }
