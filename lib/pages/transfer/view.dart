@@ -37,8 +37,9 @@ class _DownloaderPageState extends State<DownloaderPage> {
         setState(() => _downloadList = list);
       }
     });
-    _progressSubscription =
-        Get.find<DownloadSession>().progressStream.listen((item) {
+    _progressSubscription = Get.find<DownloadSession>().progressStream.listen((
+      item,
+    ) {
       if (item.status == DownloadStatus.completed &&
           _notifiedCompletedIds.add(item.file.fileId)) {
         if (!mounted) return;
@@ -75,10 +76,20 @@ class _DownloaderPageState extends State<DownloaderPage> {
       if (_filterType == 'transfer.filter.uploading'.i) {
         setState(() => _filterType = 'transfer.filter.all'.i);
       }
-      showInfoBar(context, 'transfer.added.title'.i, 'transfer.added.message'.i, InfoBarSeverity.success);
+      showInfoBar(
+        context,
+        'transfer.added.title'.i,
+        'transfer.added.message'.i,
+        InfoBarSeverity.success,
+      );
     } catch (e) {
       if (!mounted) return;
-      showInfoBar(context, 'transfer.add.failed'.i, e.toString(), InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'transfer.add.failed'.i,
+        e.toString(),
+        InfoBarSeverity.error,
+      );
     }
   }
 
@@ -133,7 +144,10 @@ class _DownloaderPageState extends State<DownloaderPage> {
                       ComboBox(
                         value: _filterType,
                         items: [
-                          ComboBoxItem(value: 'transfer.filter.all'.i, child: Text('transfer.filter.all'.i)),
+                          ComboBoxItem(
+                            value: 'transfer.filter.all'.i,
+                            child: Text('transfer.filter.all'.i),
+                          ),
                           ComboBoxItem(
                             value: 'transfer.filter.downloading'.i,
                             child: Row(
@@ -192,8 +206,8 @@ class _DownloaderPageState extends State<DownloaderPage> {
                           _filterType == 'transfer.filter.uploading'.i
                               ? 'transfer.empty.uploading'.i
                               : _filterType == 'transfer.filter.downloading'.i
-                                  ? 'transfer.empty.downloading'.i
-                                  : 'transfer.empty.all'.i,
+                              ? 'transfer.empty.downloading'.i
+                              : 'transfer.empty.all'.i,
                         ),
                       ),
                     )

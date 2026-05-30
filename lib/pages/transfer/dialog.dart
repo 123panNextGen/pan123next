@@ -80,7 +80,7 @@ class _AddDownloadDialogState extends State<AddDownloadDialog> {
       final baseDir = _savePathController.text.isNotEmpty
           ? (File(_savePathController.text).parent.path)
           : (Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
-              await getDownloadsDirectory().then((dir) => dir?.path ?? ''));
+                await getDownloadsDirectory().then((dir) => dir?.path ?? ''));
 
       final dir = await FilePicker.getDirectoryPath(
         dialogTitle: 'file.list.save.path.title'.i,

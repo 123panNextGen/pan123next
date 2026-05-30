@@ -248,7 +248,10 @@ class _SettingsViewState extends State<SettingsView> {
                             value: 'zh_CN',
                             child: Text('lang.zh.cn'.i),
                           ),
-                          ComboBoxItem(value: 'en_US', child: Text('lang.en.us'.i)),
+                          ComboBoxItem(
+                            value: 'en_US',
+                            child: Text('lang.en.us'.i),
+                          ),
                           ComboBoxItem(
                             value: 'zh_NY',
                             child: Text('lang.zh.ny'.i),

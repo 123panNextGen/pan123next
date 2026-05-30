@@ -13,7 +13,9 @@ class AppSession extends GetxController {
   void onInit() {
     super.onInit();
     final appDb = Get.find<AppDb>();
-    theme = (appDb.getValue('theme') == 'dark' ? Brightness.dark : Brightness.light).obs;
+    theme =
+        (appDb.getValue('theme') == 'dark' ? Brightness.dark : Brightness.light)
+            .obs;
     accentColor = appDb.getAccentColor().obs;
 
     final savedLocale = Get.find<UserDb>().getValue('set.language') as String?;

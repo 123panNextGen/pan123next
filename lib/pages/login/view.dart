@@ -25,7 +25,12 @@ class _LoginInputPageState extends State<LoginInputPage> {
     setState(() => isLogin = true);
 
     if (userNameController.text.isEmpty || passwordController.text.isEmpty) {
-      showInfoBar(context, 'login.failed'.i, 'login.empty.credentials'.i, InfoBarSeverity.error);
+      showInfoBar(
+        context,
+        'login.failed'.i,
+        'login.empty.credentials'.i,
+        InfoBarSeverity.error,
+      );
       setState(() => isLogin = false);
       return;
     }
@@ -41,7 +46,12 @@ class _LoginInputPageState extends State<LoginInputPage> {
       if (value.apiCodeEnum == ApiCode.success) {
         widget.onLoginSuccess();
       } else {
-        showInfoBar(context, 'login.failed'.i, value.msg, InfoBarSeverity.error);
+        showInfoBar(
+          context,
+          'login.failed'.i,
+          value.msg,
+          InfoBarSeverity.error,
+        );
       }
     } finally {
       if (mounted) setState(() => isLogin = false);
@@ -82,7 +92,10 @@ class _LoginInputPageState extends State<LoginInputPage> {
                   controller: userNameController,
                 ),
                 const SizedBox(height: 10),
-                PasswordBox(placeholder: 'login.password.placeholder'.i, controller: passwordController),
+                PasswordBox(
+                  placeholder: 'login.password.placeholder'.i,
+                  controller: passwordController,
+                ),
 
                 const SizedBox(height: 10),
                 Row(
@@ -114,7 +127,10 @@ class _LoginInputPageState extends State<LoginInputPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    FilledButton(onPressed: login, child: Text('login.button'.i)),
+                    FilledButton(
+                      onPressed: login,
+                      child: Text('login.button'.i),
+                    ),
                     SizedBox(width: 5),
                     Button(
                       onPressed: () => Navigator.pop(context),

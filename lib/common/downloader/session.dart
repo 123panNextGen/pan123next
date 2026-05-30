@@ -321,8 +321,11 @@ class DownloadSession extends GetxController {
           item.isExternal &&
           item.downloadUrl == url &&
           item.status != DownloadStatus.completed,
-      orElse: () =>
-          DownloadItemModel(file: _placeholderFile(0, ''), savePath: '', downloadUrl: ''),
+      orElse: () => DownloadItemModel(
+        file: _placeholderFile(0, ''),
+        savePath: '',
+        downloadUrl: '',
+      ),
     );
     if (existing.savePath.isNotEmpty) return existing;
 
@@ -389,8 +392,7 @@ class DownloadSession extends GetxController {
     _notifyProgress(item);
 
     // 续传前用 HEAD 校验远端文件未被替换。
-    final hasProgress =
-        item.segments.isNotEmpty || item.downloadedSize > 0;
+    final hasProgress = item.segments.isNotEmpty || item.downloadedSize > 0;
     if (hasProgress) {
       final ok = await _verifyRemoteFile(item);
       if (!ok) {
@@ -613,7 +615,9 @@ class DownloadSession extends GetxController {
         // 未预期的状态码
         await tempFile.delete();
         item.status = DownloadStatus.failed;
-        item.errorMessage = 'downloader.error.resume.failed'.iParams({'code': '$statusCode'});
+        item.errorMessage = 'downloader.error.resume.failed'.iParams({
+          'code': '$statusCode',
+        });
         _speedTrackers.remove(id);
         _notifyProgress(item);
         await _persistFlush(item);
@@ -625,7 +629,10 @@ class DownloadSession extends GetxController {
       final finalSize = await file.length();
       if (finalSize < item.totalSize) {
         item.status = DownloadStatus.failed;
-        item.errorMessage = 'downloader.error.incomplete'.iParams({'downloaded': '$finalSize', 'total': '${item.totalSize}'});
+        item.errorMessage = 'downloader.error.incomplete'.iParams({
+          'downloaded': '$finalSize',
+          'total': '${item.totalSize}',
+        });
         _speedTrackers.remove(id);
         _notifyProgress(item);
         await _persistFlush(item);
@@ -930,12 +937,16 @@ class DownloadSession extends GetxController {
         options: Options(headers: _headersFor(item)),
       );
 
-      final contentLength =
-          int.tryParse(response.headers.value('content-length') ?? '');
+      final contentLength = int.tryParse(
+        response.headers.value('content-length') ?? '',
+      );
       if (contentLength != null &&
           item.totalSize > 0 &&
           contentLength != item.totalSize) {
-        item.errorMessage = 'downloader.error.remote.size.changed'.iParams({'remote': '$contentLength', 'local': '${item.totalSize}'});
+        item.errorMessage = 'downloader.error.remote.size.changed'.iParams({
+          'remote': '$contentLength',
+          'local': '${item.totalSize}',
+        });
         return false;
       }
 
