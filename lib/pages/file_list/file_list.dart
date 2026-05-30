@@ -484,9 +484,11 @@ class _FileListWidgetState extends State<FileListWidget> {
               ),
               CommandBarButton(
                 icon: const Icon(FluentIcons.select_all_off_24_filled),
-                label: const Text('取消'),
+                label: const Text('取消选择'),
                 tooltip: '取消选择的文件',
-                onPressed: () => setState(() => _selectedFile = null),
+                onPressed: _selectedFile != null
+                    ? () => setState(() => _selectedFile = null)
+                    : null,
               ),
             ],
     );
@@ -497,11 +499,11 @@ class _FileListWidgetState extends State<FileListWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          '文件列表',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
+        // Text(
+        //   widget.isShowTrash ? '回收站' : '文件列表',
+        //   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        // ),
+        // const SizedBox(height: 16),
         Card(
           child: Row(
             children: [
