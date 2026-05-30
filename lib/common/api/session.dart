@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:pan123next/common/api/model.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 
 class NetSession {
   static final NetSession _instance = NetSession._internal();
@@ -48,28 +47,22 @@ class NetSession {
     );
 
     _dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
-        error: true,
-      ),
-    );
-
-    _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
           options.headers.addAll(headers);
           return handler.next(options);
         },
-        onResponse: (response, handler) {
-          return handler.next(response);
-        },
-        onError: (error, handler) {
-          return handler.next(error);
-        },
+      ),
+    );
+
+    _dio.interceptors.add(
+      LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: false,
+        responseBody: false,
+        error: true,
       ),
     );
   }
@@ -99,270 +92,314 @@ class NetSession {
     return headers;
   }
 
-  Future<ApiReturnModel> login() async {
-    int returnCode = 0;
-    Map data = {
-      'type': 1,
-      'passport': _userInformation!.userName,
-      'password': _userInformation!.password,
-    };
+  Future<ApiReturnModel<void>> login() async {
+    try {
+      int returnCode = 0;
+      Map data = {
+        'type': 1,
+        'passport': _userInformation!.userName,
+        'password': _userInformation!.password,
+      };
 
-    final response = await dio.post('/b/api/user/sign_in', data: data);
+      final response = await dio.post('/b/api/user/sign_in', data: data);
 
-    if (response.statusCode == 200) {
-      // 解析 JSON 响应
-      final Map content = response.data;
-      returnCode = content['code'];
-      if (returnCode != 200) {
-        return ApiReturnModel(
+      if (response.statusCode == 200) {
+        final Map content = response.data;
+        returnCode = content['code'];
+        if (returnCode != 200) {
+          return ApiReturnModel<void>(
+            code: response.statusCode ?? 0,
+            apiCode: returnCode,
+            apiCodeEnum: ApiCode.fail,
+            msg: content['message'] ?? '登录失败',
+          );
+        }
+
+        _userInformation!.authorization = 'Bearer ${content['data']['token']}';
+
+        _updateHeaders();
+        return ApiReturnModel<void>(
           code: response.statusCode ?? 0,
           apiCode: returnCode,
-          apiCodeEnum: ApiCode.fail,
-          msg: content['message'] ?? 'api.login.failed'.i,
+          apiCodeEnum: ApiCode.success,
+          msg: content['message'] ?? '登录成功',
         );
       }
 
-      _userInformation!.authorization = 'Bearer ${content['data']['token']}';
-
-      _updateHeaders();
-      return ApiReturnModel(
+      return ApiReturnModel<void>(
         code: response.statusCode ?? 0,
         apiCode: returnCode,
-        apiCodeEnum: ApiCode.success,
-        msg: content['message'] ?? 'login.success'.i,
+        apiCodeEnum: ApiCode.fail,
+        msg: '登录失败',
+      );
+    } catch (e) {
+      return ApiReturnModel<void>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: e.toString(),
       );
     }
-
-    return ApiReturnModel(
-      code: response.statusCode ?? 0,
-      apiCode: returnCode,
-      apiCodeEnum: ApiCode.fail,
-      msg: 'api.login.failed'.i,
-    );
   }
 
-  // Pan API
-
-  Future<ApiReturnModel> getFileList(
+  Future<ApiReturnModel<FileListResponse>> getFileList(
     String fileId, {
     bool reverse = false,
     bool trashed = false,
   }) async {
-    int page = 1;
-    String next = '';
-    List<FileItemModel> allFiles = [];
+    try {
+      int page = 1;
+      String next = '';
+      List<FileItemModel> allFiles = [];
 
-    while (next != '-1') {
-      final response = await dio.get(
-        '/api/file/list/new',
-        queryParameters: {
-          'driveId': '0',
-          'parentFileId': fileId,
-          'limit': 20,
-          'page': page,
-          'orderBy': 'file_name',
-          'orderDirection': 'desc',
-          'trashed': trashed,
-        },
-      );
-
-      final fileListResponse = FileListResponse.fromJson(response.data);
-      allFiles.addAll(fileListResponse.data.infoList);
-
-      if (response.data['code'] == 401) {
-        return ApiReturnModel(
-          code: response.statusCode ?? 0,
-          apiCode: 401,
-          apiCodeEnum: ApiCode.fail,
-          msg: '登录过期，请重新登录',
+      while (next != '-1') {
+        final response = await dio.get(
+          '/api/file/list/new',
+          queryParameters: {
+            'driveId': '0',
+            'parentFileId': fileId,
+            'limit': 20,
+            'page': page,
+            'orderBy': 'file_name',
+            'orderDirection': 'desc',
+            'trashed': trashed,
+          },
         );
+
+        final fileListResponse = FileListResponse.fromJson(response.data);
+        allFiles.addAll(fileListResponse.data.infoList);
+
+        if (response.data['code'] == 401) {
+          return ApiReturnModel<FileListResponse>(
+            code: response.statusCode ?? 0,
+            apiCode: 401,
+            apiCodeEnum: ApiCode.fail,
+            msg: '登录过期，请重新登录',
+          );
+        }
+
+        next = fileListResponse.data.next;
+        if (next != '-1') {
+          page++;
+        }
       }
 
-      next = fileListResponse.data.next;
-      if (next != '-1') {
-        page++;
-      }
-    }
-
-    return ApiReturnModel(
-      code: 200,
-      apiCode: 200,
-      apiCodeEnum: ApiCode.success,
-      msg: 'ok',
-      data: FileListResponse(
-        code: 0,
-        message: 'ok',
-        data: FileListData(
-          next: '-1',
-          len: allFiles.length,
-          isFirst: true,
-          total: allFiles.length,
-          infoList: reverse ? allFiles.reversed.toList() : allFiles,
+      return ApiReturnModel<FileListResponse>(
+        code: 200,
+        apiCode: 200,
+        apiCodeEnum: ApiCode.success,
+        msg: 'ok',
+        data: FileListResponse(
+          code: 0,
+          message: 'ok',
+          data: FileListData(
+            next: '-1',
+            len: allFiles.length,
+            isFirst: true,
+            total: allFiles.length,
+            infoList: reverse ? allFiles.reversed.toList() : allFiles,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      return ApiReturnModel<FileListResponse>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: e.toString(),
+      );
+    }
   }
 
-  Future<ApiReturnModel> getTrashList(
+  Future<ApiReturnModel<FileListResponse>> getTrashList(
     String fileId, {
     bool reverse = false,
   }) async {
     return await getFileList(fileId, trashed: true, reverse: reverse);
   }
 
-  Future<ApiReturnModel> createDir(String fileName, String fileId) async {
-    final response = await dio.post(
-      '/a/api/file/upload_request',
-      data: {
-        'driveId': '0',
-        'etag': '',
-        'fileName': fileName,
-        'parentFileId': fileId,
-        'type': 1,
-        'size': 0,
-        'duplicate': 1,
-        'NotReuse': true,
-        'event': 'newCreateFolder',
-        'operateType': 1,
-      },
-    );
-
-    if (response.data['code'] != 0) {
-      return ApiReturnModel(
-        code: response.statusCode ?? 0,
-        apiCode: response.data['code'],
-        apiCodeEnum: ApiCode.fail,
-        msg: response.data['message'] ?? 'api.create.failed'.i,
-      );
-    }
-
-    return ApiReturnModel(
-      code: response.statusCode ?? 0,
-      apiCode: response.data['code'],
-      apiCodeEnum: ApiCode.success,
-      msg: response.data['message'] ?? 'api.create.success'.i,
-    );
-  }
-
-  Future<ApiReturnModel> trashFile(
-    FileItemModel file, [
-    bool operation = true,
-  ]) async {
-    final response = await dio.post(
-      '/a/api/file/trash',
-      data: {
-        'driveId': '0',
-        'fileTrashInfoList': file.toJson(),
-        'operation': operation,
-      },
-    );
-
-    if (response.data['code'] != 0) {
-      return ApiReturnModel(
-        code: response.statusCode ?? 0,
-        apiCode: response.data['code'],
-        apiCodeEnum: ApiCode.fail,
-        msg: response.data['message'] ?? 'api.delete.failed'.i,
-        data: response.data,
-      );
-    }
-
-    return ApiReturnModel(
-      code: response.statusCode ?? 0,
-      apiCode: response.data['code'],
-      apiCodeEnum: ApiCode.success,
-      msg: response.data['message'] ?? 'api.delete.success'.i,
-      data: response.data,
-    );
-  }
-
-  Future<ApiReturnModel> getFileLink(FileItemModel file) async {
-    Response response;
-
-    if (file.isFolder) {
-      response = await dio.post(
-        '/a/api/file/batch_download_info',
-        data: {
-          'fileIdList': [
-            {'fileId': file.fileId},
-          ],
-        },
-      );
-    } else {
-      response = await dio.post(
-        '/a/api/file/download_info',
+  Future<ApiReturnModel<void>> createDir(String fileName, String fileId) async {
+    try {
+      final response = await dio.post(
+        '/a/api/file/upload_request',
         data: {
           'driveId': '0',
-          'etag': file.etag,
-          'fileId': file.fileId,
-          's3keyFlag': file.s3keyFlag,
-          'type': file.type,
-          'fileName': file.fileName,
-          'size': file.size,
+          'etag': '',
+          'fileName': fileName,
+          'parentFileId': fileId,
+          'type': 1,
+          'size': 0,
+          'duplicate': 1,
+          'NotReuse': true,
+          'event': 'newCreateFolder',
+          'operateType': 1,
         },
       );
-    }
 
-    if (response.data['code'] != 0) {
-      return ApiReturnModel(
-        code: response.statusCode ?? 0,
-        apiCode: response.data['code'],
-        apiCodeEnum: ApiCode.fail,
-        msg: response.data['message'] ?? 'api.get.link.failed'.i,
-      );
-    }
-
-    String downloadUrl = response.data['data']['DownloadUrl'] ?? '';
-
-    if (downloadUrl.isNotEmpty) {
-      return ApiReturnModel(
-        code: response.statusCode ?? 0,
-        apiCode: 0,
-        apiCodeEnum: ApiCode.success,
-        msg: '',
-        data: downloadUrl,
-      );
-    }
-
-    return ApiReturnModel(
-      code: response.statusCode ?? 0,
-      apiCode: 404,
-      apiCodeEnum: ApiCode.fail,
-      msg: 'api.link.not.found'.i,
-    );
-  }
-
-  Future<ApiReturnModel> renameFile(String fileId, String newName) {
-    return dio.post(
-      '/a/api/file/rename',
-      data: {
-        'driveId': '0',
-        'fileId': fileId,
-        'fileName': newName,
-      },
-    ).then((response) {
       if (response.data['code'] != 0) {
-        return ApiReturnModel(
+        return ApiReturnModel<void>(
           code: response.statusCode ?? 0,
           apiCode: response.data['code'],
           apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? 'api.rename.failed'.i,
+          msg: response.data['message'] ?? '创建失败',
         );
       }
 
-      return ApiReturnModel(
+      return ApiReturnModel<void>(
         code: response.statusCode ?? 0,
         apiCode: response.data['code'],
         apiCodeEnum: ApiCode.success,
-        msg: response.data['message'] ?? 'api.rename.success'.i,
+        msg: response.data['message'] ?? '创建成功',
       );
-    }).catchError((error) {
-      return ApiReturnModel(
-        code: error.response?.statusCode ?? 0,
-        apiCode: error.response?.data['code'] ?? 0,
+    } catch (e) {
+      return ApiReturnModel<void>(
+        code: 0,
+        apiCode: -1,
         apiCodeEnum: ApiCode.fail,
-        msg: error.response?.data['message'] ?? 'api.rename.failed'.i,
+        msg: e.toString(),
       );
-    });
+    }
+  }
+
+  Future<ApiReturnModel<Map>> trashFile(
+    FileItemModel file, [
+    bool operation = true,
+  ]) async {
+    try {
+      final response = await dio.post(
+        '/a/api/file/trash',
+        data: {
+          'driveId': '0',
+          'fileTrashInfoList': file.toJson(),
+          'operation': operation,
+        },
+      );
+
+      if (response.data['code'] != 0) {
+        return ApiReturnModel<Map>(
+          code: response.statusCode ?? 0,
+          apiCode: response.data['code'],
+          apiCodeEnum: ApiCode.fail,
+          msg: response.data['message'] ?? '删除失败',
+          data: response.data,
+        );
+      }
+
+      return ApiReturnModel<Map>(
+        code: response.statusCode ?? 0,
+        apiCode: response.data['code'],
+        apiCodeEnum: ApiCode.success,
+        msg: response.data['message'] ?? '删除成功',
+        data: response.data,
+      );
+    } catch (e) {
+      return ApiReturnModel<Map>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: e.toString(),
+      );
+    }
+  }
+
+  Future<ApiReturnModel<Map>> restoreFile(FileItemModel file) async {
+    return await trashFile(file, false);
+  }
+
+  Future<ApiReturnModel<String>> getFileLink(FileItemModel file) async {
+    try {
+      Response response;
+
+      if (file.isFolder) {
+        response = await dio.post(
+          '/a/api/file/batch_download_info',
+          data: {
+            'fileIdList': [
+              {'fileId': file.fileId},
+            ],
+          },
+        );
+      } else {
+        response = await dio.post(
+          '/a/api/file/download_info',
+          data: {
+            'driveId': '0',
+            'etag': file.etag,
+            'fileId': file.fileId,
+            's3keyFlag': file.s3keyFlag,
+            'type': file.type,
+            'fileName': file.fileName,
+            'size': file.size,
+          },
+        );
+      }
+
+      if (response.data['code'] != 0) {
+        return ApiReturnModel<String>(
+          code: response.statusCode ?? 0,
+          apiCode: response.data['code'],
+          apiCodeEnum: ApiCode.fail,
+          msg: response.data['message'] ?? '获取文件链接失败',
+        );
+      }
+
+      String downloadUrl = response.data['data']['DownloadUrl'] ?? '';
+
+      if (downloadUrl.isNotEmpty) {
+        return ApiReturnModel<String>(
+          code: response.statusCode ?? 0,
+          apiCode: 0,
+          apiCodeEnum: ApiCode.success,
+          msg: '',
+          data: downloadUrl,
+        );
+      }
+
+      return ApiReturnModel<String>(
+        code: response.statusCode ?? 0,
+        apiCode: 404,
+        apiCodeEnum: ApiCode.fail,
+        msg: '文件链接不存在',
+      );
+    } catch (e) {
+      return ApiReturnModel<String>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: e.toString(),
+      );
+    }
+  }
+
+  Future<ApiReturnModel<void>> renameFile(String fileId, String newName) async {
+    try {
+      final response = await dio.post(
+        '/a/api/file/rename',
+        data: {'driveId': '0', 'fileId': fileId, 'fileName': newName},
+      );
+
+      if (response.data['code'] != 0) {
+        return ApiReturnModel<void>(
+          code: response.statusCode ?? 0,
+          apiCode: response.data['code'],
+          apiCodeEnum: ApiCode.fail,
+          msg: response.data['message'] ?? '重命名失败',
+        );
+      }
+
+      return ApiReturnModel<void>(
+        code: response.statusCode ?? 0,
+        apiCode: response.data['code'],
+        apiCodeEnum: ApiCode.success,
+        msg: response.data['message'] ?? '重命名成功',
+      );
+    } catch (e) {
+      return ApiReturnModel<void>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: e.toString(),
+      );
+    }
   }
 }

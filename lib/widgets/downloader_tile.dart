@@ -23,8 +23,9 @@ class _DownloaderTileState extends State<DownloaderTile> {
   @override
   void initState() {
     super.initState();
-    _progressSubscription =
-        Get.find<DownloadSession>().progressStream.listen((item) {
+    _progressSubscription = Get.find<DownloadSession>().progressStream.listen((
+      item,
+    ) {
       if (item.file.fileId == widget.file.file.fileId && mounted) {
         setState(() {});
       }

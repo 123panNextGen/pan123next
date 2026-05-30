@@ -2,7 +2,6 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 
 class AppSession extends GetxController {
   late final Rx<Brightness> theme;
@@ -13,18 +12,17 @@ class AppSession extends GetxController {
   void onInit() {
     super.onInit();
     final appDb = Get.find<AppDb>();
-    theme = (appDb.getValue('theme') == 'dark'
-        ? Brightness.dark
-        : Brightness.light)
-        .obs;
+    theme =
+        (appDb.getValue('theme') == 'dark' ? Brightness.dark : Brightness.light)
+            .obs;
     accentColor = appDb.getAccentColor().obs;
 
     final savedLocale = Get.find<UserDb>().getValue('set.language') as String?;
-    if (savedLocale != null && savedLocale.isNotEmpty) {
-      final parts = savedLocale.split('_');
+    if (savedLocale?.isNotEmpty == true) {
+      final parts = savedLocale!.split('_');
       if (parts.length == 2) {
         appLocale.value = Locale(parts[0], parts[1]);
-        TranslationService.to.switchLocale(savedLocale);
+        Get.locale = appLocale.value;
       }
     }
     Get.locale = appLocale.value;
@@ -49,7 +47,6 @@ class AppSession extends GetxController {
     final locale = Locale(parts[0], parts[1]);
     appLocale.value = locale;
     Get.locale = locale;
-    TranslationService.to.switchLocale(languageTag);
     Get.find<UserDb>().setValue('set.language', languageTag, 'string');
   }
 

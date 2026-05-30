@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/data/downloader.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 import 'model.dart';
 
 /// 单分片最多重试次数（不含首次尝试）。
@@ -321,8 +320,11 @@ class DownloadSession extends GetxController {
           item.isExternal &&
           item.downloadUrl == url &&
           item.status != DownloadStatus.completed,
-      orElse: () =>
-          DownloadItemModel(file: _placeholderFile(0, ''), savePath: '', downloadUrl: ''),
+      orElse: () => DownloadItemModel(
+        file: _placeholderFile(0, ''),
+        savePath: '',
+        downloadUrl: '',
+      ),
     );
     if (existing.savePath.isNotEmpty) return existing;
 
@@ -389,13 +391,12 @@ class DownloadSession extends GetxController {
     _notifyProgress(item);
 
     // 续传前用 HEAD 校验远端文件未被替换。
-    final hasProgress =
-        item.segments.isNotEmpty || item.downloadedSize > 0;
+    final hasProgress = item.segments.isNotEmpty || item.downloadedSize > 0;
     if (hasProgress) {
       final ok = await _verifyRemoteFile(item);
       if (!ok) {
         item.status = DownloadStatus.failed;
-        item.errorMessage ??= 'downloader.error.remote.changed'.i;
+        item.errorMessage ??= '远端文件已变更，请重新下载';
         _notifyProgress(item);
         await _persistFlush(item);
         _notifyListChange();
@@ -469,7 +470,7 @@ class DownloadSession extends GetxController {
 
       if (item.totalSize <= 0) {
         item.status = DownloadStatus.failed;
-        item.errorMessage = 'downloader.error.no.size'.i;
+        item.errorMessage = '无法获取文件大小';
         _notifyProgress(item);
         await _persistFlush(item);
         _notifyListChange();
@@ -613,7 +614,7 @@ class DownloadSession extends GetxController {
         // 未预期的状态码
         await tempFile.delete();
         item.status = DownloadStatus.failed;
-        item.errorMessage = 'downloader.error.resume.failed'.iParams({'code': '$statusCode'});
+        item.errorMessage = '续传失败，状态码: $statusCode';
         _speedTrackers.remove(id);
         _notifyProgress(item);
         await _persistFlush(item);
@@ -625,7 +626,7 @@ class DownloadSession extends GetxController {
       final finalSize = await file.length();
       if (finalSize < item.totalSize) {
         item.status = DownloadStatus.failed;
-        item.errorMessage = 'downloader.error.incomplete'.iParams({'downloaded': '$finalSize', 'total': '${item.totalSize}'});
+        item.errorMessage = '下载不完整，已下载: $finalSize 字节，总计: ${item.totalSize} 字节';
         _speedTrackers.remove(id);
         _notifyProgress(item);
         await _persistFlush(item);
@@ -930,12 +931,14 @@ class DownloadSession extends GetxController {
         options: Options(headers: _headersFor(item)),
       );
 
-      final contentLength =
-          int.tryParse(response.headers.value('content-length') ?? '');
+      final contentLength = int.tryParse(
+        response.headers.value('content-length') ?? '',
+      );
       if (contentLength != null &&
           item.totalSize > 0 &&
           contentLength != item.totalSize) {
-        item.errorMessage = 'downloader.error.remote.size.changed'.iParams({'remote': '$contentLength', 'local': '${item.totalSize}'});
+        item.errorMessage =
+            '远端文件大小已变更，远端: $contentLength 字节，本地: ${item.totalSize} 字节';
         return false;
       }
 
@@ -945,7 +948,7 @@ class DownloadSession extends GetxController {
           remoteEtag != null &&
           remoteEtag.isNotEmpty &&
           remoteEtag != item.etag) {
-        item.errorMessage = 'downloader.error.remote.etag.changed'.i;
+        item.errorMessage = '远端文件已变更(ETag不匹配)';
         return false;
       }
 

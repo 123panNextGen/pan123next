@@ -71,9 +71,7 @@ def get_latest_tag() -> Optional[str]:
 _SEP = "\x1f"
 
 
-def get_commits_between(
-    from_ref: str, to_ref: str
-) -> List[Tuple[str, str, str]]:
+def get_commits_between(from_ref: str, to_ref: str) -> List[Tuple[str, str, str]]:
     raw = _git(
         "log",
         f"--format=%h{_SEP}%an{_SEP}%s",

@@ -1,20 +1,19 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:pan123next/common/i18n/i18n.dart';
 import 'package:pan123next/common/data/base_db.dart';
 
 List<Map> get themes => [
-  {'value': 'dark', 'label': 'theme.dark'.i, 'result': Brightness.dark},
-  {'value': 'light', 'label': 'theme.light'.i, 'result': Brightness.light},
+  {'value': 'dark', 'label': '深色', 'result': Brightness.dark},
+  {'value': 'light', 'label': '浅色', 'result': Brightness.light},
 ];
 
 List<Map> get accentColors => [
-  {'value': 'purple', 'label': 'color.purple'.i, 'result': Colors.purple},
-  {'value': 'blue', 'label': 'color.blue'.i, 'result': Colors.blue},
-  {'value': 'yellow', 'label': 'color.yellow'.i, 'result': Colors.yellow},
-  {'value': 'red', 'label': 'color.red'.i, 'result': Colors.red},
-  {'value': 'green', 'label': 'color.green'.i, 'result': Colors.green},
-  {'value': 'orange', 'label': 'color.orange'.i, 'result': Colors.orange},
-  {'value': 'teal', 'label': 'color.teal'.i, 'result': Colors.teal},
+  {'value': 'purple', 'label': '紫色', 'result': Colors.purple},
+  {'value': 'blue', 'label': '蓝色', 'result': Colors.blue},
+  {'value': 'yellow', 'label': '黄色', 'result': Colors.yellow},
+  {'value': 'red', 'label': '红色', 'result': Colors.red},
+  {'value': 'green', 'label': '绿色', 'result': Colors.green},
+  {'value': 'orange', 'label': '橙色', 'result': Colors.orange},
+  {'value': 'teal', 'label': '青色', 'result': Colors.teal},
 ];
 
 class AppDb extends BaseDb {
