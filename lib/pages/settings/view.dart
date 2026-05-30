@@ -56,10 +56,7 @@ class _SettingsViewState extends State<SettingsView> {
                     children: [
                       const Icon(FluentIcons.dark_theme_24_regular),
                       const SizedBox(width: 8.0),
-                      const Text(
-                        '外观',
-                        style: TextStyle(fontSize: 16),
-                      ),
+                      const Text('外观', style: TextStyle(fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 16.0),
@@ -138,10 +135,7 @@ class _SettingsViewState extends State<SettingsView> {
                     children: [
                       const Icon(FluentIcons.arrow_download_24_regular),
                       const SizedBox(width: 8.0),
-                      const Text(
-                        '下载',
-                        style: TextStyle(fontSize: 16),
-                      ),
+                      const Text('下载', style: TextStyle(fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 16.0),
@@ -195,9 +189,7 @@ class _SettingsViewState extends State<SettingsView> {
                               )
                             : const Row(
                                 children: [
-                                  Icon(
-                                    FluentIcons.folder_open_24_regular,
-                                  ),
+                                  Icon(FluentIcons.folder_open_24_regular),
                                   SizedBox(width: 6),
                                   Text('选择'),
                                 ],
@@ -228,64 +220,13 @@ class _SettingsViewState extends State<SettingsView> {
                 children: [
                   Row(
                     children: [
-                      const Icon(FluentIcons.local_language_24_regular),
-                      const SizedBox(width: 8.0),
-                      const Text(
-                        '语言',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    children: [
-                      const Expanded(child: Text('界面语言')),
-                      ComboBox<String>(
-                        value: language,
-                        items: const [
-                          ComboBoxItem(
-                            value: 'zh_CN',
-                            child: Text('简体中文'),
-                          ),
-                          ComboBoxItem(
-                            value: 'en_US',
-                            child: Text('English'),
-                          ),
-                          ComboBoxItem(
-                            value: 'zh_NY',
-                            child: Text('中文(繁体)'),
-                          ),
-                        ],
-                        onChanged: (v) {
-                          if (v != null) {
-                            language = v;
-                            setState(() {});
-                            appSession.updateLocale(v);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16.0),
-            Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
                       const Icon(FluentIcons.info_24_regular),
                       const SizedBox(width: 8.0),
                       const Text('关于'),
                     ],
                   ),
                   const SizedBox(height: 8.0),
-                  Text(
-                    '当前版本：$version',
-                  ),
+                  Text('当前版本：$version'),
                 ],
               ),
             ),
