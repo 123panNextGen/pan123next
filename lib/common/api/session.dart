@@ -9,7 +9,6 @@ class NetSession {
 
   NetSession._internal() {
     _initDio();
-    _setupInterceptors();
   }
 
   late final Dio _dio;
@@ -49,6 +48,15 @@ class NetSession {
     );
 
     _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          options.headers.addAll(headers);
+          return handler.next(options);
+        },
+      ),
+    );
+
+    _dio.interceptors.add(
       LogInterceptor(
         request: true,
         requestHeader: true,
@@ -56,23 +64,6 @@ class NetSession {
         responseHeader: false,
         responseBody: false,
         error: true,
-      ),
-    );
-  }
-
-  void _setupInterceptors() {
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          options.headers.addAll(headers);
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          return handler.next(response);
-        },
-        onError: (error, handler) {
-          return handler.next(error);
-        },
       ),
     );
   }
@@ -310,6 +301,10 @@ class NetSession {
         msg: e.toString(),
       );
     }
+  }
+
+  Future<ApiReturnModel<Map>> restoreFile(FileItemModel file) async {
+    return await trashFile(file, false);
   }
 
   Future<ApiReturnModel<String>> getFileLink(FileItemModel file) async {

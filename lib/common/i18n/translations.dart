@@ -82,6 +82,11 @@ class AppTranslations extends Translations {
     'file.list.save.path.title': '选择保存路径:',
     'file.list.rename': '重命名',
     'file.list.rename.tooltip': '重命名选中文件',
+    'file.list.restore': '恢复',
+    'file.list.restore.tooltip': '恢复回收站中的选中文件',
+    'file.list.restore.success': '已成功恢复文件',
+    'file.list.cancel': '取消',
+    'file.list.cancel.tooltip': '取消选择的文件',
 
     'dialog.new.folder.title': '新建文件夹',
     'dialog.new.folder.label': '在当前目录下新建文件夹',
