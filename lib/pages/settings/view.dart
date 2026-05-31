@@ -20,6 +20,7 @@ class _SettingsViewState extends State<SettingsView> {
   late String accentColor;
   late bool askDownload;
   late String language;
+  late TextEditingController _downloadPathController;
 
   bool _picking = false;
 
@@ -30,6 +31,15 @@ class _SettingsViewState extends State<SettingsView> {
     accentColor = appSession.getAccentColor();
     askDownload = Get.find<UserDb>().getValue('set.askDownload') ?? true;
     language = Get.find<UserDb>().getValue('set.language') ?? 'zh_CN';
+    _downloadPathController = TextEditingController(
+      text: Get.find<UserDb>().getValue('set.defaultDownloadPath') ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _downloadPathController.dispose();
+    super.dispose();
   }
 
   @override
@@ -162,13 +172,7 @@ class _SettingsViewState extends State<SettingsView> {
                       const Expanded(child: Text('默认下载路径')),
                       Expanded(
                         child: TextBox(
-                          controller: TextEditingController(
-                            text:
-                                Get.find<UserDb>().getValue(
-                                  'set.defaultDownloadPath',
-                                ) ??
-                                '',
-                          ),
+                          controller: _downloadPathController,
                           placeholder: '请选择默认下载路径',
                           onChanged: (v) {
                             Get.find<UserDb>().setValue(
