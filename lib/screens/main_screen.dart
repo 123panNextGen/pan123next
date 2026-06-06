@@ -43,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
           child: Image(image: AssetImage('assets/image/app_icon.png')),
         ),
         title: Text(appName),
-        subtitle: const Text('Preview'),
+        subtitle: const Text('Next'),
         captionControls: const WindowButtons(),
         onDragStarted: () => windowManager.startDragging(),
       ),
