@@ -85,8 +85,7 @@ class _SettingsViewState extends State<SettingsView> {
                             .toList(),
                         onChanged: (v) {
                           if (v != null) {
-                            theme = v;
-                            setState(() {});
+                            setState(() => theme = v);
                             appSession.updateTheme(
                               v == 'dark' ? Brightness.dark : Brightness.light,
                             );
@@ -124,8 +123,7 @@ class _SettingsViewState extends State<SettingsView> {
                             .toList(),
                         onChanged: (v) {
                           if (v != null) {
-                            accentColor = v;
-                            setState(() {});
+                            setState(() => accentColor = v);
                             appSession.updateAccentColor(v);
                           }
                         },

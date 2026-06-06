@@ -28,10 +28,30 @@ class _FileListWidgetState extends State<FileListWidget> {
   bool _isLoading = false;
   bool _isLoadFailed = false;
 
+  Widget getRootItem() {
+    return widget.isShowTrash
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(FluentIcons.delete_24_regular),
+              SizedBox(width: 4),
+              Text('回收站'),
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(FluentIcons.home_24_regular),
+              SizedBox(width: 4),
+              Text('根目录'),
+            ],
+          );
+  }
+
   final List<String> _breadItemIds = ['0'];
   final List<FileItemModel> _breadItemModels = [];
-  final _breadItems = <BreadcrumbItem<int>>[
-    BreadcrumbItem(label: Text('根目录'), value: 0),
+  late final _breadItems = <BreadcrumbItem<int>>[
+    BreadcrumbItem(label: getRootItem(), value: 0),
   ];
 
   final commandBarKey = GlobalKey<CommandBarState>();
