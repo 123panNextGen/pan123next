@@ -372,15 +372,14 @@ class _FileListWidgetState extends State<FileListWidget> {
   }
 
   Widget _buildFileItem(FileItemModel file) {
+    String size = formatSize(file.size);
+    size = size == '0 B' ? '啥也木有' : size;
+
     return ListTile.selectable(
       leading: getFileIcon(file),
 
       title: Text(file.fileName),
-      subtitle: Text(
-        file.isFolder
-            ? '文件夹 - ${formatSize(file.size)}'
-            : formatSize(file.size),
-      ),
+      subtitle: Text(file.isFolder ? '文件夹 - $size' : size),
       trailing: FlyoutTarget(
         controller: _getFlyoutController(file.fileId),
         child: IconButton(

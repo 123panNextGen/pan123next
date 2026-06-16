@@ -4,30 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: '版本号 (如: 1.0.0)'
-        required: false
-        default: '1.0.0'
-      preview:
-        description: '是否为预览版本'
-        required: false
-        type: boolean
-        default: false
-      release_title:
-        description: 'Release 标题'
-        required: false
-        default: 'Pan123 Next Release Version'
-      release_body:
-        description: 'Release 描述内容（手动触发时使用，将作为更新说明注入模板）'
-        required: false
-        default: ''
-      auto_generate:
-        description: '是否使用 doc/ChangeLog.md 自动生成更新内容'
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: write
@@ -38,7 +14,7 @@ jobs:
   # 校验：tag 推送场景下，必须保证 tag 指向的 commit 已合并入 main
   # ---------------------------------------------------------------------------
   verify-tag:
-    name: Verify tag on main
+    name: Verify tag on main and analyze project
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -60,6 +36,24 @@ jobs:
           else
             echo "❌ Tag $GITHUB_REF_NAME ($TAG_COMMIT) is not reachable from origin/main ($MAIN_COMMIT)."
             echo "Only tags pointing to commits on the main branch are eligible for release."
+            exit 1
+          fi
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze project
+        run: |
+          set -euo pipefail
+          if flutter analyze; then
+            echo "✅ Project analysis passed."
+          else
+            echo "❌ Project analysis failed. Please fix the errors before creating a release."
             exit 1
           fi
 
