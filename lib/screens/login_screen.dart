@@ -29,6 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
         subtitle: const Text('Preview'),
         captionControls: const WindowButtons(),
         onDragStarted: () => windowManager.startDragging(),
+        onDoubleTap: () async {
+          if (await windowManager.isMaximized()) {
+            await windowManager.unmaximize();
+          } else {
+            await windowManager.maximize();
+          }
+        },
       ),
       pane: NavigationPane(
         selected: topIndex,

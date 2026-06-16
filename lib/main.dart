@@ -15,7 +15,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (isDesktop()) {
-    WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(

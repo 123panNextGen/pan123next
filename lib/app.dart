@@ -30,6 +30,7 @@ class _MainAppState extends State<MainApp> {
           theme: FluentThemeData(
             brightness: appSession.theme.value,
             accentColor: appSession.accentColor.value,
+            fontFamily: 'MiSans',
           ),
           home: SafeArea(
             child: isLoggedIn

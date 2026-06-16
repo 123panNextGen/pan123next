@@ -46,6 +46,13 @@ class _MainScreenState extends State<MainScreen> {
         subtitle: const Text('Next'),
         captionControls: const WindowButtons(),
         onDragStarted: () => windowManager.startDragging(),
+        onDoubleTap: () async {
+          if (await windowManager.isMaximized()) {
+            await windowManager.unmaximize();
+          } else {
+            await windowManager.maximize();
+          }
+        },
       ),
       pane: NavigationPane(
         selected: topIndex,

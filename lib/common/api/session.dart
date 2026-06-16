@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/const.dart';
 
 class NetSession {
   static final NetSession _instance = NetSession._internal();
@@ -37,7 +38,7 @@ class NetSession {
   void _initDio() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: 'https://www.123pan.com',
+        baseUrl: apiBaseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 30),
         sendTimeout: const Duration(seconds: 10),

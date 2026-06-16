@@ -54,3 +54,15 @@ flutter:
         - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-BoldItalic.ttf
           weight: 700
           style: italic
+    
+    - family: MiSans
+      fonts:
+        - asset: assets/fonts/MiSans/MiSans-Normal.ttf
+          weight: 400
+          style: normal
+        - asset: assets/fonts/MiSans/MiSans-Medium.ttf
+          weight: 500
+          style: normal
+        - asset: assets/fonts/MiSans/MiSans-Bold.ttf
+          weight: 700
+          style: normal
