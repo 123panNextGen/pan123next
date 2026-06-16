@@ -16,6 +16,7 @@ dependencies:
   window_manager: ^0.5.1
   fluent_ui: ^4.15.1
 
+  flutter_secure_storage: ^10.3.1
   shared_preferences: ^2.5.5
   uuid: ^4.5.3
 

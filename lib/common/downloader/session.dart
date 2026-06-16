@@ -231,7 +231,7 @@ class DownloadSession extends GetxController {
     final listJson = _downloadList
         .map((item) => jsonEncode(item.toJson()))
         .toList();
-    db.prefs.setStringList('downloader.downloadList', listJson);
+    db.downloadList = listJson;
   }
 
   /// 节流：合并 [_kPersistThrottle] 内的多次写入为一次。
