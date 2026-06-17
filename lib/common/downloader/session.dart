@@ -69,11 +69,11 @@ class DownloadSession extends GetxController {
   Future<String> _resolveDataDir() async {
     if (Platform.isAndroid || Platform.isIOS) return '';
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await getApplicationSupportDirectory();
       return dir.path;
     } catch (_) {
       try {
-        final dir = await getApplicationSupportDirectory();
+        final dir = await getApplicationDocumentsDirectory();
         return dir.path;
       } catch (_) {
         return '';
