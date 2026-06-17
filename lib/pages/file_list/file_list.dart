@@ -28,10 +28,30 @@ class _FileListWidgetState extends State<FileListWidget> {
   bool _isLoading = false;
   bool _isLoadFailed = false;
 
+  Widget getRootItem() {
+    return widget.isShowTrash
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(FluentIcons.delete_24_regular),
+              SizedBox(width: 4),
+              Text('回收站'),
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(FluentIcons.home_24_regular),
+              SizedBox(width: 4),
+              Text('根目录'),
+            ],
+          );
+  }
+
   final List<String> _breadItemIds = ['0'];
   final List<FileItemModel> _breadItemModels = [];
-  final _breadItems = <BreadcrumbItem<int>>[
-    BreadcrumbItem(label: Text('根目录'), value: 0),
+  late final _breadItems = <BreadcrumbItem<int>>[
+    BreadcrumbItem(label: getRootItem(), value: 0),
   ];
 
   final commandBarKey = GlobalKey<CommandBarState>();
@@ -271,17 +291,24 @@ class _FileListWidgetState extends State<FileListWidget> {
       return;
     }
 
+    final downloadUrl = result.data;
+    if (downloadUrl == null || downloadUrl.isEmpty) {
+      if (!mounted) return;
+      showInfoBar(context, '错误', '获取下载链接失败', InfoBarSeverity.error);
+      return;
+    }
+
     await Get.find<DownloadSession>().addDownload(
       file: file,
-      downloadUrl: result.data,
+      downloadUrl: downloadUrl,
       savePath: savePath,
     );
 
     if (!mounted) return;
     showInfoBar(
       context,
-      '成功',
-      '已成功下载: ${file.fileName}',
+      '已添加',
+      '下载任务已添加: ${file.fileName}',
       InfoBarSeverity.success,
     );
   }
@@ -352,15 +379,14 @@ class _FileListWidgetState extends State<FileListWidget> {
   }
 
   Widget _buildFileItem(FileItemModel file) {
+    String size = formatSize(file.size);
+    size = size == '0 B' ? '啥也木有' : size;
+
     return ListTile.selectable(
       leading: getFileIcon(file),
 
       title: Text(file.fileName),
-      subtitle: Text(
-        file.isFolder
-            ? '文件夹 - ${formatSize(file.size)}'
-            : formatSize(file.size),
-      ),
+      subtitle: Text(file.isFolder ? '文件夹 - $size' : size),
       trailing: FlyoutTarget(
         controller: _getFlyoutController(file.fileId),
         child: IconButton(

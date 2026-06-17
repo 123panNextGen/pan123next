@@ -6,6 +6,7 @@ import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/format.dart';
+import 'package:path/path.dart' as p;
 
 class DownloaderTile extends StatefulWidget {
   const DownloaderTile({super.key, required this.file});
@@ -41,6 +42,7 @@ class _DownloaderTileState extends State<DownloaderTile> {
   @override
   Widget build(BuildContext context) {
     final file = widget.file;
+    final progressValue = file.progress.isFinite ? (file.progress * 100).clamp(0.0, 100.0) : 0.0;
 
     return ListTile(
       leading: Row(
@@ -54,19 +56,19 @@ class _DownloaderTileState extends State<DownloaderTile> {
           const SizedBox(width: 5),
           Icon(
             getFileIconDataBySuffix(
-              file.savePath.split('/').last.split('.').lastOrNull ?? '',
+              p.extension(file.savePath).replaceAll('.', ''),
             ),
             color: appSession.accentColor.value,
             size: 24,
           ),
         ],
       ),
-      title: Text(file.savePath.split('/').last),
+      title: Text(p.basename(file.savePath)),
       subtitle: Row(
         children: [
-          Expanded(child: ProgressBar(value: file.progress * 100)),
+          Expanded(child: ProgressBar(value: progressValue)),
           const SizedBox(width: 5),
-          Text('${(file.progress * 100).toStringAsFixed(0)}%'),
+          Text('${progressValue.toStringAsFixed(0)}%'),
           if (file.status == DownloadStatus.downloading) ...[
             const SizedBox(width: 5),
             Text(file.formattedSpeed),
@@ -93,7 +95,7 @@ class _DownloaderTileState extends State<DownloaderTile> {
               file.status == DownloadStatus.failed)
             IconButton(
               icon: Icon(FluentIcons.play_24_regular),
-              onPressed: () => Get.find<DownloadSession>().startDownload(file),
+              onPressed: () => Get.find<DownloadSession>().resumeDownload(file),
             ),
           IconButton(
             icon: Icon(FluentIcons.dismiss_24_regular),

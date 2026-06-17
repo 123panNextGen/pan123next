@@ -1,16 +1,27 @@
 import 'package:pan123next/common/data/base_db.dart';
 
 class DownloaderDb extends BaseDb {
-  @override
-  String get prefix => 'downloader';
+  static const _prefix = 'downloader';
 
   static final DownloaderDb _instance = DownloaderDb._internal();
   factory DownloaderDb() => _instance;
   DownloaderDb._internal();
 
   @override
+  String get prefix => _prefix;
+
+  @override
+  List<String> get keys => [
+    '$_prefix.downloadList',
+    '$_prefix.initialed',
+  ];
+
+  @override
   Future<void> firstInitDb() async {
-    prefs.setStringList('downloader.downloadList', []);
-    prefs.setBool('downloader.initialed', true);
+    setValue('downloadList', <String>[]);
   }
+
+  List<String> get downloadList => getValue('downloadList') ?? <String>[];
+
+  set downloadList(List<String> value) => setValue('downloadList', value);
 }

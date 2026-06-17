@@ -73,19 +73,19 @@ class FileItemModel {
 
   factory FileItemModel.fromJson(Map<String, dynamic> json) {
     return FileItemModel(
-      fileId: json['FileId'] ?? 0,
-      fileName: json['FileName'] ?? '',
-      type: json['Type'] ?? 0,
-      size: json['Size'] ?? 0,
-      etag: json['Etag'] ?? '',
-      s3keyFlag: json['S3KeyFlag'] ?? '',
-      contentType: json['ContentType'] ?? '',
-      createAt: json['CreateAt'] ?? '',
-      updateAt: json['UpdateAt'] ?? '',
-      hidden: json['Hidden'] ?? false,
-      parentFileId: json['ParentFileId'] ?? 0,
-      pinYin: json['PinYin'] ?? '',
-      starredStatus: json['StarredStatus'] == 1,
+      fileId: (json['fileId'] ?? json['FileId'] ?? 0) as int,
+      fileName: (json['fileName'] ?? json['FileName'] ?? '') as String,
+      type: (json['type'] ?? json['Type'] ?? 0) as int,
+      size: (json['size'] ?? json['Size'] ?? 0) as int,
+      etag: (json['etag'] ?? json['Etag'] ?? '') as String,
+      s3keyFlag: (json['s3keyFlag'] ?? json['S3KeyFlag'] ?? '') as String,
+      contentType: (json['contentType'] ?? json['ContentType'] ?? '') as String,
+      createAt: (json['createAt'] ?? json['CreateAt'] ?? '') as String,
+      updateAt: (json['updateAt'] ?? json['UpdateAt'] ?? '') as String,
+      hidden: (json['hidden'] ?? json['Hidden'] ?? false) as bool,
+      parentFileId: (json['parentFileId'] ?? json['ParentFileId'] ?? 0) as int,
+      pinYin: (json['pinYin'] ?? json['PinYin'] ?? '') as String,
+      starredStatus: (json['starredStatus'] ?? json['StarredStatus'] ?? 0) == 1,
     );
   }
 
@@ -120,10 +120,11 @@ class FileListResponse {
   });
 
   factory FileListResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] ?? json['Data'] ?? <String, dynamic>{};
     return FileListResponse(
-      code: json['code'] ?? 0,
-      message: json['message'] ?? '',
-      data: FileListData.fromJson(json['data'] ?? {}),
+      code: json['code'] ?? json['Code'] ?? 0,
+      message: json['message'] ?? json['Message'] ?? '',
+      data: FileListData.fromJson(data as Map<String, dynamic>),
     );
   }
 }
@@ -144,14 +145,15 @@ class FileListData {
   });
 
   factory FileListData.fromJson(Map<String, dynamic> json) {
+    final infoListRaw = json['infoList'] ?? json['InfoList'];
     return FileListData(
-      next: json['Next'] ?? '',
-      len: json['Len'] ?? 0,
-      isFirst: json['IsFirst'] ?? false,
-      total: json['Total'] ?? 0,
+      next: (json['next'] ?? json['Next'] ?? '') as String,
+      len: (json['len'] ?? json['Len'] ?? 0) as int,
+      isFirst: (json['isFirst'] ?? json['IsFirst'] ?? false) as bool,
+      total: (json['total'] ?? json['Total'] ?? 0) as int,
       infoList:
-          (json['InfoList'] as List?)
-              ?.map((item) => FileItemModel.fromJson(item))
+          (infoListRaw as List?)
+              ?.map((item) => FileItemModel.fromJson(item as Map<String, dynamic>))
               .toList() ??
           [],
     );

@@ -142,6 +142,12 @@ class RenameFileDialog extends StatefulWidget {
 class _RenameFileDialogState extends State<RenameFileDialog> {
   final TextEditingController _fileNameController = TextEditingController();
 
+  @override
+  void dispose() {
+    _fileNameController.dispose();
+    super.dispose();
+  }
+
   void _renameFile() async {
     final fileName = _fileNameController.text;
     if (fileName.isEmpty) {

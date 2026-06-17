@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/downloader/model.dart';
@@ -20,6 +21,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int topIndex = 0;
   int downloadCount = 0;
+  StreamSubscription<List<DownloadItemModel>>? _downloadListSubscription;
 
   void updateDownloadCount(List<DownloadItemModel> downloadList) {
     downloadCount = downloadList
@@ -31,7 +33,15 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    DownloadSession().addDownloadListListener(updateDownloadCount);
+    _downloadListSubscription = DownloadSession().listStream.listen(
+      updateDownloadCount,
+    );
+  }
+
+  @override
+  void dispose() {
+    _downloadListSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -42,10 +52,17 @@ class _MainScreenState extends State<MainScreen> {
           padding: EdgeInsetsGeometry.all(2.0),
           child: Image(image: AssetImage('assets/image/app_icon.png')),
         ),
-        title: Text(appName),
-        subtitle: const Text('Preview'),
+        title: Text(screenTitle),
+        subtitle: const Text(screenSubTitle),
         captionControls: const WindowButtons(),
         onDragStarted: () => windowManager.startDragging(),
+        onDoubleTap: () async {
+          if (await windowManager.isMaximized()) {
+            await windowManager.unmaximize();
+          } else {
+            await windowManager.maximize();
+          }
+        },
       ),
       pane: NavigationPane(
         selected: topIndex,

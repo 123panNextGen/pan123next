@@ -13,31 +13,30 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  bool isLoggedIn = false;
+  final AppSession appSession = Get.find();
 
   void onLoginSuccess() {
-    setState(() => isLoggedIn = true);
+    appSession.isLoggedIn.value = true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<AppSession>(
-      builder: (appSession) {
-        return FluentApp(
-          debugShowCheckedModeBanner: false,
-          title: appName,
-          locale: appSession.appLocale.value,
-          theme: FluentThemeData(
-            brightness: appSession.theme.value,
-            accentColor: appSession.accentColor.value,
-          ),
-          home: SafeArea(
-            child: isLoggedIn
-                ? const MainScreen()
-                : LoginScreen(onLoginSuccess: onLoginSuccess),
-          ),
-        );
-      },
-    );
+    return Obx(() {
+      return FluentApp(
+        debugShowCheckedModeBanner: false,
+        title: appName,
+        locale: appSession.appLocale.value,
+        theme: FluentThemeData(
+          brightness: appSession.theme.value,
+          accentColor: appSession.accentColor.value,
+          fontFamily: 'MiSans',
+        ),
+        home: SafeArea(
+          child: appSession.isLoggedIn.value
+              ? const MainScreen()
+              : LoginScreen(onLoginSuccess: onLoginSuccess),
+        ),
+      );
+    });
   }
 }

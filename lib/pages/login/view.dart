@@ -24,12 +24,7 @@ class _LoginInputPageState extends State<LoginInputPage> {
     setState(() => isLogin = true);
 
     if (userNameController.text.isEmpty || passwordController.text.isEmpty) {
-      showInfoBar(
-        context,
-        '登录失败',
-        '请输入用户名和密码',
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '登录失败', '请输入用户名和密码', InfoBarSeverity.error);
       setState(() => isLogin = false);
       return;
     }
@@ -45,12 +40,7 @@ class _LoginInputPageState extends State<LoginInputPage> {
       if (value.apiCodeEnum == ApiCode.success) {
         widget.onLoginSuccess();
       } else {
-        showInfoBar(
-          context,
-          '登录失败',
-          value.msg,
-          InfoBarSeverity.error,
-        );
+        showInfoBar(context, '登录失败', value.msg, InfoBarSeverity.error);
       }
     } finally {
       if (mounted) setState(() => isLogin = false);
@@ -62,15 +52,22 @@ class _LoginInputPageState extends State<LoginInputPage> {
     super.initState();
     Map<String, dynamic> info = control.getUserInfo();
     setState(() {
-      userNameController.text = info['userName'];
-      passwordController.text = info['password'];
-      autoLogin = info['autoLogin'];
-      rememberPassword = info['rememberPassword'];
+      userNameController.text = info['userName'] ?? '';
+      passwordController.text = info['password'] ?? '';
+      autoLogin = info['autoLogin'] ?? false;
+      rememberPassword = info['rememberPassword'] ?? false;
     });
 
     if (autoLogin) {
       login();
     }
+  }
+
+  @override
+  void dispose() {
+    userNameController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -86,23 +83,20 @@ class _LoginInputPageState extends State<LoginInputPage> {
                 ),
 
                 const SizedBox(height: 10),
-                TextBox(
-                  placeholder: '用户名',
-                  controller: userNameController,
-                ),
+                TextBox(placeholder: '用户名', controller: userNameController),
                 const SizedBox(height: 10),
-                PasswordBox(
-                  placeholder: '密码',
-                  controller: passwordController,
-                ),
+                PasswordBox(placeholder: '密码', controller: passwordController),
 
                 const SizedBox(height: 10),
                 Row(
                   children: [
                     Checkbox(
                       checked: rememberPassword,
-                      onChanged: (_) =>
-                          setState(() => rememberPassword = !rememberPassword),
+                      onChanged: autoLogin
+                          ? null
+                          : (_) => setState(
+                              () => rememberPassword = !rememberPassword,
+                            ),
                     ),
                     const SizedBox(width: 5),
                     const Text('记住密码'),
@@ -126,10 +120,7 @@ class _LoginInputPageState extends State<LoginInputPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    FilledButton(
-                      onPressed: login,
-                      child: const Text('登录'),
-                    ),
+                    FilledButton(onPressed: login, child: const Text('登录')),
                     const SizedBox(width: 5),
                     Button(
                       onPressed: () => Navigator.pop(context),

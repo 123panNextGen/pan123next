@@ -24,7 +24,7 @@ Future<void> showInfoBar(
               },
             ),
             const SizedBox(width: 8),
-            IconButton(icon: const Icon(WindowsIcons.clear), onPressed: close),
+            IconButton(icon: const Icon(FluentIcons.dismiss_24_regular), onPressed: close),
           ],
         ),
         severity: severity,

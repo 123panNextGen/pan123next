@@ -6,6 +6,7 @@ import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:pan123next/widgets/setting_card.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -20,6 +21,7 @@ class _SettingsViewState extends State<SettingsView> {
   late String accentColor;
   late bool askDownload;
   late String language;
+  late TextEditingController _downloadPathController;
 
   bool _picking = false;
 
@@ -30,6 +32,15 @@ class _SettingsViewState extends State<SettingsView> {
     accentColor = appSession.getAccentColor();
     askDownload = Get.find<UserDb>().getValue('set.askDownload') ?? true;
     language = Get.find<UserDb>().getValue('set.language') ?? 'zh_CN';
+    _downloadPathController = TextEditingController(
+      text: Get.find<UserDb>().getValue('set.defaultDownloadPath') ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _downloadPathController.dispose();
+    super.dispose();
   }
 
   @override
@@ -48,7 +59,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
 
             const SizedBox(height: 16.0),
-            Card(
+            SettingCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -75,8 +86,7 @@ class _SettingsViewState extends State<SettingsView> {
                             .toList(),
                         onChanged: (v) {
                           if (v != null) {
-                            theme = v;
-                            setState(() {});
+                            setState(() => theme = v);
                             appSession.updateTheme(
                               v == 'dark' ? Brightness.dark : Brightness.light,
                             );
@@ -114,8 +124,7 @@ class _SettingsViewState extends State<SettingsView> {
                             .toList(),
                         onChanged: (v) {
                           if (v != null) {
-                            accentColor = v;
-                            setState(() {});
+                            setState(() => accentColor = v);
                             appSession.updateAccentColor(v);
                           }
                         },
@@ -127,7 +136,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
 
             const SizedBox(height: 16.0),
-            Card(
+            SettingCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -149,7 +158,6 @@ class _SettingsViewState extends State<SettingsView> {
                           Get.find<UserDb>().setValue(
                             'set.askDownload',
                             askDownload,
-                            'bool',
                           );
                           setState(() {});
                         },
@@ -162,19 +170,12 @@ class _SettingsViewState extends State<SettingsView> {
                       const Expanded(child: Text('默认下载路径')),
                       Expanded(
                         child: TextBox(
-                          controller: TextEditingController(
-                            text:
-                                Get.find<UserDb>().getValue(
-                                  'set.defaultDownloadPath',
-                                ) ??
-                                '',
-                          ),
+                          controller: _downloadPathController,
                           placeholder: '请选择默认下载路径',
                           onChanged: (v) {
                             Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               v,
-                              'string',
                             );
                           },
                         ),
@@ -198,10 +199,10 @@ class _SettingsViewState extends State<SettingsView> {
                           setState(() => _picking = true);
                           final path = await FilePicker.getDirectoryPath();
                           if (path != null) {
+                            _downloadPathController.text = path;
                             Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               path,
-                              'string',
                             );
                           }
                           setState(() => _picking = false);
@@ -214,7 +215,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
 
             const SizedBox(height: 16.0),
-            Card(
+            SettingCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -226,7 +227,8 @@ class _SettingsViewState extends State<SettingsView> {
                     ],
                   ),
                   const SizedBox(height: 8.0),
-                  Text('当前版本：$version'),
+                  Text('当前版本：$version  当前平台：${getSystem().capitalizeFirst}'),
+                  Text('开发团队: 123PanNextGen'),
                 ],
               ),
             ),

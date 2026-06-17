@@ -35,6 +35,12 @@ Future<ApiReturnModel> login(
     model.userName = userName;
     model.password = password;
     session.setUserInformation(model);
+    downloadSession.setUserInformation(model);
+
+    await db.setUserInfo(model);
+    await db.setValueAsync('autoLogin', autoLogin);
+    await db.setValueAsync('rememberPassword', rememberPassword);
+    await db.setValueAsync('userName', userName);
 
     return ApiReturnModel(
       code: 0,
@@ -61,15 +67,14 @@ Future<ApiReturnModel> login(
   ApiReturnModel returnModel = await session.login();
   if (returnModel.apiCodeEnum == ApiCode.success) {
     if (rememberPassword) {
-      db.setUserInfo(session.userInformation!);
+      await db.setUserInfo(session.userInformation!);
     } else {
-      db.setValue('password', '', 'string');
-      db.setValue('authorization', '', 'string');
+      await db.setValueAsync('password', '');
+      await db.setValueAsync('authorization', '');
     }
-    db.setValue('autoLogin', autoLogin, 'bool');
-    db.setValue('rememberPassword', rememberPassword, 'bool');
-
-    db.setValue('userName', userName, 'string');
+    await db.setValueAsync('autoLogin', autoLogin);
+    await db.setValueAsync('rememberPassword', rememberPassword);
+    await db.setValueAsync('userName', userName);
   }
 
   return returnModel;

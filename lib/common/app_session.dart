@@ -7,6 +7,7 @@ class AppSession extends GetxController {
   late final Rx<Brightness> theme;
   late final Rx<AccentColor> accentColor;
   final Rx<Locale> appLocale = const Locale('zh', 'CN').obs;
+  final RxBool isLoggedIn = false.obs;
 
   @override
   void onInit() {
@@ -33,13 +34,14 @@ class AppSession extends GetxController {
     Get.find<AppDb>().setValue(
       'theme',
       value == Brightness.dark ? 'dark' : 'light',
-      'string',
     );
+    update();
   }
 
   void updateAccentColor(String value) {
-    Get.find<AppDb>().setValue('accentColor', value, 'string');
+    Get.find<AppDb>().setValue('accentColor', value);
     accentColor.value = Get.find<AppDb>().getAccentColor();
+    update();
   }
 
   void updateLocale(String languageTag) {
@@ -47,7 +49,7 @@ class AppSession extends GetxController {
     final locale = Locale(parts[0], parts[1]);
     appLocale.value = locale;
     Get.locale = locale;
-    Get.find<UserDb>().setValue('set.language', languageTag, 'string');
+    Get.find<UserDb>().setValue('set.language', languageTag);
   }
 
   String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
@@ -59,10 +61,10 @@ class AppSession extends GetxController {
 
   void clearSession() {
     final userDb = Get.find<UserDb>();
-    userDb.setValue('password', '', 'string');
-    userDb.setValue('authorization', '', 'string');
-    userDb.setValue('uuid', '', 'string');
-    userDb.setValue('autoLogin', false, 'bool');
-    userDb.setValue('rememberPassword', false, 'bool');
+    userDb.setValue('password', '');
+    userDb.setValue('authorization', '');
+    userDb.setValue('uuid', '');
+    userDb.setValue('autoLogin', false);
+    userDb.setValue('rememberPassword', false);
   }
 }

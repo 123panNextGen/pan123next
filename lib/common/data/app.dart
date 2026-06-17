@@ -17,21 +17,31 @@ List<Map> get accentColors => [
 ];
 
 class AppDb extends BaseDb {
-  @override
-  String get prefix => 'app';
+  static const _prefix = 'app';
 
   static final AppDb _instance = AppDb._internal();
   factory AppDb() => _instance;
   AppDb._internal();
 
   @override
+  String get prefix => _prefix;
+
+  @override
+  List<String> get keys => [
+    '$_prefix.theme',
+    '$_prefix.accentColor',
+    '$_prefix.initialed',
+  ];
+
+  @override
   Future<void> firstInitDb() async {
-    prefs.setString('app.theme', 'light');
-    prefs.setBool('app.initialed', true);
+    setValue('theme', 'light');
+    setValue('accentColor', 'purple');
   }
 
   Brightness get theme =>
       getValue('theme') == 'dark' ? Brightness.dark : Brightness.light;
+
   AccentColor getAccentColor() {
     return accentColors.firstWhere(
       (e) => e['value'] == getValue('accentColor'),

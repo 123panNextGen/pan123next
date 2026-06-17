@@ -2,13 +2,51 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/api/model.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
-String formatSize(int size) {
-  if (size < 1024) return '$size B';
-  if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
-  if (size < 1024 * 1024 * 1024) {
-    return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
+enum SizeUnit { b, kb, mb, gb, auto }
+
+String formatSize(
+  int size, {
+  SizeUnit target = SizeUnit.auto,
+  SizeUnit from = SizeUnit.b,
+}) {
+  late int realSize;
+  switch (from) {
+    case SizeUnit.b:
+      realSize = size;
+      break;
+    case SizeUnit.kb:
+      realSize = size * 1024;
+      break;
+    case SizeUnit.mb:
+      realSize = size * 1024 * 1024;
+      break;
+    case SizeUnit.gb:
+      realSize = size * 1024 * 1024 * 1024;
+      break;
+    default:
+      realSize = size;
+      break;
   }
-  return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+
+  switch (target) {
+    case SizeUnit.b:
+      return '$realSize B';
+    case SizeUnit.kb:
+      return '${(realSize / 1024).toStringAsFixed(1)} KB';
+    case SizeUnit.mb:
+      return '${(realSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    case SizeUnit.gb:
+      return '${(realSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    default:
+      if (realSize < 1024) return '$realSize B';
+      if (realSize < 1024 * 1024) {
+        return '${(realSize / 1024).toStringAsFixed(1)} KB';
+      }
+      if (realSize < 1024 * 1024 * 1024) {
+        return '${(realSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+      }
+      return '${(realSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
 }
 
 String formatDate(String dateString) {

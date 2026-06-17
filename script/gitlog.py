@@ -50,6 +50,8 @@ def _git(*args: str) -> str:
         ("git", *args),
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if result.returncode != 0:
         sys.exit(1)
@@ -61,6 +63,8 @@ def get_latest_tag() -> Optional[str]:
         ("git", "describe", "--tags", "--abbrev=0"),
         capture_output=True,
         text=True,
+        encoding='utf-8',
+        errors='replace',
     )
     if result.returncode != 0:
         return None
