@@ -66,19 +66,19 @@ def update_pubspec_yaml(version: str, project_dir: Path) -> None:
 
 
 def run_uv_sync(project_dir: Path) -> None:
-    """执行 uv run 同步依赖"""
-    click.echo("执行 uv run 同步依赖...")
+    """执行 uv sync 同步依赖"""
+    click.echo("执行 uv sync 同步依赖...")
     result = subprocess.run(
-        ["uv", "run", "--sync"],
+        ["uv", "sync"],
         cwd=project_dir,
         shell=True,
     )
 
     if result.returncode != 0:
-        click.echo("✗ uv run 执行失败", err=True)
+        click.echo("✗ uv sync 执行失败", err=True)
         sys.exit(1)
 
-    click.echo("✓ uv run 执行成功")
+    click.echo("✓ uv sync 执行成功")
 
 
 def run_flutter_pub_get(project_dir: Path) -> None:
@@ -109,7 +109,7 @@ def run_flutter_pub_get(project_dir: Path) -> None:
     "--no-sync",
     is_flag=True,
     default=False,
-    help="跳过依赖同步（不执行 uv run 和 flutter pub get）",
+    help="跳过依赖同步（不执行 uv sync 和 flutter pub get）",
 )
 @click.option(
     "--project-dir",

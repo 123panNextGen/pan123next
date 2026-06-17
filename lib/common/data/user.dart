@@ -49,7 +49,8 @@ class UserDb extends BaseDb {
     if (!(cache['$_prefix.initialed'] == 'true')) {
       initialized = true;
       await firstInitDb();
-      setValue('initialed', true);
+      cache['$_prefix.initialed'] = 'true';
+      await _storage.write(key: '$_prefix.initialed', value: 'true');
     } else {
       initialized = true;
     }
@@ -59,16 +60,16 @@ class UserDb extends BaseDb {
   Future<void> firstInitDb() async {
     final downloadPath = await getDownloadPath();
 
-    setValue('userName', '');
-    setValue('password', '');
-    setValue('uuid', '');
-    setValue('authorization', '');
-    setValue('os', '');
-    setValue('type', '');
-    setValue('autoLogin', false);
-    setValue('rememberPassword', false);
-    setValue('set.askDownload', true);
-    setValue('set.defaultDownloadPath', downloadPath);
+    await _setValue('userName', '');
+    await _setValue('password', '');
+    await _setValue('uuid', '');
+    await _setValue('authorization', '');
+    await _setValue('os', '');
+    await _setValue('type', '');
+    await _setValue('autoLogin', 'false');
+    await _setValue('rememberPassword', 'false');
+    await _setValue('set.askDownload', 'true');
+    await _setValue('set.defaultDownloadPath', downloadPath);
   }
 
   @override
@@ -109,13 +110,42 @@ class UserDb extends BaseDb {
     _storage.write(key: realKey, value: stringValue);
   }
 
-  void setUserInfo(UserInfoModel model) {
-    setValue('userName', model.userName);
-    setValue('password', model.password);
-    setValue('uuid', model.uuid);
-    setValue('authorization', model.authorization);
-    setValue('os', model.device.os);
-    setValue('type', model.device.type);
+  Future<void> setUserInfo(UserInfoModel model) async {
+    await _setValue('userName', model.userName);
+    await _setValue('password', model.password);
+    await _setValue('uuid', model.uuid);
+    await _setValue('authorization', model.authorization);
+    await _setValue('os', model.device.os);
+    await _setValue('type', model.device.type);
+  }
+
+  Future<void> _setValue(String key, String value) async {
+    final realKey = '$_prefix.$key';
+    cache[realKey] = value;
+    await _storage.write(key: realKey, value: value);
+  }
+
+  Future<void> setValueAsync<T>(String key, T value) async {
+    if (!initialized) {
+      throw Exception('请先调用 initDb() 初始化数据库');
+    }
+    final realKey = '$_prefix.$key';
+    String stringValue;
+    if (value is String) {
+      stringValue = value;
+    } else if (value is bool) {
+      stringValue = value.toString();
+    } else if (value is int) {
+      stringValue = value.toString();
+    } else if (value is double) {
+      stringValue = value.toString();
+    } else if (value is List<String>) {
+      stringValue = value.join(',');
+    } else {
+      stringValue = value.toString();
+    }
+    cache[realKey] = stringValue;
+    await _storage.write(key: realKey, value: stringValue);
   }
 
   UserInfoModel getUserInfo() {

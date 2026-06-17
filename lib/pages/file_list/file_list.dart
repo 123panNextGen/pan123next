@@ -291,17 +291,24 @@ class _FileListWidgetState extends State<FileListWidget> {
       return;
     }
 
+    final downloadUrl = result.data;
+    if (downloadUrl == null || downloadUrl.isEmpty) {
+      if (!mounted) return;
+      showInfoBar(context, '错误', '获取下载链接失败', InfoBarSeverity.error);
+      return;
+    }
+
     await Get.find<DownloadSession>().addDownload(
       file: file,
-      downloadUrl: result.data,
+      downloadUrl: downloadUrl,
       savePath: savePath,
     );
 
     if (!mounted) return;
     showInfoBar(
       context,
-      '成功',
-      '已成功下载: ${file.fileName}',
+      '已添加',
+      '下载任务已添加: ${file.fileName}',
       InfoBarSeverity.success,
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/const.dart';
@@ -62,7 +63,7 @@ class NetSession {
         requestHeader: false,
         requestBody: false,
         responseHeader: false,
-        responseBody: false,
+        responseBody: true,
         error: true,
       ),
     );
@@ -178,9 +179,10 @@ class NetSession {
         );
 
         final fileListResponse = FileListResponse.fromJson(response.data);
-        allFiles.addAll(fileListResponse.data.infoList);
+        final infoList = fileListResponse.data.infoList;
+        allFiles.addAll(infoList);
 
-        if (response.data['code'] == 401) {
+        if (response.data['Code'] == 401 || response.data['code'] == 401) {
           return ApiReturnModel<FileListResponse>(
             code: response.statusCode ?? 0,
             apiCode: 401,
@@ -190,6 +192,7 @@ class NetSession {
         }
 
         next = fileListResponse.data.next;
+        if (next.isEmpty || infoList.isEmpty) break;
         if (next != '-1') {
           page++;
         }
@@ -345,25 +348,46 @@ class NetSession {
         );
       }
 
-      if (response.data['code'] != 0) {
-        return ApiReturnModel<String>(
-          code: response.statusCode ?? 0,
-          apiCode: response.data['code'],
-          apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? '获取文件链接失败',
-        );
+      final apiCode = response.data['code'] ?? response.data['Code'];
+      final outerData = response.data['data'] ?? response.data['Data'];
+
+      String? downloadUrl;
+
+      // 123pan API 返回结构为 {code, data: {data: {DownloadUrl, ...}}}
+      // 尝试两层 data 嵌套
+      if (outerData is Map) {
+        // 直接取 DownloadUrl（部分接口可能是一层结构）
+        downloadUrl = outerData['downloadUrl'] ?? outerData['DownloadUrl'];
+        if ((downloadUrl ?? '').isEmpty) {
+          // 嵌套 data 层
+          final innerData = outerData['data'] ?? outerData['Data'];
+          if (innerData is Map) {
+            downloadUrl = innerData['downloadUrl'] ?? innerData['DownloadUrl'];
+          }
+        }
+      } else if (outerData is String) {
+        downloadUrl = outerData;
       }
 
-      final data = response.data['data'];
-      String downloadUrl = data is Map ? data['DownloadUrl'] ?? '' : '';
-
-      if (downloadUrl.isNotEmpty) {
+      downloadUrl = downloadUrl?.trim();
+      if (downloadUrl != null && downloadUrl.isNotEmpty) {
+        // downloadUrl 是中间跳转地址，跟随 302 获取真实下载链接
+        final realUrl = await _resolveDownloadUrl(downloadUrl);
         return ApiReturnModel<String>(
           code: response.statusCode ?? 0,
           apiCode: 0,
           apiCodeEnum: ApiCode.success,
           msg: '',
-          data: downloadUrl,
+          data: realUrl,
+        );
+      }
+
+      if (apiCode != null && apiCode != 0 && apiCode != 200) {
+        return ApiReturnModel<String>(
+          code: response.statusCode ?? 0,
+          apiCode: apiCode,
+          apiCodeEnum: ApiCode.fail,
+          msg: response.data['message'] ?? response.data['Message'] ?? '获取文件链接失败',
         );
       }
 
@@ -380,6 +404,35 @@ class NetSession {
         apiCodeEnum: ApiCode.fail,
         msg: e.toString(),
       );
+    }
+  }
+
+  /// 跟随 302 跳转获取真实下载链接
+  Future<String> _resolveDownloadUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      final client = HttpClient()
+        ..autoUncompress = true
+        ..connectionTimeout = const Duration(seconds: 15);
+      final request = await client.getUrl(uri);
+      // 不自动跟随重定向，手动处理
+      final response = await request.close();
+
+      if (response.statusCode == 301 || response.statusCode == 302 || response.statusCode == 307 || response.statusCode == 308) {
+        final location = response.headers.value('location');
+        client.close(force: true);
+        if (location != null && location.isNotEmpty) {
+          final resolved = Uri.parse(location).isAbsolute
+              ? location
+              : uri.resolve(location).toString();
+          return resolved;
+        }
+      }
+
+      client.close(force: true);
+      return url;
+    } catch (e) {
+      return url;
     }
   }
 

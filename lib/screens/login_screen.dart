@@ -25,8 +25,8 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: EdgeInsetsGeometry.all(2.0),
           child: Image(image: AssetImage('assets/image/app_icon.png')),
         ),
-        title: Text(appName),
-        subtitle: const Text('Preview'),
+        title: Text(screenTitle),
+        subtitle: const Text(screenSubTitle),
         captionControls: const WindowButtons(),
         onDragStarted: () => windowManager.startDragging(),
         onDoubleTap: () async {

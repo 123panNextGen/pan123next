@@ -227,7 +227,7 @@ class _SettingsViewState extends State<SettingsView> {
                     ],
                   ),
                   const SizedBox(height: 8.0),
-                  Text('当前版本：$version  当前平台：${getSystem()}'),
+                  Text('当前版本：$version  当前平台：${getSystem().capitalizeFirst}'),
                   Text('开发团队: 123PanNextGen'),
                 ],
               ),

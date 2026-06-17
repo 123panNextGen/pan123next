@@ -1,399 +1,245 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'package:background_downloader/background_downloader.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pan123next/common/downloader/go_bridge.dart';
 import 'package:pan123next/common/api/model.dart';
-import 'package:pan123next/common/api/session.dart';
-import 'package:pan123next/common/data/downloader.dart';
 import 'model.dart';
-
-/// 外部 URL（非 123pan）使用的最小请求头。
-const Map<String, String> _kExternalHeaders = {
-  'user-agent': 'pan123next/2.4.0',
-  'accept-encoding': 'gzip',
-};
 
 class DownloadSession extends GetxController {
   static final DownloadSession _instance = DownloadSession._internal();
   factory DownloadSession() => _instance;
   DownloadSession._internal();
 
-  Map<String, dynamic> headers = {};
-  UserInfoModel? _userInformation;
+  final DownloadServerBridge _bridge = DownloadServerBridge();
+  DownloadServerClient? _client;
 
   final List<DownloadItemModel> _downloadList = [];
-  final Map<String, DownloadTask> _tasks = {};
+  StreamSubscription<List<Map<String, dynamic>>>? _pollSub;
 
   final StreamController<DownloadItemModel> _progressController =
       StreamController.broadcast();
   final StreamController<List<DownloadItemModel>> _listController =
       StreamController.broadcast();
 
-  bool _isInitialized = false;
+  bool _running = false;
 
-  UserInfoModel? get userInformation => _userInformation;
+  /// 正在等待服务端确认的操作中的任务 ID 集合
+  final Set<String> _pendingActions = {};
 
-  void setUserInformation(UserInfoModel userInfo) {
-    _userInformation = userInfo;
-    _updateHeaders();
-  }
-
-  void updateUserInfo(UserInfoModel userInfo) {
-    _userInformation = userInfo;
-    _updateHeaders();
-  }
-
-  StreamSubscription<List<DownloadItemModel>> addDownloadListListener(
-    void Function(List<DownloadItemModel>) listener,
-  ) {
-    return _listController.stream.listen(listener);
-  }
+  // ---- 空闲自停 ----
+  Timer? _idleTimer;
+  static const _idleTimeout = Duration(seconds: 120);
 
   Stream<DownloadItemModel> get progressStream => _progressController.stream;
   Stream<List<DownloadItemModel>> get listStream => _listController.stream;
   List<DownloadItemModel> get downloadList => List.unmodifiable(_downloadList);
+  bool get isRunning => _running;
+  int get port => _bridge.port;
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
-    await DownloaderDb().initDb();
+  UserInfoModel? get userInformation => null;
 
-    // 初始化 background_downloader
-    await FileDownloader().start();
-
-    // 设置更新监听
-    FileDownloader().updates.listen((update) {
-      _handleUpdate(update);
-    });
-
-    await _loadDownloadList();
-    _isInitialized = true;
-  }
-
-  void _updateHeaders() {
-    if (_userInformation == null) return;
-    headers = NetSession.buildHeadersForUser(_userInformation!);
-  }
-
-  /// 处理 background_downloader 的更新
-  void _handleUpdate(TaskUpdate update) {
-    switch (update) {
-      case TaskStatusUpdate():
-        final item = _findItemByTaskId(update.task.taskId);
-        if (item != null) {
-          final errorMsg = update.exception?.toString();
-          item.updateFromTaskStatus(update.status, error: errorMsg);
-          if (update.status == TaskStatus.running) {
-            item.startTime ??= DateTime.now();
-          }
-          _notifyProgress(item);
-          _saveDownloadList();
-          _notifyListChange();
-        }
-      case TaskProgressUpdate():
-        final item = _findItemByTaskId(update.task.taskId);
-        if (item != null) {
-          item.updateFromProgress(update);
-          _notifyProgress(item);
-        }
-    }
-  }
-
-  DownloadItemModel? _findItemByTaskId(String taskId) {
-    for (final item in _downloadList) {
-      if (item.taskId == taskId) {
-        return item;
-      }
-    }
-    return null;
-  }
+  void setUserInformation(UserInfoModel userInfo) {}
+  void updateUserInfo(UserInfoModel userInfo) {}
 
   // ---------------------------------------------------------------------------
-  // 持久化
+  // 生命周期
   // ---------------------------------------------------------------------------
 
-  Future<void> _loadDownloadList() async {
-    final db = Get.find<DownloaderDb>();
-    final List<dynamic> listJson = db.getValue('downloadList') ?? [];
+  Future<bool> startServer() async {
+    final dataDir = await _resolveDataDir();
+    final ok = await _bridge.start(dataDir: dataDir);
+    if (ok) {
+      _client = DownloadServerClient(_bridge.port);
+      _running = true;
+      await _loadFromServer();
+      _startPolling();
+    }
+    return ok;
+  }
 
+  Future<void> stopServer() async {
+    _cancelIdleTimer();
+    _pollSub?.cancel();
+    await _bridge.stop();
+    _running = false;
     _downloadList.clear();
-    for (final jsonStr in listJson) {
+  }
+
+  Future<String> _resolveDataDir() async {
+    if (Platform.isAndroid || Platform.isIOS) return '';
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      return dir.path;
+    } catch (_) {
       try {
-        final jsonMap = jsonDecode(jsonStr) as Map<String, dynamic>;
-        final item = DownloadItemModel.fromJson(jsonMap);
-
-        // 重启后，未完成任务一律标记为 pending（避免悬挂的 downloading 状态）
-        if (item.status == DownloadStatus.downloading) {
-          item.status = DownloadStatus.pending;
-        }
-
-        // 已完成任务：如最终文件已被用户删除则丢弃任务条目
-        if (item.status == DownloadStatus.completed) {
-          if (!await File(item.savePath).exists()) continue;
-        }
-
-        _downloadList.add(item);
+        final dir = await getApplicationSupportDirectory();
+        return dir.path;
       } catch (_) {
-        // 跳过已损坏的条目
+        return '';
       }
     }
-    _notifyListChange();
   }
 
-  Future<void> _saveDownloadList() async {
-    final db = Get.find<DownloaderDb>();
-    final listJson = _downloadList
-        .map((item) => jsonEncode(item.toJson()))
-        .toList();
-    db.downloadList = listJson;
+  void _startPolling() {
+    _pollSub?.cancel();
+    _pollSub = _client!
+        .pollProgress(interval: const Duration(milliseconds: 600))
+        .listen((tasks) {
+      _mergeTasks(tasks);
+    });
   }
+
+  void _mergeTasks(List<Map<String, dynamic>> serverTasks) {
+    final serverMap = <String, Map<String, dynamic>>{};
+    for (final t in serverTasks) {
+      serverMap[t['id'] as String] = t;
+    }
+
+    for (final item in _downloadList) {
+      final serverTask = serverMap.remove(item.taskId);
+      if (serverTask != null) {
+        if (_pendingActions.contains(item.taskId)) {
+          item.updateProgressFromMap(serverTask);
+        } else {
+          item.updateFromServerMap(serverTask);
+        }
+        _notifyProgress(item);
+      }
+    }
+
+    for (final entry in serverMap.entries) {
+      if (_pendingActions.contains(entry.key)) continue;
+      final t = DownloadItemModel.fromServerMap(entry.value);
+      if (t != null) {
+        _downloadList.add(t);
+        _notifyListChange();
+      }
+    }
+
+    _notifyListChange();
+    _updateIdleTimer();
+  }
+
+  // ---- 空闲检测: 无活动任务 120s 后自动停服 ----
+
+  void _updateIdleTimer() {
+    if (!_running) return;
+    if (_hasActiveTasks) {
+      _cancelIdleTimer();
+    } else {
+      _idleTimer ??= Timer(_idleTimeout, _onIdleTimeout);
+    }
+  }
+
+  void _cancelIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = null;
+  }
+
+  void _onIdleTimeout() {
+    _idleTimer = null;
+    stopServer();
+  }
+
+  bool get _hasActiveTasks =>
+      _downloadList.any((item) =>
+          item.status == DownloadStatus.downloading ||
+          item.status == DownloadStatus.pending);
 
   // ---------------------------------------------------------------------------
   // 公开 API
   // ---------------------------------------------------------------------------
 
-  Future<DownloadItemModel> addDownload({
+  Future<DownloadItemModel?> addDownload({
     required FileItemModel file,
     required String downloadUrl,
-    String? savePath,
-  }) async {
-    await _ensureInitialized();
-
-    final existingTask = _downloadList.firstWhere(
-      (item) =>
-          item.file.fileId == file.fileId &&
-          item.status != DownloadStatus.completed,
-      orElse: () =>
-          DownloadItemModel(file: file, savePath: '', downloadUrl: ''),
-    );
-
-    if (existingTask.savePath.isNotEmpty) {
-      return existingTask;
-    }
-
-    final path = savePath ?? await _getDefaultSavePath(file.fileName);
-
-    final downloadItem = DownloadItemModel(
-      file: file,
-      savePath: path,
-      downloadUrl: downloadUrl,
-      totalSize: file.size,
-    );
-
-    _downloadList.add(downloadItem);
-    await _saveDownloadList();
-    _notifyListChange();
-
-    await startDownload(downloadItem);
-
-    return downloadItem;
-  }
-
-  Future<String> _getDefaultSavePath(String fileName) async {
-    final directory = await getDownloadsDirectory();
-    return '${directory!.path}/${_sanitizeFileName(fileName)}';
-  }
-
-  /// 添加一个非 123pan 的外部 URL 下载任务
-  Future<DownloadItemModel> addExternalDownload({
-    required String url,
     required String savePath,
-    String? fileName,
   }) async {
-    await _ensureInitialized();
-
-    final name = (fileName != null && fileName.isNotEmpty)
-        ? fileName
-        : _filenameFromUrl(url);
-
-    // 同 URL 且未完成的任务去重
-    final existing = _downloadList.firstWhere(
-      (item) =>
-          item.isExternal &&
-          item.downloadUrl == url &&
-          item.status != DownloadStatus.completed,
-      orElse: () => DownloadItemModel(
-        file: _placeholderFile(0, ''),
-        savePath: '',
-        downloadUrl: '',
-      ),
-    );
-    if (existing.savePath.isNotEmpty) return existing;
-
-    final syntheticId = -DateTime.now().microsecondsSinceEpoch;
-    final placeholder = _placeholderFile(syntheticId, name);
-
-    final downloadItem = DownloadItemModel(
-      file: placeholder,
-      savePath: savePath,
-      downloadUrl: url,
-      isExternal: true,
-    );
-
-    _downloadList.add(downloadItem);
-    await _saveDownloadList();
-    _notifyListChange();
-
-    await startDownload(downloadItem);
-
-    return downloadItem;
-  }
-
-  String _filenameFromUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      final segments = uri.pathSegments;
-      if (segments.isNotEmpty && segments.last.isNotEmpty) {
-        final decoded = Uri.decodeComponent(segments.last);
-        return _sanitizeFileName(decoded);
-      }
-    } catch (_) {}
-    return 'download_${DateTime.now().millisecondsSinceEpoch}';
-  }
-
-  String _sanitizeFileName(String name) {
-    final cleaned = name.replaceAll(RegExp(r'[/\\]'), '_');
-    return cleaned.replaceFirst(RegExp(r'^\.+'), '');
-  }
-
-  FileItemModel _placeholderFile(int id, String name) {
-    return FileItemModel(
-      fileId: id,
-      fileName: name,
-      type: 0,
-      size: 0,
-      etag: '',
-      s3keyFlag: '',
-      contentType: '',
-      createAt: '',
-      updateAt: '',
-      hidden: false,
-      parentFileId: 0,
-      pinYin: '',
-      starredStatus: false,
-    );
-  }
-
-  Future<void> startDownload(DownloadItemModel item) async {
-    await _ensureInitialized();
-
-    if (item.status == DownloadStatus.downloading) return;
-
-    // 确保保存目录存在
-    final file = File(item.savePath);
-    final parentDir = file.parent;
-    if (!await parentDir.exists()) {
-      await parentDir.create(recursive: true);
+    // 服务未运行则自动重启
+    if (!_running) {
+      final ok = await startServer();
+      if (!ok) return null;
     }
+    // 有新任务，取消空闲定时器
+    _cancelIdleTimer();
+    if (_client == null) return null;
 
-    final filename = file.uri.pathSegments.last;
-    final directory = parentDir.path;
-
-    // 创建 DownloadTask
-    final task = DownloadTask(
-      url: item.downloadUrl,
-      filename: filename,
-      directory: directory,
-      baseDirectory: BaseDirectory.root,
-      headers: item.isExternal
-          ? _kExternalHeaders
-          : Map<String, String>.from(headers),
-      updates: Updates.statusAndProgress,
-      allowPause: true,
-      retries: 3,
-      metaData: jsonEncode({
-        'fileId': item.file.fileId,
-        'isExternal': item.isExternal,
-      }),
+    final result = await _client!.addTask(
+      url: downloadUrl,
+      savePath: savePath,
+      fileName: file.fileName,
     );
 
-    item.taskId = task.taskId;
-    item.status = DownloadStatus.downloading;
-    item.startTime ??= DateTime.now();
-    _tasks[task.taskId] = task;
-    await _saveDownloadList();
-    _notifyProgress(item);
+    if (result == null) return null;
 
-    // 使用 enqueue 启动后台下载
-    final success = await FileDownloader().enqueue(task);
-    if (!success) {
-      item.status = DownloadStatus.failed;
-      item.errorMessage = '无法启动下载任务';
-      _notifyProgress(item);
-      await _saveDownloadList();
+    final item = DownloadItemModel.fromServerMap(result);
+    if (item != null) {
+      _downloadList.add(item);
       _notifyListChange();
     }
+    return item;
   }
 
-  void pauseDownload(DownloadItemModel item) {
-    if (item.taskId == null) return;
-
-    final task = _tasks[item.taskId!];
-    if (task != null) {
-      FileDownloader().pause(task);
+  Future<bool> pauseDownload(DownloadItemModel item) async {
+    _pendingActions.add(item.taskId);
+    final ok = await _client?.pauseTask(item.taskId) ?? false;
+    if (ok) {
+      item.status = DownloadStatus.paused;
+      _notifyProgress(item);
+      _notifyListChange();
     }
-    item.status = DownloadStatus.paused;
-    item.speed = 0;
-    _notifyProgress(item);
-    _saveDownloadList();
-    _notifyListChange();
+    _pendingActions.remove(item.taskId);
+    return ok;
   }
 
-  void resumeDownload(DownloadItemModel item) {
-    if (item.taskId == null) return;
-
-    final task = _tasks[item.taskId!];
-    if (task != null) {
-      FileDownloader().resume(task);
+  Future<bool> resumeDownload(DownloadItemModel item) async {
+    _pendingActions.add(item.taskId);
+    final ok = await _client?.resumeTask(item.taskId) ?? false;
+    if (ok) {
+      item.status = DownloadStatus.pending;
+      _notifyProgress(item);
+      _notifyListChange();
     }
-    item.status = DownloadStatus.downloading;
-    _notifyProgress(item);
-    _saveDownloadList();
-    _notifyListChange();
+    _pendingActions.remove(item.taskId);
+    return ok;
   }
 
-  void pauseAllDownloads() {
-    for (final item in _downloadList) {
-      if (item.status == DownloadStatus.downloading) {
-        pauseDownload(item);
+  Future<bool> removeDownload(DownloadItemModel item) async {
+    _pendingActions.add(item.taskId);
+    final ok = await _client?.removeTask(item.taskId) ?? false;
+    if (ok) {
+      _downloadList.remove(item);
+      _notifyListChange();
+    }
+    _pendingActions.remove(item.taskId);
+    return ok;
+  }
+
+  Future<bool> clearCompleted() async {
+    final ok = await _client?.clearCompleted() ?? false;
+    if (ok) {
+      _downloadList.removeWhere((i) => i.status == DownloadStatus.completed);
+      _notifyListChange();
+    }
+    return ok;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 加载
+  // ---------------------------------------------------------------------------
+
+  Future<void> _loadFromServer() async {
+    if (_client == null) return;
+    final tasks = await _client!.listTasks();
+    _downloadList.clear();
+    for (final t in tasks) {
+      final item = DownloadItemModel.fromServerMap(t);
+      if (item != null) {
+        _downloadList.add(item);
       }
     }
-  }
-
-  Future<void> removeDownload(DownloadItemModel item) async {
-    if (item.taskId != null) {
-      await FileDownloader().cancelTaskWithId(item.taskId!);
-      _tasks.remove(item.taskId!);
-    }
-    _downloadList.remove(item);
-
-    // 清理临时文件
-    final file = File(item.savePath);
-    if (await file.exists()) {
-      await file.delete();
-    }
-
-    await _saveDownloadList();
     _notifyListChange();
-  }
-
-  void clearCompleted() {
-    _downloadList.removeWhere(
-      (item) => item.status == DownloadStatus.completed,
-    );
-    _saveDownloadList();
-    _notifyListChange();
-  }
-
-  // ---------------------------------------------------------------------------
-  // 辅助方法
-  // ---------------------------------------------------------------------------
-
-  Future<void> _ensureInitialized() async {
-    if (!_isInitialized) {
-      await initialize();
-    }
   }
 
   void _notifyProgress(DownloadItemModel item) {

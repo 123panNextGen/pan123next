@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:get/get.dart';
@@ -6,6 +7,7 @@ import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/pages/transfer/dialog.dart';
+import 'package:http/http.dart' as http;
 import 'package:pan123next/widgets/downloader_tile.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 
@@ -67,10 +69,18 @@ class _DownloaderPageState extends State<DownloaderPage> {
     );
     if (result == null || !mounted) return;
     try {
-      await Get.find<DownloadSession>().addExternalDownload(
-        url: result.url,
-        savePath: result.savePath,
+      final resp = await http.post(
+        Uri.parse('http://127.0.0.1:${Get.find<DownloadSession>().port}/api/tasks'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'url': result.url,
+          'save_path': result.savePath,
+          'file_name': '',
+        }),
       );
+      if (resp.statusCode != 200) {
+        throw Exception('服务器返回 ${resp.statusCode}');
+      }
       if (!mounted) return;
       if (_filterType == '上传中') {
         setState(() => _filterType = '全部');

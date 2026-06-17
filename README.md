@@ -76,5 +76,6 @@
 
 ---
 
-<p align="center">Made with ❤️ by 123panNextGen Team</p>
-<p align="center">⚡ Powered with <b>you</b></p>
+Made with ❤️ by 123panNextGen Team
+
+⚡ Powered with **you**
