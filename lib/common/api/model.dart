@@ -121,9 +121,9 @@ class FileListResponse {
 
   factory FileListResponse.fromJson(Map<String, dynamic> json) {
     return FileListResponse(
-      code: json['code'] ?? 0,
-      message: json['message'] ?? '',
-      data: FileListData.fromJson(json['data'] ?? {}),
+      code: json['Code'] ?? 0,
+      message: json['Message'] ?? '',
+      data: FileListData.fromJson(json['Data'] ?? {}),
     );
   }
 }

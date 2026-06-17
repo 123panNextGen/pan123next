@@ -62,15 +62,22 @@ class _LoginInputPageState extends State<LoginInputPage> {
     super.initState();
     Map<String, dynamic> info = control.getUserInfo();
     setState(() {
-      userNameController.text = info['userName'];
-      passwordController.text = info['password'];
-      autoLogin = info['autoLogin'];
-      rememberPassword = info['rememberPassword'];
+      userNameController.text = info['userName'] ?? '';
+      passwordController.text = info['password'] ?? '';
+      autoLogin = info['autoLogin'] ?? false;
+      rememberPassword = info['rememberPassword'] ?? false;
     });
 
     if (autoLogin) {
       login();
     }
+  }
+
+  @override
+  void dispose() {
+    userNameController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override

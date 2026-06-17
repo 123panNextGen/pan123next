@@ -6,6 +6,7 @@ import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/downloader/model.dart';
 import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/format.dart';
+import 'package:path/path.dart' as p;
 
 class DownloaderTile extends StatefulWidget {
   const DownloaderTile({super.key, required this.file});
@@ -54,14 +55,14 @@ class _DownloaderTileState extends State<DownloaderTile> {
           const SizedBox(width: 5),
           Icon(
             getFileIconDataBySuffix(
-              file.savePath.split('/').last.split('.').lastOrNull ?? '',
+              p.extension(file.savePath).replaceAll('.', ''),
             ),
             color: appSession.accentColor.value,
             size: 24,
           ),
         ],
       ),
-      title: Text(file.savePath.split('/').last),
+      title: Text(p.basename(file.savePath)),
       subtitle: Row(
         children: [
           Expanded(child: ProgressBar(value: file.progress * 100)),

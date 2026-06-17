@@ -13,10 +13,8 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  bool isLoggedIn = false;
-
   void onLoginSuccess() {
-    setState(() => isLoggedIn = true);
+    Get.find<AppSession>().isLoggedIn.value = true;
   }
 
   @override
@@ -33,7 +31,7 @@ class _MainAppState extends State<MainApp> {
             fontFamily: 'MiSans',
           ),
           home: SafeArea(
-            child: isLoggedIn
+            child: appSession.isLoggedIn.value
                 ? const MainScreen()
                 : LoginScreen(onLoginSuccess: onLoginSuccess),
           ),

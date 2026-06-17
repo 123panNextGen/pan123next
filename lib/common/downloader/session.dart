@@ -45,8 +45,10 @@ class DownloadSession extends GetxController {
     _updateHeaders();
   }
 
-  void addDownloadListListener(Function(List<DownloadItemModel>) listener) {
-    _listController.stream.listen(listener);
+  StreamSubscription<List<DownloadItemModel>> addDownloadListListener(
+    void Function(List<DownloadItemModel>) listener,
+  ) {
+    return _listController.stream.listen(listener);
   }
 
   Stream<DownloadItemModel> get progressStream => _progressController.stream;
@@ -190,7 +192,7 @@ class DownloadSession extends GetxController {
 
   Future<String> _getDefaultSavePath(String fileName) async {
     final directory = await getDownloadsDirectory();
-    return '${directory!.path}/$fileName';
+    return '${directory!.path}/${_sanitizeFileName(fileName)}';
   }
 
   /// 添加一个非 123pan 的外部 URL 下载任务
@@ -243,10 +245,16 @@ class DownloadSession extends GetxController {
       final uri = Uri.parse(url);
       final segments = uri.pathSegments;
       if (segments.isNotEmpty && segments.last.isNotEmpty) {
-        return Uri.decodeComponent(segments.last);
+        final decoded = Uri.decodeComponent(segments.last);
+        return _sanitizeFileName(decoded);
       }
     } catch (_) {}
     return 'download_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  String _sanitizeFileName(String name) {
+    final cleaned = name.replaceAll(RegExp(r'[/\\]'), '_');
+    return cleaned.replaceFirst(RegExp(r'^\.+'), '');
   }
 
   FileItemModel _placeholderFile(int id, String name) {

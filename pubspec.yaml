@@ -23,6 +23,7 @@ dependencies:
   fluentui_system_icons: ^1.1.273
   get: ^4.7.3
 
+  path: ^1.9.1
   path_provider: ^2.1.5
   file_picker: ^11.0.2
 

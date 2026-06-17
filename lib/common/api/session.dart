@@ -12,7 +12,7 @@ class NetSession {
   }
 
   late final Dio _dio;
-  Map<String, dynamic> headers = {};
+  final Map<String, dynamic> headers = {};
   UserInfoModel? _userInformation;
   String cookie = '';
 
@@ -59,8 +59,8 @@ class NetSession {
     _dio.interceptors.add(
       LogInterceptor(
         request: true,
-        requestHeader: true,
-        requestBody: true,
+        requestHeader: false,
+        requestBody: false,
         responseHeader: false,
         responseBody: false,
         error: true,
@@ -70,7 +70,9 @@ class NetSession {
 
   void _updateHeaders() {
     if (_userInformation == null) return;
-    headers = buildHeadersForUser(_userInformation!);
+    headers
+      ..clear()
+      ..addAll(buildHeadersForUser(_userInformation!));
   }
 
   static Map<String, dynamic> buildHeadersForUser(UserInfoModel userInfo) {
@@ -94,6 +96,14 @@ class NetSession {
   }
 
   Future<ApiReturnModel<void>> login() async {
+    if (_userInformation == null) {
+      return ApiReturnModel<void>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: '请先设置用户信息',
+      );
+    }
     try {
       int returnCode = 0;
       Map data = {
@@ -344,7 +354,8 @@ class NetSession {
         );
       }
 
-      String downloadUrl = response.data['data']['DownloadUrl'] ?? '';
+      final data = response.data['data'];
+      String downloadUrl = data is Map ? data['DownloadUrl'] ?? '' : '';
 
       if (downloadUrl.isNotEmpty) {
         return ApiReturnModel<String>(
