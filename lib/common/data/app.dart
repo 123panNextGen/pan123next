@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:pan123next/common/data/base_db.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 List<Map> get themes => [
@@ -16,7 +17,7 @@ List<Map> get accentColors => [
   {'value': 'teal', 'label': '青色', 'result': Colors.teal},
 ];
 
-class AppDb {
+class AppDb extends BaseDb {
   static const _prefix = 'app';
   static SharedPreferences? _prefs;
 
@@ -27,6 +28,10 @@ class AppDb {
   factory AppDb() => _instance;
   AppDb._internal();
 
+  @override
+  String get prefix => _prefix;
+
+  @override
   Future<void> initDb() async {
     if (_initialized) return;
 
@@ -52,8 +57,10 @@ class AppDb {
     _initialized = true;
   }
 
+  @override
   Future<void> firstInitDb() async {
     await _setString('$_prefix.theme', 'light');
+    await _setString('$_prefix.accentColor', 'purple');
     await _setBool('$_prefix.initialed', true);
   }
 
@@ -67,6 +74,7 @@ class AppDb {
     await _prefs!.setBool(key, value);
   }
 
+  @override
   dynamic getValue(String key) {
     if (!_initialized) {
       throw Exception('请先调用 initDb() 初始化数据库');
@@ -74,25 +82,25 @@ class AppDb {
     return _cache['$_prefix.$key'];
   }
 
-  void setValue(String key, dynamic value, String type) {
+  @override
+  void setValue<T>(String key, T value) {
     if (!_initialized) {
       throw Exception('请先调用 initDb() 初始化数据库');
     }
     final realKey = '$_prefix.$key';
-    switch (type) {
-      case 'bool':
-        _cache[realKey] = value;
-        _prefs!.setBool(realKey, value);
-        break;
-      case 'int':
-        _cache[realKey] = value;
-        _prefs!.setInt(realKey, value);
-        break;
-      case 'string':
-      default:
-        _cache[realKey] = value;
-        _prefs!.setString(realKey, value);
-        break;
+
+    if (value is String) {
+      prefs.setString(realKey, value);
+    } else if (value is bool) {
+      prefs.setBool(realKey, value);
+    } else if (value is int) {
+      prefs.setInt(realKey, value);
+    } else if (value is double) {
+      prefs.setDouble(realKey, value);
+    } else if (value is List<String>) {
+      prefs.setStringList(realKey, value);
+    } else {
+      prefs.setString(realKey, value.toString());
     }
   }
 
