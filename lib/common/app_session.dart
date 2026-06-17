@@ -50,7 +50,7 @@ class AppSession extends GetxController {
     final locale = Locale(parts[0], parts[1]);
     appLocale.value = locale;
     Get.locale = locale;
-    Get.find<UserDb>().setValue('set.language', languageTag, 'string');
+    Get.find<UserDb>().setValue('set.language', languageTag);
   }
 
   String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
@@ -62,10 +62,10 @@ class AppSession extends GetxController {
 
   void clearSession() {
     final userDb = Get.find<UserDb>();
-    userDb.setValue('password', '', 'string');
-    userDb.setValue('authorization', '', 'string');
-    userDb.setValue('uuid', '', 'string');
-    userDb.setValue('autoLogin', false, 'bool');
-    userDb.setValue('rememberPassword', false, 'bool');
+    userDb.setValue('password', '');
+    userDb.setValue('authorization', '');
+    userDb.setValue('uuid', '');
+    userDb.setValue('autoLogin', false);
+    userDb.setValue('rememberPassword', false);
   }
 }

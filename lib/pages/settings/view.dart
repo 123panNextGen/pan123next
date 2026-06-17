@@ -157,7 +157,6 @@ class _SettingsViewState extends State<SettingsView> {
                           Get.find<UserDb>().setValue(
                             'set.askDownload',
                             askDownload,
-                            'bool',
                           );
                           setState(() {});
                         },
@@ -176,7 +175,6 @@ class _SettingsViewState extends State<SettingsView> {
                             Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               v,
-                              'string',
                             );
                           },
                         ),
@@ -204,7 +202,6 @@ class _SettingsViewState extends State<SettingsView> {
                             Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               path,
-                              'string',
                             );
                           }
                           setState(() => _picking = false);

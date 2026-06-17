@@ -28,19 +28,22 @@ abstract class BaseDb {
     return prefs.get('$prefix.$key');
   }
 
-  void setValue(String key, dynamic value, String type) {
+  void setValue<T>(String key, T value) {
     if (key.isEmpty) return;
     final realKey = '$prefix.$key';
-    switch (type) {
-      case 'string':
-        prefs.setString(realKey, value);
-        break;
-      case 'bool':
-        prefs.setBool(realKey, value);
-        break;
-      case 'int':
-        prefs.setInt(realKey, value);
-        break;
+
+    if (value is String) {
+      prefs.setString(realKey, value);
+    } else if (value is bool) {
+      prefs.setBool(realKey, value);
+    } else if (value is int) {
+      prefs.setInt(realKey, value);
+    } else if (value is double) {
+      prefs.setDouble(realKey, value);
+    } else if (value is List<String>) {
+      prefs.setStringList(realKey, value);
+    } else {
+      prefs.setString(realKey, value.toString());
     }
   }
 }

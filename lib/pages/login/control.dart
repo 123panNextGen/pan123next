@@ -63,13 +63,13 @@ Future<ApiReturnModel> login(
     if (rememberPassword) {
       db.setUserInfo(session.userInformation!);
     } else {
-      db.setValue('password', '', 'string');
-      db.setValue('authorization', '', 'string');
+      db.setValue('password', '');
+      db.setValue('authorization', '');
     }
-    db.setValue('autoLogin', autoLogin, 'bool');
-    db.setValue('rememberPassword', rememberPassword, 'bool');
+    db.setValue('autoLogin', autoLogin);
+    db.setValue('rememberPassword', rememberPassword);
 
-    db.setValue('userName', userName, 'string');
+    db.setValue('userName', userName);
   }
 
   return returnModel;
