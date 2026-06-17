@@ -19,6 +19,32 @@ bool isSupportedAria() {
   return Platform.isWindows || Platform.isLinux || Platform.isAndroid;
 }
 
+String getPlatform() {
+  if (isDesktop()) {
+    return 'desktop';
+  } else if (isMobile()) {
+    return 'mobile';
+  } else {
+    return 'unknown';
+  }
+}
+
+String getSystem() {
+  if (Platform.isWindows) {
+    return 'windows';
+  } else if (Platform.isLinux) {
+    return 'linux';
+  } else if (Platform.isMacOS) {
+    return 'macos';
+  } else if (Platform.isIOS) {
+    return 'ios';
+  } else if (Platform.isAndroid) {
+    return 'android';
+  } else {
+    return 'unknown';
+  }
+}
+
 PaneDisplayMode getPaneDisplayMode() {
   return isDesktop() ? PaneDisplayMode.compact : PaneDisplayMode.auto;
 }
