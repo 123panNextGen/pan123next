@@ -200,6 +200,7 @@ class _SettingsViewState extends State<SettingsView> {
                           setState(() => _picking = true);
                           final path = await FilePicker.getDirectoryPath();
                           if (path != null) {
+                            _downloadPathController.text = path;
                             Get.find<UserDb>().setValue(
                               'set.defaultDownloadPath',
                               path,

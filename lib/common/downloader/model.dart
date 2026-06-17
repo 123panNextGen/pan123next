@@ -1,54 +1,36 @@
-import 'package:dio/dio.dart';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:pan123next/common/api/model.dart';
 
+/// 下载状态映射
 enum DownloadStatus {
   pending, // 待下载
   downloading, // 下载中
   paused, // 暂停
   completed, // 完成
   failed, // 失败
+  canceled, // 取消
 }
 
-/// 单个分片的元信息。
-///
-/// 字段会随任务一起序列化到 SharedPreferences，因此可以在应用崩溃 / 重启后
-/// 从 `downloaded` 字段恢复每个分片的下载进度（断点续传）。
-/// `cancelToken` 是运行时字段，不会持久化。
-class SegmentInfo {
-  final int index;
-  final int start; // 起始字节（含）
-  final int end; // 结束字节（含）
-  int downloaded; // 已成功写入字节数；续传起点 = start + downloaded
-  bool completed;
-
-  // 仅运行时使用，不参与序列化
-  CancelToken? cancelToken;
-
-  SegmentInfo({
-    required this.index,
-    required this.start,
-    required this.end,
-    this.downloaded = 0,
-    this.completed = false,
-  });
-
-  int get expectedSize => end - start + 1;
-
-  Map<String, dynamic> toJson() => {
-    'index': index,
-    'start': start,
-    'end': end,
-    'downloaded': downloaded,
-    'completed': completed,
-  };
-
-  factory SegmentInfo.fromJson(Map<String, dynamic> json) => SegmentInfo(
-    index: json['index'] as int,
-    start: json['start'] as int,
-    end: json['end'] as int,
-    downloaded: (json['downloaded'] ?? 0) as int,
-    completed: (json['completed'] ?? false) as bool,
-  );
+/// 将 background_downloader 的 TaskStatus 转换为 DownloadStatus
+DownloadStatus _mapTaskStatus(TaskStatus status) {
+  switch (status) {
+    case TaskStatus.enqueued:
+      return DownloadStatus.pending;
+    case TaskStatus.running:
+      return DownloadStatus.downloading;
+    case TaskStatus.paused:
+      return DownloadStatus.paused;
+    case TaskStatus.complete:
+      return DownloadStatus.completed;
+    case TaskStatus.failed:
+      return DownloadStatus.failed;
+    case TaskStatus.canceled:
+      return DownloadStatus.canceled;
+    case TaskStatus.notFound:
+      return DownloadStatus.failed;
+    case TaskStatus.waitingToRetry:
+      return DownloadStatus.pending;
+  }
 }
 
 class DownloadItemModel {
@@ -64,18 +46,11 @@ class DownloadItemModel {
   DateTime? startTime;
   DateTime? endTime;
   String? errorMessage;
-  bool supportsResume;
-  String? etag;
 
-  /// 分片列表。空列表表示单线程下载或尚未规划分片。
-  /// 每个 [SegmentInfo] 都会持久化，崩溃恢复时直接复用。
-  List<SegmentInfo> segments;
+  /// background_downloader 的任务 ID
+  String? taskId;
 
-  /// 任务级重试次数（当前仅占位，便于未来扩展整体级别的策略）。
-  int retryCount;
-
-  /// 是否为外部 URL（非 123pan）。外部任务不附带 123pan 鉴权头，
-  /// 也不会在过期时自动刷新 URL。
+  /// 是否为外部 URL（非 123pan）
   bool isExternal;
 
   DownloadItemModel({
@@ -90,12 +65,9 @@ class DownloadItemModel {
     this.startTime,
     this.endTime,
     this.errorMessage,
-    this.supportsResume = false,
-    this.etag,
-    List<SegmentInfo>? segments,
-    this.retryCount = 0,
+    this.taskId,
     this.isExternal = false,
-  }) : segments = segments ?? [];
+  });
 
   int? get remainingSeconds {
     if (status != DownloadStatus.downloading || speed == 0) return null;
@@ -129,37 +101,57 @@ class DownloadItemModel {
       'startTime': startTime?.toIso8601String(),
       'endTime': endTime?.toIso8601String(),
       'errorMessage': errorMessage,
-      'supportsResume': supportsResume,
-      'etag': etag,
-      'segments': segments.map((s) => s.toJson()).toList(),
-      'retryCount': retryCount,
+      'taskId': taskId,
       'isExternal': isExternal,
     };
   }
 
   factory DownloadItemModel.fromJson(Map<String, dynamic> json) {
-    final segmentsJson = json['segments'] as List?;
     return DownloadItemModel(
       file: FileItemModel.fromJson(json['file']),
       savePath: json['savePath'],
       downloadUrl: json['downloadUrl'],
       status: DownloadStatus.values[json['status']],
-      downloadedSize: json['downloadedSize'],
-      totalSize: json['totalSize'],
-      progress: json['progress'],
-      speed: json['speed'],
+      downloadedSize: json['downloadedSize'] ?? 0,
+      totalSize: json['totalSize'] ?? 0,
+      progress: json['progress'] ?? 0.0,
+      speed: json['speed'] ?? 0,
       startTime: json['startTime'] != null
           ? DateTime.parse(json['startTime'])
           : null,
       endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
       errorMessage: json['errorMessage'],
-      supportsResume: json['supportsResume'] ?? false,
-      etag: json['etag'],
-      segments: segmentsJson
-          ?.map((e) => SegmentInfo.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      retryCount: (json['retryCount'] ?? 0) as int,
+      taskId: json['taskId'],
       isExternal: (json['isExternal'] ?? false) as bool,
     );
+  }
+
+  /// 从 background_downloader 的 TaskStatusUpdate 更新状态
+  void updateFromTaskStatus(TaskStatus status, {String? error}) {
+    this.status = _mapTaskStatus(status);
+    if (status == TaskStatus.complete) {
+      endTime = DateTime.now();
+      progress = 1.0;
+      downloadedSize = totalSize;
+    }
+    if (error != null) {
+      errorMessage = error;
+    }
+  }
+
+  /// 从 background_downloader 的 TaskProgressUpdate 更新进度
+  void updateFromProgress(TaskProgressUpdate update) {
+    progress = update.progress;
+    if (update.hasExpectedFileSize) {
+      totalSize = update.expectedFileSize;
+    }
+    // 计算已下载大小
+    if (progress > 0 && progress < 1 && totalSize > 0) {
+      downloadedSize = (progress * totalSize).round();
+    }
+    // 使用库提供的网络速度（MB/s -> bytes/s）
+    if (update.hasNetworkSpeed) {
+      speed = (update.networkSpeed * 1024 * 1024).round();
+    }
   }
 }

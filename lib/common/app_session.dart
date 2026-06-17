@@ -35,11 +35,13 @@ class AppSession extends GetxController {
       value == Brightness.dark ? 'dark' : 'light',
       'string',
     );
+    update();
   }
 
   void updateAccentColor(String value) {
     Get.find<AppDb>().setValue('accentColor', value, 'string');
     accentColor.value = Get.find<AppDb>().getAccentColor();
+    update();
   }
 
   void updateLocale(String languageTag) {
