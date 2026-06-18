@@ -288,13 +288,18 @@ func (t *DownloadTask) Pause() {
 	if t.Status == StatusDownloading || t.Status == StatusPending {
 		t.Status = StatusPaused
 	}
-	select {
-	case <-t.cancel:
-	default:
-		close(t.cancel)
+	if t.cancel != nil {
+		select {
+		case <-t.cancel:
+		default:
+			close(t.cancel)
+		}
 	}
 	cancelFn := t.cancelCtx
 	b := t.body
+	t.body = nil
+	t.cancelCtx = nil
+	t.cancel = nil
 	t.mu.Unlock()
 
 	if cancelFn != nil {
@@ -319,11 +324,17 @@ func (t *DownloadTask) WaitStopped() {
 
 func (t *DownloadTask) Resume() {
 	t.pauseRequested.Store(false)
+	t.launched.Store(false)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.Status == StatusPaused || t.Status == StatusFailed {
 		t.Status = StatusPending
+		t.ErrorMessage = ""
 	}
+	t.cancel = nil
+	t.cancelCtx = nil
+	t.body = nil
+	t.done = nil
 }
 
 func (t *DownloadTask) Launched() bool {
