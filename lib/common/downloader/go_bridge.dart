@@ -185,7 +185,7 @@ class DownloadServerBridge {
 
   Future<bool> _startMobile(String dataDir) async {
     try {
-      final result = await _channel.invokeMethod<int>('startServer');
+      final result = await _channel.invokeMethod<int>('startServer', {'dataDir': dataDir});
       if (result == null || result <= 0) return false;
       _port = result;
       _running = true;

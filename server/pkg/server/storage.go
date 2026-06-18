@@ -40,11 +40,3 @@ func LoadTasks(dir string) {
 	}
 	GlobalManager.RestoreTasks(tasks)
 }
-
-func defaultDataDir() string {
-	exe, err := os.Executable()
-	if err != nil {
-		return "."
-	}
-	return filepath.Dir(exe)
-}

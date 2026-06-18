@@ -5,6 +5,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
 android {
     namespace = "org.pan123ng.pan123next"
     compileSdk = flutter.compileSdkVersion
@@ -13,10 +21,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -50,13 +54,10 @@ tasks.register<Exec>("buildGoBackend") {
     // Only run if gomobile is available
     val gomobilePath: String? by lazy {
         try {
-            org.apache.tools.ant.taskdefs.condition.Os.isFamily("windows")
-            val result = ByteArrayOutputStream()
-            exec {
-                commandLine("where", "gomobile")
-                standardOutput = result
-            }
-            result.toString().trim()
+            val cmd = if (System.getProperty("os.name").lowercase().contains("win")) "where" else "which"
+            providers.exec {
+                commandLine(cmd, "gomobile")
+            }.standardOutput.asText.get().trim()
         } catch (_: Exception) { null }
     }
 

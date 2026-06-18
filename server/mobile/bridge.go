@@ -3,8 +3,6 @@ package mobile
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"pan123next_downloader/pkg/server"
 )
@@ -13,16 +11,14 @@ var dataDir string
 
 // StartServer 启动下载服务器，返回监听端口号。失败返回 0。
 //
-// 数据持久化到 os.UserCacheDir()/pan123next_downloader/。
-func StartServer() int {
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		dir = "."
+// dir: 数据持久化目录路径，由 Flutter 传入。
+func StartServer(dir string) int {
+	if dir == "" {
+		return 0
 	}
-	dataDir = filepath.Join(dir, "pan123next_downloader")
-	os.MkdirAll(dataDir, 0755)
+	dataDir = dir
 
-	port, err := server.StartServer(dataDir)
+	port, err := server.StartServer(dir)
 	if err != nil {
 		return 0
 	}
