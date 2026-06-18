@@ -9,23 +9,6 @@ enum DownloadStatus {
   canceled,
 }
 
-DownloadStatus _statusFromString(String s) {
-  switch (s) {
-    case 'pending':
-      return DownloadStatus.pending;
-    case 'downloading':
-      return DownloadStatus.downloading;
-    case 'paused':
-      return DownloadStatus.paused;
-    case 'completed':
-      return DownloadStatus.completed;
-    case 'failed':
-      return DownloadStatus.failed;
-    default:
-      return DownloadStatus.pending;
-  }
-}
-
 class DownloadItemModel {
   final FileItemModel file;
   String savePath;
@@ -58,132 +41,23 @@ class DownloadItemModel {
     this.isExternal = false,
   });
 
-  int? get remainingSeconds {
-    if (status != DownloadStatus.downloading || speed == 0) return null;
-    final remaining = totalSize - downloadedSize;
-    return (remaining / speed).ceil();
-  }
+  int? get remainingSeconds => null;
 
-  String get formattedTotalSize => _formatSize(totalSize);
-  String get formattedDownloadedSize => _formatSize(downloadedSize);
-  String get formattedSpeed => '${_formatSize(speed)}/s';
+  String get formattedTotalSize => '';
+  String get formattedDownloadedSize => '';
+  String get formattedSpeed => '';
 
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
+  static DownloadItemModel? fromServerMap(Map<String, dynamic> map) => null;
 
-  // ---------------------------------------------------------------------------
-  // Go 后端数据映射
-  // ---------------------------------------------------------------------------
+  void updateFromServerMap(Map<String, dynamic> map) {}
 
-  static DownloadItemModel? fromServerMap(Map<String, dynamic> map) {
-    final id = map['id'] as String?;
-    final url = map['url'] as String? ?? '';
-    final savePath = map['save_path'] as String? ?? '';
-    final fileName = map['file_name'] as String? ?? '未知文件';
-    final totalSize = _toInt(map['total_size']);
-    final downloaded = _toInt(map['downloaded']);
-    final status = _statusFromString(map['status'] as String? ?? '');
-    final speed = _toInt(map['speed']);
-    final errorMsg = map['error_message'] as String?;
+  void updateProgressFromMap(Map<String, dynamic> map) {}
 
-    if (id == null || id.isEmpty) return null;
+  void markCompleted() {}
 
-    final fileItem = FileItemModel(
-      fileId: id.hashCode,
-      fileName: fileName,
-      type: 0,
-      size: totalSize,
-      etag: '',
-      s3keyFlag: '',
-      contentType: '',
-      createAt: '',
-      updateAt: '',
-      hidden: false,
-      parentFileId: 0,
-      pinYin: '',
-      starredStatus: false,
-    );
+  void markFailed(String? error) {}
 
-    final item = DownloadItemModel(
-      file: fileItem,
-      savePath: savePath,
-      downloadUrl: url,
-      taskId: id,
-      status: status,
-      downloadedSize: downloaded,
-      totalSize: totalSize,
-      speed: speed,
-      errorMessage: errorMsg,
-    );
+  void updateProgress(int bytesReceived, int totalBytes) {}
 
-    if (totalSize > 0) {
-      item.progress = downloaded / totalSize;
-    }
-
-    return item;
-  }
-
-  void updateFromServerMap(Map<String, dynamic> map) {
-    totalSize = _toInt(map['total_size']);
-    downloadedSize = _toInt(map['downloaded']);
-    speed = _toInt(map['speed']);
-    errorMessage = map['error_message'] as String?;
-    status = _statusFromString(map['status'] as String? ?? '');
-
-    if (totalSize > 0) {
-      progress = downloadedSize / totalSize;
-    }
-  }
-
-  /// 只更新进度字段，不覆盖 status（用于 pending 操作期间避免状态回退）。
-  void updateProgressFromMap(Map<String, dynamic> map) {
-    totalSize = _toInt(map['total_size']);
-    downloadedSize = _toInt(map['downloaded']);
-    speed = _toInt(map['speed']);
-    errorMessage = map['error_message'] as String?;
-
-    if (totalSize > 0) {
-      progress = downloadedSize / totalSize;
-    }
-  }
-
-  static int _toInt(dynamic v) {
-    if (v is int) return v;
-    if (v is double) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
-    return 0;
-  }
-
-  // ---------------------------------------------------------------------------
-  // 序列化（用于旧版持久化，后续可移除）
-  // ---------------------------------------------------------------------------
-
-  void markCompleted() {
-    status = DownloadStatus.completed;
-    endTime = DateTime.now();
-    progress = 1.0;
-    downloadedSize = totalSize;
-  }
-
-  void markFailed(String? error) {
-    status = DownloadStatus.failed;
-    errorMessage = error;
-    speed = 0;
-  }
-
-  void updateProgress(int bytesReceived, int totalBytes) {
-    downloadedSize = bytesReceived;
-    totalSize = totalBytes;
-    progress = totalBytes > 0 ? bytesReceived / totalBytes : 0.0;
-  }
-
-  void updateSpeed(int bytesPerSecond) {
-    speed = bytesPerSecond;
-  }
+  void updateSpeed(int bytesPerSecond) {}
 }
