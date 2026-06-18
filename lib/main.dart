@@ -63,7 +63,9 @@ Future<void> main() async {
 
   // 终端信号：Ctrl+C / SIGTERM 时终止 Go 进程
   ProcessSignal.sigint.watch().listen((_) => downloadSession.stopServer());
-  ProcessSignal.sigterm.watch().listen((_) => downloadSession.stopServer());
+  if (!Platform.isWindows) {
+    ProcessSignal.sigterm.watch().listen((_) => downloadSession.stopServer());
+  }
 
   Get.put(AppSession());
 
