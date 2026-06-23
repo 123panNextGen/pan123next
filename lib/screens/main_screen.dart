@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
+import 'package:pan123next/common/downloader/downloader.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
+import 'package:pan123next/pages/transfer/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:window_manager/window_manager.dart';
@@ -17,14 +20,27 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int topIndex = 0;
   int downloadCount = 0;
+  StreamSubscription<DownloadTask>? _subscription;
 
   @override
   void initState() {
     super.initState();
+    final mgr = DownloadManager();
+    mgr.init().then((_) {
+      if (mounted) {
+        setState(() => downloadCount = mgr.downloadingCount);
+      }
+    });
+    _subscription = mgr.onTaskUpdated.listen((_) {
+      if (mounted) {
+        setState(() => downloadCount = mgr.downloadingCount);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _subscription?.cancel();
     super.dispose();
   }
 
@@ -70,7 +86,10 @@ class _MainScreenState extends State<MainScreen> {
             infoBadge: downloadCount > 0
                 ? InfoBadge(source: Text(downloadCount.toString()))
                 : const SizedBox(),
-            body: const Center(child: Text('你游开发者正在抓紧开发ing...')),
+            body: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: TransferView(),
+            ),
           ),
         ],
 
