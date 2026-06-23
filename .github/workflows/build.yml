@@ -14,7 +14,7 @@ jobs:
   # 校验：tag 推送场景下，必须保证 tag 指向的 commit 已合并入 main
   # ---------------------------------------------------------------------------
   verify-tag:
-    name: Verify tag on main and analyze project
+    name: Verify tag on main
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -38,11 +38,6 @@ jobs:
             echo "Only tags pointing to commits on the main branch are eligible for release."
             exit 1
           fi
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
 
   build:
     name: Build on ${{ matrix.os }}
@@ -84,7 +79,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libnotify-dev \
           libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-          libsecret \
+          libsecret-1-dev \
           ninja-build
 
       - name: Install dependencies

@@ -128,27 +128,3 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
 endif()
 
 
-# === Go downloader backend ===
-find_program(GO_EXECUTABLE go)
-if(GO_EXECUTABLE)
-  set(GO_SERVER_DIR "${CMAKE_SOURCE_DIR}/../server")
-  set(GO_SERVER_OUTPUT "${CMAKE_BINARY_DIR}/downloader_server")
-
-  add_custom_command(
-    OUTPUT ${GO_SERVER_OUTPUT}
-    COMMAND ${GO_EXECUTABLE} build
-      -o ${GO_SERVER_OUTPUT}
-      ./cmd/server
-    WORKING_DIRECTORY ${GO_SERVER_DIR}
-    COMMENT "Building Go downloader backend..."
-    VERBATIM
-  )
-  add_custom_target(go_downloader_backend DEPENDS ${GO_SERVER_OUTPUT})
-  add_dependencies(${BINARY_NAME} go_downloader_backend)
-
-  install(FILES "${GO_SERVER_OUTPUT}"
-    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-    COMPONENT Runtime)
-else()
-  message(STATUS "Go not found; skipping downloader backend build")
-endif()
