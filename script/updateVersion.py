@@ -97,13 +97,40 @@ def run_flutter_pub_get(project_dir: Path) -> None:
     click.echo("✓ flutter pub get 执行成功")
 
 
+def get_current_version(project_dir: Path) -> str | None:
+    """获取当前版本号（优先从 pubspec.yaml 读取）"""
+    pubspec_path = project_dir / "pubspec.yaml"
+    if pubspec_path.exists():
+        content = pubspec_path.read_text(encoding="utf-8")
+        match = re.search(r"version:\s*(\d+\.\d+\.\d+)", content)
+        if match:
+            return match.group(1)
+
+    pyproject_path = project_dir / "pyproject.toml"
+    if pyproject_path.exists():
+        content = pyproject_path.read_text(encoding="utf-8")
+        match = re.search(r'version\s*=\s*"(\d+\.\d+\.\d+)"', content)
+        if match:
+            return match.group(1)
+
+    return None
+
+
 @click.command(
     help="快速更新项目版本号并同步依赖\n\n"
     "VERSION: 新版本号，格式为 x.x.x (例如: 0.1.7)"
 )
 @click.argument(
     "version",
-    required=True,
+    required=False,
+    default=None,
+)
+@click.option(
+    "--get",
+    "get_version",
+    is_flag=True,
+    default=False,
+    help="仅获取当前版本号（不执行更新）",
 )
 @click.option(
     "--no-sync",
@@ -118,20 +145,36 @@ def run_flutter_pub_get(project_dir: Path) -> None:
     help="项目根目录，默认为当前目录",
 )
 def main(
-    version: str,
+    version: str | None,
+    get_version: bool,
     no_sync: bool,
     project_dir: Path | None,
 ) -> None:
     """更新项目版本号并同步依赖"""
 
+    # 确定项目目录
+    if project_dir is None:
+        project_dir = Path.cwd()
+
+    # --get 模式：仅获取并输出版本号
+    if get_version:
+        current = get_current_version(project_dir)
+        if current:
+            click.echo(current)
+        else:
+            click.echo("✗ 未找到版本号", err=True)
+            sys.exit(1)
+        return
+
+    # 更新模式需要 version 参数
+    if version is None:
+        click.echo("✗ 请指定版本号，或使用 --get 获取当前版本", err=True)
+        sys.exit(1)
+
     # 验证版本号格式
     if not re.match(r"^\d+\.\d+\.\d+$", version):
         click.echo("✗ 版本号格式错误，应为 x.x.x (例如: 0.1.7)", err=True)
         sys.exit(1)
-
-    # 确定项目目录
-    if project_dir is None:
-        project_dir = Path.cwd()
 
     click.echo(f"项目目录: {project_dir}")
     click.echo(f"新版本号: {version}")
