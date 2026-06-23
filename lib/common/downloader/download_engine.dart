@@ -101,6 +101,7 @@ class DownloadEngine {
     PauseToken? pauseToken,
   }) async {
     final tmpPath = '$savePath.pan123';
+    await Directory(tmpPath).parent.create(recursive: true);
 
     if (startOffset > 0) {
       final tmpFile = File(tmpPath);
@@ -177,6 +178,7 @@ class DownloadEngine {
     CancelToken? cancelToken,
     PauseToken? pauseToken,
   }) async {
+    await Directory(savePath).parent.create(recursive: true);
     final tmpDir = Directory('$savePath.pan123');
     if (!await tmpDir.exists()) {
       await tmpDir.create(recursive: true);
