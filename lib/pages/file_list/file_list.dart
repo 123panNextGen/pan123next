@@ -3,12 +3,12 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/user.dart';
-import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pan123next/common/downloader/downloader.dart';
 import 'dialog.dart';
 
 class FileListWidget extends StatefulWidget {
@@ -275,11 +275,7 @@ class _FileListWidgetState extends State<FileListWidget> {
         );
       }
 
-      if (fileResult != null) {
-      } else {
-        return;
-      }
-
+      if (fileResult == null) return;
       savePath = fileResult;
     }
 
@@ -298,11 +294,13 @@ class _FileListWidgetState extends State<FileListWidget> {
       return;
     }
 
-    await Get.find<DownloadSession>().addDownload(
+    final manager = DownloadManager();
+    await manager.createTask(
       file: file,
-      downloadUrl: downloadUrl,
       savePath: savePath,
+      downloadUrl: downloadUrl,
     );
+    await manager.start(_getLastTaskId(manager));
 
     if (!mounted) return;
     showInfoBar(
@@ -311,6 +309,11 @@ class _FileListWidgetState extends State<FileListWidget> {
       '下载任务已添加: ${file.fileName}',
       InfoBarSeverity.success,
     );
+  }
+
+  String _getLastTaskId(DownloadManager manager) {
+    final tasks = manager.tasks;
+    return tasks.last.id;
   }
 
   Future<void> getFileDownloadLink(FileItemModel file) async {

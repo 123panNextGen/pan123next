@@ -16,7 +16,9 @@ import UIKit
     channel.setMethodCallHandler { [weak self] (call, result) in
       switch call.method {
       case "startServer":
-        let port = GoDownloaderServer.startServer()
+        let args = call.arguments as? [String: Any]
+        let dataDir = args?["dataDir"] as? String ?? ""
+        let port = GoDownloaderServer.startServer(dataDir: dataDir)
         result(port)
       case "stopServer":
         GoDownloaderServer.stopServer()

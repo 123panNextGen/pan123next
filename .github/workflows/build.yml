@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -44,30 +44,17 @@ jobs:
         with:
           channel: stable
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze project
-        run: |
-          set -euo pipefail
-          if flutter analyze; then
-            echo "✅ Project analysis passed."
-          else
-            echo "❌ Project analysis failed. Please fix the errors before creating a release."
-            exit 1
-          fi
-
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: [ verify-tag ]
+    needs: [verify-tag]
     if: |
       always() &&
       (github.event_name == 'workflow_dispatch' || needs.verify-tag.result == 'success')
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
             target: linux
@@ -97,6 +84,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libnotify-dev \
           libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+          libsecret \
           ninja-build
 
       - name: Install dependencies
@@ -123,7 +111,7 @@ jobs:
   build-apk:
     name: Build APK
     runs-on: ubuntu-latest
-    needs: [ verify-tag ]
+    needs: [verify-tag]
     if: |
       always() &&
       (github.event_name == 'workflow_dispatch' || needs.verify-tag.result == 'success')
@@ -151,7 +139,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: [ build, build-apk ]
+    needs: [build, build-apk]
     runs-on: ubuntu-latest
     if: |
       always() &&

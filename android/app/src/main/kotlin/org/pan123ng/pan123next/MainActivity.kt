@@ -20,8 +20,9 @@ class MainActivity : FlutterActivity() {
                         result.success(serverPort)
                         return@setMethodCallHandler
                     }
+                    val dir = call.argument<String>("dir") ?: ""
                     Thread {
-                        val port = startGoServer()
+                        val port = startGoServer(dir)
                         serverPort = port
                         Handler(Looper.getMainLooper()).post {
                             result.success(port)
@@ -38,11 +39,11 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun startGoServer(): Int {
+    private fun startGoServer(dir: String): Int {
         return try {
             val clazz = Class.forName("downloader.MobileServer")
-            val method = clazz.getMethod("startServer")
-            method.invoke(null) as Int
+            val method = clazz.getMethod("startServer", String::class.java)
+            method.invoke(null, dir) as Int
         } catch (e: Exception) {
             android.util.Log.e("GoDownloader", "startServer failed", e)
             0

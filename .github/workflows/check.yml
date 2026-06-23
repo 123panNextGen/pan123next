@@ -1,0 +1,33 @@
+name: Check Code Quality
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    name: Check code quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze project
+        run: |
+          set -euo pipefail
+          if flutter analyze; then
+            echo "✅ Project analysis passed."
+          else
+            echo "❌ Project analysis failed. Please fix the errors before creating a release."
+            exit 1
+          fi

@@ -31,8 +31,10 @@ class UserDb extends BaseDb {
   ];
 
   Future<String> getDownloadPath() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
+    final directory = await getDownloadsDirectory();
+    if (directory != null) return directory.path;
+    final fallback = await getApplicationDocumentsDirectory();
+    return fallback.path;
   }
 
   @override
