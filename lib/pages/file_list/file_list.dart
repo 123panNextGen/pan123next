@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/user.dart';
-import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -297,12 +296,6 @@ class _FileListWidgetState extends State<FileListWidget> {
       showInfoBar(context, '错误', '获取下载链接失败', InfoBarSeverity.error);
       return;
     }
-
-    await Get.find<DownloadSession>().addDownload(
-      file: file,
-      downloadUrl: downloadUrl,
-      savePath: savePath,
-    );
 
     if (!mounted) return;
     showInfoBar(

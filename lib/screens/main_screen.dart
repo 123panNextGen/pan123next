@@ -1,10 +1,6 @@
-import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
-import 'package:pan123next/common/downloader/model.dart';
-import 'package:pan123next/common/downloader/session.dart';
 import 'package:pan123next/common/get_platform.dart';
-import 'package:pan123next/pages/transfer/view.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
@@ -21,26 +17,14 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int topIndex = 0;
   int downloadCount = 0;
-  StreamSubscription<List<DownloadItemModel>>? _downloadListSubscription;
-
-  void updateDownloadCount(List<DownloadItemModel> downloadList) {
-    downloadCount = downloadList
-        .where((element) => element.status != DownloadStatus.completed)
-        .length;
-    setState(() {});
-  }
 
   @override
   void initState() {
     super.initState();
-    _downloadListSubscription = DownloadSession().listStream.listen(
-      updateDownloadCount,
-    );
   }
 
   @override
   void dispose() {
-    _downloadListSubscription?.cancel();
     super.dispose();
   }
 
@@ -86,10 +70,7 @@ class _MainScreenState extends State<MainScreen> {
             infoBadge: downloadCount > 0
                 ? InfoBadge(source: Text(downloadCount.toString()))
                 : const SizedBox(),
-            body: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: DownloaderPage(),
-            ),
+            body: const Center(child: Text('你游开发者正在抓紧开发ing...')),
           ),
         ],
 
