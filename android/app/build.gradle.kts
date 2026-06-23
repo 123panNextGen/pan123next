@@ -34,11 +34,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("ci") {
+            storeFile = file("ci.keystore")
+            storePassword = System.getenv("CI_KEYSTORE_PASSWORD") ?: "public_ci"
+            keyAlias = "ci"
+            keyPassword = System.getenv("CI_KEY_PASSWORD") ?: "public_ci"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("ci")
         }
     }
 }
