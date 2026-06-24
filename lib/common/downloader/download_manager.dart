@@ -173,7 +173,11 @@ class DownloadManager {
     _pauseTokens.remove(taskId);
     _tasks.remove(taskId);
     await _store.removeTask(taskId);
-    _cleanupTempFiles(task);
+    // 下载完成的任务只删除任务，保留文件
+    if (task.status != DownloadStatus.completed) {
+      _cleanupTempFiles(task);
+    }
+    _emitUpdate(task);
   }
 
   Future<void> retry(String taskId) async {

@@ -82,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           PaneItem(
             icon: const Icon(FluentIcons.arrow_download_24_regular),
-            title: const Text('下载'),
+            title: const Text('传输'),
             infoBadge: downloadCount > 0
                 ? InfoBadge(source: Text(downloadCount.toString()))
                 : const SizedBox(),

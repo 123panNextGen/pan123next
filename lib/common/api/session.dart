@@ -387,7 +387,10 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: apiCode,
           apiCodeEnum: ApiCode.fail,
-          msg: response.data['message'] ?? response.data['Message'] ?? '获取文件链接失败',
+          msg:
+              response.data['message'] ??
+              response.data['Message'] ??
+              '获取文件链接失败',
         );
       }
 
@@ -418,7 +421,10 @@ class NetSession {
       // 不自动跟随重定向，手动处理
       final response = await request.close();
 
-      if (response.statusCode == 301 || response.statusCode == 302 || response.statusCode == 307 || response.statusCode == 308) {
+      if (response.statusCode == 301 ||
+          response.statusCode == 302 ||
+          response.statusCode == 307 ||
+          response.statusCode == 308) {
         final location = response.headers.value('location');
         client.close(force: true);
         if (location != null && location.isNotEmpty) {
