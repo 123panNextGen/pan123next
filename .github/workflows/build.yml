@@ -13,6 +13,8 @@ jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    if: |
+      always()
     strategy:
       fail-fast: false
       matrix:
@@ -74,8 +76,7 @@ jobs:
     name: Build APK
     runs-on: ubuntu-latest
     if: |
-      always() &&
-      (github.event_name == 'workflow_dispatch' || needs.verify-tag.result == 'success')
+      always()
 
     steps:
       - name: Checkout code
@@ -102,6 +103,11 @@ jobs:
     name: Create GitHub Release
     needs: [build, build-apk]
     runs-on: ubuntu-latest
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      needs.build-apk.result == 'success' &&
+      ((github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch')
     permissions:
       contents: write
 
