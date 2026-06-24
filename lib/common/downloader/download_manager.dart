@@ -72,6 +72,8 @@ class DownloadManager {
     if (task == null) return;
     if (task.status == DownloadStatus.downloading || task.status == DownloadStatus.completed) return;
 
+    task.chunkProgress = null;
+
     if (task.status != DownloadStatus.paused) {
       task.errorMessage = null;
       task.retryCount = 0;
@@ -183,6 +185,7 @@ class DownloadManager {
   Future<void> retry(String taskId) async {
     final task = _tasks[taskId];
     if (task == null) return;
+    task.chunkProgress = null;
     task.status = DownloadStatus.pending;
     task.errorMessage = null;
     task.retryCount = 0;

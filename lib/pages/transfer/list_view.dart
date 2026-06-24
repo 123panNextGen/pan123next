@@ -94,14 +94,16 @@ class _DownloadListViewState extends State<DownloadListView> {
           children: [
             Row(
               children: [
-                getFileIcon(task.file),
+                task.file.isFolder
+                    ? const Icon(FluentIcons.folder_zip_24_regular, size: 24)
+                    : getFileIcon(task.file),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        task.file.fileName,
+                        task.file.isFolder ? '${task.file.fileName}.zip' : task.file.fileName,
                         style: const TextStyle(fontWeight: FontWeight.w500),
                         overflow: TextOverflow.ellipsis,
                       ),
