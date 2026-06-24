@@ -181,8 +181,8 @@ class _DownloadListViewState extends State<DownloadListView> {
               onPressed: () => DownloadManager().pause(task.id),
             ),
             IconButton(
-              icon: const Icon(FluentIcons.dismiss_circle_24_regular),
-              onPressed: () => DownloadManager().cancel(task.id),
+              icon: const Icon(FluentIcons.delete_24_regular),
+              onPressed: () => DownloadManager().remove(task.id),
             ),
           ],
         );
@@ -195,15 +195,15 @@ class _DownloadListViewState extends State<DownloadListView> {
               onPressed: () => DownloadManager().start(task.id),
             ),
             IconButton(
-              icon: const Icon(FluentIcons.dismiss_circle_24_regular),
-              onPressed: () => DownloadManager().cancel(task.id),
+              icon: const Icon(FluentIcons.delete_24_regular),
+              onPressed: () => DownloadManager().remove(task.id),
             ),
           ],
         );
       case DownloadStatus.completed:
         return IconButton(
-          icon: const Icon(FluentIcons.checkmark_24_regular),
-          onPressed: null,
+          icon: const Icon(FluentIcons.delete_24_regular),
+          onPressed: () => DownloadManager().remove(task.id),
         );
       case DownloadStatus.failed:
         return Row(

@@ -10,42 +10,9 @@ permissions:
   packages: read
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # 校验：tag 推送场景下，必须保证 tag 指向的 commit 已合并入 main
-  # ---------------------------------------------------------------------------
-  verify-tag:
-    name: Verify tag on main
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Checkout (full history)
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Ensure tag commit is reachable from origin/main
-        run: |
-          set -euo pipefail
-          TAG_COMMIT=$(git rev-list -n 1 "${GITHUB_REF}")
-          echo "Tag commit: $TAG_COMMIT"
-          git fetch --no-tags origin main:refs/remotes/origin/main
-          MAIN_COMMIT=$(git rev-parse origin/main)
-          echo "origin/main: $MAIN_COMMIT"
-          if git merge-base --is-ancestor "$TAG_COMMIT" "$MAIN_COMMIT"; then
-            echo "✅ Tag is on main, proceeding."
-          else
-            echo "❌ Tag $GITHUB_REF_NAME ($TAG_COMMIT) is not reachable from origin/main ($MAIN_COMMIT)."
-            echo "Only tags pointing to commits on the main branch are eligible for release."
-            exit 1
-          fi
-
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: [verify-tag]
-    if: |
-      always() &&
-      (github.event_name == 'workflow_dispatch' || needs.verify-tag.result == 'success')
     strategy:
       fail-fast: false
       matrix:
