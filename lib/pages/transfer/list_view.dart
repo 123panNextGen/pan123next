@@ -139,7 +139,7 @@ class _DownloadListViewState extends State<DownloadListView> {
               Row(
                 children: [
                   Expanded(
-                    child: ProgressBar(value: task.progress * 100),
+                    child: ProgressBar(value: (task.progress * 100).clamp(0, 100)),
                   ),
                   const SizedBox(width: 10),
                   Text('${(task.progress * 100).toStringAsFixed(1)}%'),
@@ -260,7 +260,7 @@ class _DownloadListViewState extends State<DownloadListView> {
                 Expanded(
                   child: SizedBox(
                     height: 8,
-                    child: ProgressBar(value: cp.progress * 100),
+                    child: ProgressBar(value: (cp.progress * 100).clamp(0, 100)),
                   ),
                 ),
                 const SizedBox(width: 6),

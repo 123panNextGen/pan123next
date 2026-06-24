@@ -94,6 +94,7 @@ class _MainScreenState extends State<MainScreen> {
         ],
 
         footerItems: [
+          PaneItemSeparator(),
           PaneItem(
             icon: const Icon(FluentIcons.settings_24_regular),
             title: const Text('设置'),
