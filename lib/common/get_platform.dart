@@ -46,7 +46,7 @@ String getSystem() {
 }
 
 PaneDisplayMode getPaneDisplayMode() {
-  return isDesktop() ? PaneDisplayMode.compact : PaneDisplayMode.auto;
+  return isDesktop() ? PaneDisplayMode.auto : PaneDisplayMode.minimal;
 }
 
 Future<String> getVersion() async {

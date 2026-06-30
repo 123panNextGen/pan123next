@@ -86,7 +86,7 @@ class NetSession {
       'platform': 'android',
       'devicetype': userInfo.device.type,
       'devicename': 'Xiaomi',
-      'host': 'www.123pan.com',
+      'host': apiBaseUrl.replaceAll('https://', ''),
       'app-version': '61',
       'x-app-version': '2.4.0',
     };

@@ -1,7 +1,5 @@
-import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/const.dart';
-import 'package:pan123next/common/downloader/downloader.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
@@ -19,30 +17,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int topIndex = 0;
-  int downloadCount = 0;
-  StreamSubscription<DownloadTask>? _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    final mgr = DownloadManager();
-    mgr.init().then((_) {
-      if (mounted) {
-        setState(() => downloadCount = mgr.downloadingCount);
-      }
-    });
-    _subscription = mgr.onTaskUpdated.listen((_) {
-      if (mounted) {
-        setState(() => downloadCount = mgr.downloadingCount);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,9 +57,6 @@ class _MainScreenState extends State<MainScreen> {
           PaneItem(
             icon: const Icon(FluentIcons.arrow_download_24_regular),
             title: const Text('传输'),
-            infoBadge: downloadCount > 0
-                ? InfoBadge(source: Text(downloadCount.toString()))
-                : const SizedBox(),
             body: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
               child: TransferView(),
@@ -94,6 +65,7 @@ class _MainScreenState extends State<MainScreen> {
         ],
 
         footerItems: [
+          PaneItemSeparator(),
           PaneItem(
             icon: const Icon(FluentIcons.settings_24_regular),
             title: const Text('设置'),
