@@ -2,13 +2,10 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
-import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:pan123next/common/downloader/downloader.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dialog.dart';
 
 class FileListWidget extends StatefulWidget {
@@ -243,42 +240,6 @@ class _FileListWidgetState extends State<FileListWidget> {
   }
 
   Future<void> downloadFile(FileItemModel file) async {
-    String savePath;
-    late String? fileResult;
-
-    if (!Get.find<UserDb>().getValue('set.askDownload')) {
-      savePath =
-          Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
-          await getDownloadsDirectory().then((dir) => dir?.path ?? '');
-
-      if (file.isFolder) {
-        savePath = '$savePath/${file.fileName}.zip';
-      } else {
-        savePath = '$savePath/${file.fileName}';
-      }
-    } else {
-      String defaultDownloadPath =
-          Get.find<UserDb>().getValue('set.defaultDownloadPath') ??
-          await getDownloadsDirectory().then((dir) => dir?.path ?? '');
-
-      if (file.isFolder) {
-        fileResult = await FilePicker.saveFile(
-          dialogTitle: '选择保存路径:',
-          fileName: '${file.fileName}.zip',
-          initialDirectory: defaultDownloadPath,
-        );
-      } else {
-        fileResult = await FilePicker.saveFile(
-          dialogTitle: '选择保存路径:',
-          fileName: file.fileName,
-          initialDirectory: defaultDownloadPath,
-        );
-      }
-
-      if (fileResult == null) return;
-      savePath = fileResult;
-    }
-
     final ApiReturnModel result = await _session.getFileLink(file);
 
     if (result.apiCodeEnum == ApiCode.fail) {
@@ -294,26 +255,15 @@ class _FileListWidgetState extends State<FileListWidget> {
       return;
     }
 
-    final manager = DownloadManager();
-    await manager.createTask(
-      file: file,
-      savePath: savePath,
-      downloadUrl: downloadUrl,
-    );
-    await manager.start(_getLastTaskId(manager));
-
-    if (!mounted) return;
-    showInfoBar(
-      context,
-      '已添加',
-      '下载任务已添加: ${file.fileName}',
-      InfoBarSeverity.success,
-    );
-  }
-
-  String _getLastTaskId(DownloadManager manager) {
-    final tasks = manager.tasks;
-    return tasks.last.id;
+    final uri = Uri.parse(downloadUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      showInfoBar(context, '已打开', '已在浏览器中打开下载链接', InfoBarSeverity.success);
+    } else {
+      if (!mounted) return;
+      showInfoBar(context, '错误', '无法打开下载链接', InfoBarSeverity.error);
+    }
   }
 
   Future<void> getFileDownloadLink(FileItemModel file) async {

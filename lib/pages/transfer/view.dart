@@ -104,7 +104,7 @@ class _TransferViewState extends State<TransferView> {
       closeButtonVisibility: CloseButtonVisibilityMode.never,
       tabs: <Tab>[
         TransferTab(
-          text: const Text('下载中'),
+          text: const Text('下载'),
           icon: const Icon(FluentIcons.arrow_download_24_regular),
           body: const Padding(
             padding: EdgeInsets.only(top: 8.0),

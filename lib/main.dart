@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:pan123next/common/api/session.dart';
-import 'package:pan123next/common/data/downloader.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
@@ -30,15 +29,12 @@ Future<void> main() async {
 
   final appDb = AppDb();
   final userDb = UserDb();
-  final downloaderDb = DownloaderDb();
 
   await appDb.initDb();
   await userDb.initDb();
-  await downloaderDb.initDb();
 
   Get.put(appDb);
   Get.put(userDb);
-  Get.put(downloaderDb);
   Get.put(NetSession());
 
   Get.put(AppSession());
