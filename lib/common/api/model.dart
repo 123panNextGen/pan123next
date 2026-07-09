@@ -125,7 +125,7 @@ class FileListResponse {
     final data = json['data'] ?? json['Data'] ?? <String, dynamic>{};
     return FileListResponse(
       code: json['code'] ?? json['Code'] ?? 0,
-      message: json['message'] ?? json['Message'] ?? '',
+      message: json['message'] ?? '',
       data: FileListData.fromJson(data as Map<String, dynamic>),
     );
   }
@@ -155,7 +155,9 @@ class FileListData {
       total: (json['total'] ?? json['Total'] ?? 0) as int,
       infoList:
           (infoListRaw as List?)
-              ?.map((item) => FileItemModel.fromJson(item as Map<String, dynamic>))
+              ?.map(
+                (item) => FileItemModel.fromJson(item as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -187,10 +189,7 @@ class DeveloperInfo {
   final String startTime;
   final String endTime;
 
-  DeveloperInfo({
-    required this.startTime,
-    required this.endTime,
-  });
+  DeveloperInfo({required this.startTime, required this.endTime});
 
   factory DeveloperInfo.fromJson(Map<String, dynamic> json) => DeveloperInfo(
     startTime: json['startTime'] ?? '',
@@ -234,26 +233,27 @@ class OpenUserInfoModel {
   });
 
   factory OpenUserInfoModel.fromJson(Map<String, dynamic> json) =>
-    OpenUserInfoModel(
-      uid: json['uid'] ?? 0,
-      nickname: json['nickname'] ?? '',
-      headImage: json['headImage'] ?? '',
-      passport: json['passport'] ?? '',
-      mail: json['mail'] ?? '',
-      spaceUsed: json['spaceUsed'] ?? 0,
-      spacePermanent: json['spacePermanent'] ?? 0,
-      spaceTemp: json['spaceTemp'] ?? 0,
-      spaceTempExpr: (json['spaceTempExpr'] ?? '').toString(),
-      vip: json['vip'] ?? false,
-      directTraffic: json['directTraffic'] ?? 0,
-      isHideUID: json['isHideUID'] ?? false,
-      httpsCount: json['httpsCount'] ?? 0,
-      vipInfo: (json['vipInfo'] as List?)
-          ?.map((e) => VipInfo.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      developerInfo: json['developerInfo'] != null
-          ? DeveloperInfo.fromJson(
-              json['developerInfo'] as Map<String, dynamic>)
-          : null,
-    );
+      OpenUserInfoModel(
+        uid: json['uid'] ?? 0,
+        nickname: json['nickname'] ?? '',
+        headImage: json['headImage'] ?? '',
+        passport: json['passport'] ?? '',
+        mail: json['mail'] ?? '',
+        spaceUsed: json['spaceUsed'] ?? 0,
+        spacePermanent: json['spacePermanent'] ?? 0,
+        spaceTemp: json['spaceTemp'] ?? 0,
+        spaceTempExpr: (json['spaceTempExpr'] ?? '').toString(),
+        vip: json['vip'] ?? false,
+        directTraffic: json['directTraffic'] ?? 0,
+        isHideUID: json['isHideUID'] ?? false,
+        httpsCount: json['httpsCount'] ?? 0,
+        vipInfo: (json['vipInfo'] as List?)
+            ?.map((e) => VipInfo.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        developerInfo: json['developerInfo'] != null
+            ? DeveloperInfo.fromJson(
+                json['developerInfo'] as Map<String, dynamic>,
+              )
+            : null,
+      );
 }

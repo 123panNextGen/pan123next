@@ -63,7 +63,6 @@ class NetSession {
           final code = response.data?['code'] ?? response.data?['Code'];
           if (code == 401) {
             response.data['message'] = '登录会话已过期，请刷新';
-            response.data['Message'] = '登录会话已过期，请刷新';
           }
           return handler.next(response);
         },
@@ -400,10 +399,7 @@ class NetSession {
           code: response.statusCode ?? 0,
           apiCode: apiCode,
           apiCodeEnum: ApiCode.fail,
-          msg:
-              response.data['message'] ??
-              response.data['Message'] ??
-              '获取文件链接失败',
+          msg: response.data['message'] ?? '获取文件链接失败',
         );
       }
 
