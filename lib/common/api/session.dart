@@ -58,6 +58,19 @@ class NetSession {
     );
 
     _dio.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (response, handler) {
+          final code = response.data?['code'] ?? response.data?['Code'];
+          if (code == 401) {
+            response.data['message'] = '登录会话已过期，请刷新';
+            response.data['Message'] = '登录会话已过期，请刷新';
+          }
+          return handler.next(response);
+        },
+      ),
+    );
+
+    _dio.interceptors.add(
       LogInterceptor(
         request: true,
         requestHeader: false,
@@ -187,7 +200,7 @@ class NetSession {
             code: response.statusCode ?? 0,
             apiCode: 401,
             apiCodeEnum: ApiCode.fail,
-            msg: '登录过期，请重新登录',
+            msg: '登录会话已过期，请刷新',
           );
         }
 

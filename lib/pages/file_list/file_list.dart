@@ -65,7 +65,7 @@ class _FileListWidgetState extends State<FileListWidget> {
     _loadFileList('0');
   }
 
-  Future<void> _loadFileList(String fileId, {int retryCount = 0}) async {
+  Future<void> _loadFileList(String fileId) async {
     setState(() {
       _isLoading = true;
       _currentParentId = int.parse(fileId);
@@ -77,19 +77,8 @@ class _FileListWidgetState extends State<FileListWidget> {
           ? await _session.getTrashList(fileId)
           : await _session.getFileList(fileId);
       if (response.apiCode != 200) {
-        if (retryCount >= 1) {
-          if (!mounted) return;
-          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
-          return;
-        }
-        final loginResponse = await _session.login();
-        if (loginResponse.apiCode != 200) {
-          if (!mounted) return;
-          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
-          return;
-        }
         if (!mounted) return;
-        _loadFileList(fileId, retryCount: retryCount + 1);
+        showInfoBar(context, '错误', response.msg, InfoBarSeverity.error);
         return;
       }
       setState(() {
@@ -152,8 +141,13 @@ class _FileListWidgetState extends State<FileListWidget> {
     );
 
     if (result != null) {
-      await _session.createDir(result, _currentParentId.toString());
-      _loadFileList(_currentParentId.toString());
+      final ret = await _session.createDir(result, _currentParentId.toString());
+      if (ret.apiCodeEnum == ApiCode.success) {
+        _loadFileList(_currentParentId.toString());
+      } else {
+        if (!mounted) return;
+        showInfoBar(context, '错误', ret.msg, InfoBarSeverity.error);
+      }
     }
   }
 
@@ -234,8 +228,15 @@ class _FileListWidgetState extends State<FileListWidget> {
     );
 
     if (result != null) {
-      await _session.renameFile(_selectedFile!.fileId.toString(), result);
-      _loadFileList(_currentParentId.toString());
+      final ret = await _session.renameFile(
+        _selectedFile!.fileId.toString(), result,
+      );
+      if (ret.apiCodeEnum == ApiCode.success) {
+        _loadFileList(_currentParentId.toString());
+      } else {
+        if (!mounted) return;
+        showInfoBar(context, '错误', ret.msg, InfoBarSeverity.error);
+      }
     }
   }
 
