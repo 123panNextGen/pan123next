@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/api/extra.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -63,6 +64,17 @@ class _FileListWidgetState extends State<FileListWidget> {
   void initState() {
     super.initState();
     _loadFileList('0');
+    _initOpenUserInfo();
+  }
+
+  Future<void> _initOpenUserInfo() async {
+    final res = await _session.getOpenUserInfo();
+
+    if (res.apiCodeEnum == ApiCode.success) {
+      final openInfo = res.data!;
+      _session.userInformation?.openInfo = openInfo;
+      updateUserInfoSession(_session.userInformation!, updateSession: false);
+    }
   }
 
   Future<void> _loadFileList(String fileId) async {
@@ -229,7 +241,8 @@ class _FileListWidgetState extends State<FileListWidget> {
 
     if (result != null) {
       final ret = await _session.renameFile(
-        _selectedFile!.fileId.toString(), result,
+        _selectedFile!.fileId.toString(),
+        result,
       );
       if (ret.apiCodeEnum == ApiCode.success) {
         _loadFileList(_currentParentId.toString());

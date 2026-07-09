@@ -9,20 +9,25 @@ Future<ApiReturnModel<UserInfoModel>> loginWithUserInfo(
   UserInfoModel userInfo,
 ) async {
   try {
-    final dio = Dio(BaseOptions(
-      baseUrl: apiBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 10),
-      contentType: 'application/json',
-      responseType: ResponseType.json,
-    ));
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: apiBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 10),
+        contentType: 'application/json',
+        responseType: ResponseType.json,
+      ),
+    );
 
-    final response = await dio.post('/b/api/user/sign_in', data: {
-      'type': 1,
-      'passport': userInfo.userName,
-      'password': userInfo.password,
-    });
+    final response = await dio.post(
+      '/b/api/user/sign_in',
+      data: {
+        'type': 1,
+        'passport': userInfo.userName,
+        'password': userInfo.password,
+      },
+    );
 
     if (response.statusCode == 200) {
       final Map content = response.data;
@@ -69,10 +74,14 @@ Future<ApiReturnModel<UserInfoModel>> loginWithUserInfo(
   }
 }
 
-Future<void> updateUserInfoSession(UserInfoModel userInfo) async {
+Future<void> updateUserInfoSession(
+  UserInfoModel userInfo, {
+  bool save = true,
+  bool updateSession = true,
+}) async {
   final session = Get.find<NetSession>();
   final db = Get.find<UserDb>();
 
-  session.setUserInformation(userInfo);
-  await db.setUserInfo(userInfo);
+  if (updateSession) session.setUserInformation(userInfo);
+  if (save) await db.setUserInfo(userInfo);
 }

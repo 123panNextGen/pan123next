@@ -489,21 +489,25 @@ class NetSession {
 
   Future<ApiReturnModel<OpenUserInfoModel>> getOpenUserInfo() async {
     try {
-      final openDio = Dio(BaseOptions(
-        baseUrl: openApiBaseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
-        sendTimeout: const Duration(seconds: 10),
-        contentType: 'application/json',
-        responseType: ResponseType.json,
-      ));
+      final openDio = Dio(
+        BaseOptions(
+          baseUrl: openApiBaseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 10),
+          contentType: 'application/json',
+          responseType: ResponseType.json,
+        ),
+      );
 
       final response = await openDio.get(
         '/api/v1/user/info',
-        options: Options(headers: {
-          'Authorization': _userInformation?.authorization ?? '',
-          'Platform': 'open_platform',
-        }),
+        options: Options(
+          headers: {
+            'Authorization': _userInformation?.authorization ?? '',
+            'Platform': 'open_platform',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
