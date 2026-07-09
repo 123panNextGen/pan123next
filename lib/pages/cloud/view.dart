@@ -113,7 +113,26 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                   Icon(FluentIcons.arrow_clockwise_24_regular),
                   const SizedBox(width: 8.0),
                   Expanded(child: Text('重新登录')),
-                  Button(child: Text('刷新'), onPressed: () {}),
+                  Button(
+                    child: Text('刷新'),
+                    onPressed: () async {
+                      await ExtraApiService.to.loginWithUserInfo(
+                        _session.userInformation!,
+                      );
+                      await ExtraApiService.to.updateUserInfoSession(
+                        _session.userInformation!,
+                      );
+                      setState(() {});
+
+                      if (!mounted) return;
+                      showInfoBar(
+                        context,
+                        '成功',
+                        '刷新成功',
+                        InfoBarSeverity.success,
+                      );
+                    },
+                  ),
                 ],
               ),
             ],

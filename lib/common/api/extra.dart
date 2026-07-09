@@ -1,87 +1,63 @@
-import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
-import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/data/user.dart';
 
-Future<ApiReturnModel<UserInfoModel>> loginWithUserInfo(
-  UserInfoModel userInfo,
-) async {
-  try {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: apiBaseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
-        sendTimeout: const Duration(seconds: 10),
-        contentType: 'application/json',
-        responseType: ResponseType.json,
-      ),
-    );
+class ExtraApiService {
+  static ExtraApiService get to => Get.find<ExtraApiService>();
 
-    final response = await dio.post(
-      '/b/api/user/sign_in',
-      data: {
-        'type': 1,
-        'passport': userInfo.userName,
-        'password': userInfo.password,
-      },
-    );
+  final NetSession _session;
+  final UserDb _db;
 
-    if (response.statusCode == 200) {
-      final Map content = response.data;
-      final returnCode = content['code'];
-      if (returnCode != 200) {
-        return ApiReturnModel<UserInfoModel>(
-          code: response.statusCode ?? 0,
-          apiCode: returnCode,
-          apiCodeEnum: ApiCode.fail,
-          msg: content['message'] ?? '登录失败',
-        );
-      }
+  ExtraApiService({NetSession? session, UserDb? db})
+    : _session = session ?? Get.find<NetSession>(),
+      _db = db ?? Get.find<UserDb>();
 
-      final newUserInfo = UserInfoModel(
-        userName: userInfo.userName,
-        password: userInfo.password,
-        uuid: userInfo.uuid,
-        authorization: 'Bearer ${content['data']['token']}',
-        device: userInfo.device,
-      );
+  /// 先写入 NetSession，再复用 NetSession.login() 完成登录，
+  /// 成功时返回带更新后 authorization 的 UserInfoModel 拷贝
+  Future<ApiReturnModel<UserInfoModel>> loginWithUserInfo(
+    UserInfoModel userInfo,
+  ) async {
+    userInfo.authorization = '';
+    _session.setUserInformation(userInfo);
 
+    final result = await _session.login();
+
+    if (result.apiCodeEnum == ApiCode.success) {
+      final updated = _session.userInformation!;
       return ApiReturnModel<UserInfoModel>(
-        code: response.statusCode ?? 0,
-        apiCode: returnCode,
-        apiCodeEnum: ApiCode.success,
-        msg: content['message'] ?? '登录成功',
-        data: newUserInfo,
+        code: result.code,
+        apiCode: result.apiCode,
+        apiCodeEnum: result.apiCodeEnum,
+        msg: result.msg,
+        data: UserInfoModel(
+          userName: updated.userName,
+          password: updated.password,
+          uuid: updated.uuid,
+          authorization: updated.authorization,
+          device: updated.device,
+          openInfo: updated.openInfo,
+        ),
       );
     }
 
     return ApiReturnModel<UserInfoModel>(
-      code: response.statusCode ?? 0,
-      apiCode: -1,
-      apiCodeEnum: ApiCode.fail,
-      msg: '登录失败',
-    );
-  } catch (e) {
-    return ApiReturnModel<UserInfoModel>(
-      code: 0,
-      apiCode: -1,
-      apiCodeEnum: ApiCode.fail,
-      msg: e.toString(),
+      code: result.code,
+      apiCode: result.apiCode,
+      apiCodeEnum: result.apiCodeEnum,
+      msg: result.msg,
     );
   }
-}
 
-Future<void> updateUserInfoSession(
-  UserInfoModel userInfo, {
-  bool save = true,
-  bool updateSession = true,
-}) async {
-  final session = Get.find<NetSession>();
-  final db = Get.find<UserDb>();
-
-  if (updateSession) session.setUserInformation(userInfo);
-  if (save) await db.setUserInfo(userInfo);
+  /// 同步用户信息到内存会话 (NetSession) 和 / 或本地持久化 (UserDb)
+  /// - save=true 时写入 UserDb
+  /// - updateSession=true 时更新 NetSession
+  Future<void> updateUserInfoSession(
+    UserInfoModel userInfo, {
+    bool save = true,
+    bool updateSession = true,
+  }) async {
+    if (updateSession) _session.setUserInformation(userInfo);
+    if (save) await _db.setUserInfo(userInfo);
+  }
 }

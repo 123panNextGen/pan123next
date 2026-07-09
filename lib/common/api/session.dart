@@ -72,9 +72,9 @@ class NetSession {
     _dio.interceptors.add(
       LogInterceptor(
         request: true,
-        requestHeader: false,
-        requestBody: false,
-        responseHeader: false,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
         responseBody: true,
         error: true,
       ),

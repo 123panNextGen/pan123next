@@ -73,7 +73,10 @@ class _FileListWidgetState extends State<FileListWidget> {
     if (res.apiCodeEnum == ApiCode.success) {
       final openInfo = res.data!;
       _session.userInformation?.openInfo = openInfo;
-      updateUserInfoSession(_session.userInformation!, updateSession: false);
+      ExtraApiService.to.updateUserInfoSession(
+        _session.userInformation!,
+        updateSession: false,
+      );
     }
   }
 

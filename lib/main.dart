@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:pan123next/common/api/session.dart';
+import 'package:pan123next/common/api/extra.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
@@ -36,6 +37,7 @@ Future<void> main() async {
   Get.put(appDb);
   Get.put(userDb);
   Get.put(NetSession());
+  Get.put(ExtraApiService());
 
   Get.put(AppSession());
 
