@@ -486,4 +486,60 @@ class NetSession {
       );
     }
   }
+
+  Future<ApiReturnModel<OpenUserInfoModel>> getOpenUserInfo() async {
+    try {
+      final openDio = Dio(BaseOptions(
+        baseUrl: openApiBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 10),
+        contentType: 'application/json',
+        responseType: ResponseType.json,
+      ));
+
+      final response = await openDio.get(
+        '/api/v1/user/info',
+        options: Options(headers: {
+          'Authorization': _userInformation?.authorization ?? '',
+          'Platform': 'open_platform',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map content = response.data;
+        final code = content['code'] ?? -1;
+        if (code == 0) {
+          final rawData = content['data'] ?? <String, dynamic>{};
+          return ApiReturnModel<OpenUserInfoModel>(
+            code: response.statusCode ?? 0,
+            apiCode: code,
+            apiCodeEnum: ApiCode.success,
+            msg: 'ok',
+            data: OpenUserInfoModel.fromJson(rawData as Map<String, dynamic>),
+          );
+        }
+        return ApiReturnModel<OpenUserInfoModel>(
+          code: response.statusCode ?? 0,
+          apiCode: code,
+          apiCodeEnum: ApiCode.fail,
+          msg: content['message'] ?? '获取用户信息失败',
+        );
+      }
+
+      return ApiReturnModel<OpenUserInfoModel>(
+        code: response.statusCode ?? 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: '获取用户信息失败',
+      );
+    } catch (e) {
+      return ApiReturnModel<OpenUserInfoModel>(
+        code: 0,
+        apiCode: -1,
+        apiCodeEnum: ApiCode.fail,
+        msg: e.toString(),
+      );
+    }
+  }
 }

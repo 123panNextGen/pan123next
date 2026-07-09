@@ -12,6 +12,7 @@ class UserInfoModel {
   String uuid;
   String authorization;
   DeviceModel device;
+  OpenUserInfoModel? openInfo;
 
   UserInfoModel({
     required this.userName,
@@ -19,6 +20,7 @@ class UserInfoModel {
     required this.uuid,
     required this.authorization,
     required this.device,
+    this.openInfo,
   });
 }
 
@@ -158,4 +160,100 @@ class FileListData {
           [],
     );
   }
+}
+
+class VipInfo {
+  final int vipLevel;
+  final String vipLabel;
+  final String startTime;
+  final String endTime;
+
+  VipInfo({
+    required this.vipLevel,
+    required this.vipLabel,
+    required this.startTime,
+    required this.endTime,
+  });
+
+  factory VipInfo.fromJson(Map<String, dynamic> json) => VipInfo(
+    vipLevel: json['vipLevel'] ?? 0,
+    vipLabel: json['vipLabel'] ?? '',
+    startTime: json['startTime'] ?? '',
+    endTime: json['endTime'] ?? '',
+  );
+}
+
+class DeveloperInfo {
+  final String startTime;
+  final String endTime;
+
+  DeveloperInfo({
+    required this.startTime,
+    required this.endTime,
+  });
+
+  factory DeveloperInfo.fromJson(Map<String, dynamic> json) => DeveloperInfo(
+    startTime: json['startTime'] ?? '',
+    endTime: json['endTime'] ?? '',
+  );
+}
+
+class OpenUserInfoModel {
+  final int uid;
+  final String nickname;
+  final String headImage;
+  final String passport;
+  final String mail;
+  final int spaceUsed;
+  final int spacePermanent;
+  final int spaceTemp;
+  final String spaceTempExpr;
+  final bool vip;
+  final int directTraffic;
+  final bool isHideUID;
+  final int httpsCount;
+  final List<VipInfo>? vipInfo;
+  final DeveloperInfo? developerInfo;
+
+  OpenUserInfoModel({
+    required this.uid,
+    required this.nickname,
+    required this.headImage,
+    required this.passport,
+    required this.mail,
+    required this.spaceUsed,
+    required this.spacePermanent,
+    required this.spaceTemp,
+    required this.spaceTempExpr,
+    required this.vip,
+    required this.directTraffic,
+    required this.isHideUID,
+    required this.httpsCount,
+    this.vipInfo,
+    this.developerInfo,
+  });
+
+  factory OpenUserInfoModel.fromJson(Map<String, dynamic> json) =>
+    OpenUserInfoModel(
+      uid: json['uid'] ?? 0,
+      nickname: json['nickname'] ?? '',
+      headImage: json['headImage'] ?? '',
+      passport: json['passport'] ?? '',
+      mail: json['mail'] ?? '',
+      spaceUsed: json['spaceUsed'] ?? 0,
+      spacePermanent: json['spacePermanent'] ?? 0,
+      spaceTemp: json['spaceTemp'] ?? 0,
+      spaceTempExpr: (json['spaceTempExpr'] ?? '').toString(),
+      vip: json['vip'] ?? false,
+      directTraffic: json['directTraffic'] ?? 0,
+      isHideUID: json['isHideUID'] ?? false,
+      httpsCount: json['httpsCount'] ?? 0,
+      vipInfo: (json['vipInfo'] as List?)
+          ?.map((e) => VipInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      developerInfo: json['developerInfo'] != null
+          ? DeveloperInfo.fromJson(
+              json['developerInfo'] as Map<String, dynamic>)
+          : null,
+    );
 }
