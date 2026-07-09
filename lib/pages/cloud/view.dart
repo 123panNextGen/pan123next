@@ -21,6 +21,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
   OpenUserInfoModel? get openInfo {
     if (_session.userInformation == null) {
       showInfoBar(context, '警告', '用户信息为空', InfoBarSeverity.warning);
+      return null;
     }
 
     return _session.userInformation!.openInfo;
@@ -116,8 +117,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                   Button(
                     child: Text('刷新'),
                     onPressed: () async {
-                      final result = await ExtraApiService.to
-                          .loginWithUserInfo(
+                      final result = await ExtraApiService.to.loginWithUserInfo(
                         _session.userInformation!,
                       );
 

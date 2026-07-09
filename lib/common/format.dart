@@ -110,5 +110,8 @@ Widget getFileIcon(FileItemModel item) {
 
 String formatPhoneNumber(String phoneNumber) {
   // 掩盖中间四位
-  return '${phoneNumber.substring(0, 3)}****${phoneNumber.substring(7)}';
+  if (phoneNumber.length >= 7) {
+    return '${phoneNumber.substring(0, 3)}****${phoneNumber.substring(7)}';
+  }
+  return '*' * phoneNumber.length;
 }
