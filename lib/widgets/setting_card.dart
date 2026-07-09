@@ -23,7 +23,7 @@ class _SettingCardState extends State<SettingCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(8),
       margin: widget.margin,
       backgroundColor: widget.backgroundColor,
       borderColor: widget.borderColor,

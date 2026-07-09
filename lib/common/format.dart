@@ -107,3 +107,8 @@ Widget getFileIcon(FileItemModel item) {
   final ext = item.fileName.split('.').last;
   return getFileIconBySuffix(ext);
 }
+
+String formatPhoneNumber(String phoneNumber) {
+  // 掩盖中间四位
+  return '${phoneNumber.substring(0, 3)}****${phoneNumber.substring(7)}';
+}

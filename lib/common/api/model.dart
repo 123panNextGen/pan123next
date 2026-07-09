@@ -22,6 +22,11 @@ class UserInfoModel {
     required this.device,
     this.openInfo,
   });
+
+  @override
+  String toString() {
+    return 'UserInfoModel{userName: $userName, password: $password, uuid: $uuid, authorization: $authorization, device: $device, openInfo: $openInfo}';
+  }
 }
 
 enum ApiCode { success, fail }
