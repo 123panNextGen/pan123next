@@ -116,21 +116,33 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                   Button(
                     child: Text('刷新'),
                     onPressed: () async {
-                      await ExtraApiService.to.loginWithUserInfo(
+                      final result = await ExtraApiService.to
+                          .loginWithUserInfo(
                         _session.userInformation!,
                       );
-                      await ExtraApiService.to.updateUserInfoSession(
-                        _session.userInformation!,
-                      );
-                      setState(() {});
 
-                      if (!mounted) return;
-                      showInfoBar(
-                        context,
-                        '成功',
-                        '刷新成功',
-                        InfoBarSeverity.success,
-                      );
+                      if (result.apiCodeEnum == ApiCode.success) {
+                        await ExtraApiService.to.updateUserInfoSession(
+                          result.data!,
+                        );
+                        setState(() {});
+
+                        if (!mounted) return;
+                        showInfoBar(
+                          context,
+                          '成功',
+                          '刷新成功',
+                          InfoBarSeverity.success,
+                        );
+                      } else {
+                        if (!mounted) return;
+                        showInfoBar(
+                          context,
+                          '刷新失败',
+                          result.msg,
+                          InfoBarSeverity.error,
+                        );
+                      }
                     },
                   ),
                 ],

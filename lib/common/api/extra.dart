@@ -18,6 +18,7 @@ class ExtraApiService {
   Future<ApiReturnModel<UserInfoModel>> loginWithUserInfo(
     UserInfoModel userInfo,
   ) async {
+    final oldAuth = userInfo.authorization;
     userInfo.authorization = '';
     _session.setUserInformation(userInfo);
 
@@ -40,6 +41,9 @@ class ExtraApiService {
         ),
       );
     }
+
+    userInfo.authorization = oldAuth;
+    _session.setUserInformation(userInfo);
 
     return ApiReturnModel<UserInfoModel>(
       code: result.code,

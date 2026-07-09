@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 import 'package:pan123next/common/api/device.dart';
 import 'package:pan123next/common/api/session.dart';
@@ -74,4 +76,8 @@ Future<ApiReturnModel> login(
   }
 
   return returnModel;
+}
+
+void exitProgram() {
+  exit(0);
 }
