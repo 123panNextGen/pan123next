@@ -16,7 +16,6 @@ Future<Map<String, dynamic>> getUserInfo() async {
     return {
       'userName': '',
       'password': '',
-      'autoLogin': false,
       'rememberPassword': false,
     };
   }
@@ -24,7 +23,6 @@ Future<Map<String, dynamic>> getUserInfo() async {
   return {
     'userName': current.userName,
     'password': current.password,
-    'autoLogin': current.autoLogin,
     'rememberPassword': current.rememberPassword,
   };
 }
@@ -32,7 +30,6 @@ Future<Map<String, dynamic>> getUserInfo() async {
 Future<ApiReturnModel> login(
   String userName,
   String password,
-  bool autoLogin,
   bool rememberPassword,
 ) async {
   final session = Get.find<NetSession>();
@@ -44,7 +41,6 @@ Future<ApiReturnModel> login(
       rememberPassword) {
     final updated = existing.copyWith(
       password: password,
-      autoLogin: autoLogin,
       rememberPassword: rememberPassword,
     );
     session.setUserInformation(updated.toUserInfoModel());
@@ -83,7 +79,6 @@ Future<ApiReturnModel> login(
       device: updated.device,
       openInfo: updated.openInfo,
       rememberPassword: rememberPassword,
-      autoLogin: autoLogin,
     );
     await neoDb.saveUser(neoUser, asCurrent: true);
   }
@@ -113,6 +108,19 @@ Future<ApiReturnModel> loginWithNeoUser(NeoUser user) async {
     apiCodeEnum: ApiCode.success,
     msg: '登录成功',
   );
+}
+
+/// 通过登录 API 验证用户密码是否正确（不持久化 session）
+Future<bool> verifyPassword(NeoUser user, String password) async {
+  final session = Get.find<NetSession>();
+  final model = user.toUserInfoModel();
+  model.password = password;
+  model.authorization = '';
+  session.setUserInformation(model);
+
+  final result = await session.login();
+  session.clearSession();
+  return result.apiCodeEnum == ApiCode.success;
 }
 
 void exitProgram() {

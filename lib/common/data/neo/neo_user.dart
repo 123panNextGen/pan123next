@@ -9,7 +9,6 @@ class NeoUser {
   DeviceModel device;
   OpenUserInfoModel? openInfo;
   bool rememberPassword;
-  bool autoLogin;
   DateTime lastLogin;
 
   NeoUser({
@@ -21,7 +20,6 @@ class NeoUser {
     DeviceModel? device,
     this.openInfo,
     this.rememberPassword = false,
-    this.autoLogin = false,
     DateTime? lastLogin,
   })  : device = device ?? DeviceModel(os: '', type: ''),
         lastLogin = lastLogin ?? DateTime.now();
@@ -57,7 +55,6 @@ class NeoUser {
     DeviceModel? device,
     OpenUserInfoModel? openInfo,
     bool? rememberPassword,
-    bool? autoLogin,
     DateTime? lastLogin,
   }) {
     return NeoUser(
@@ -69,14 +66,13 @@ class NeoUser {
       device: device ?? this.device,
       openInfo: openInfo ?? this.openInfo,
       rememberPassword: rememberPassword ?? this.rememberPassword,
-      autoLogin: autoLogin ?? this.autoLogin,
       lastLogin: lastLogin ?? this.lastLogin,
     );
   }
 
   @override
   String toString() {
-    return 'NeoUser(id: $id, userName: $userName, rememberPassword: $rememberPassword, autoLogin: $autoLogin, device: $device, hasOpenInfo: ${openInfo != null})';
+    return 'NeoUser(id: $id, userName: $userName, rememberPassword: $rememberPassword, device: $device, hasOpenInfo: ${openInfo != null})';
   }
 
   @override

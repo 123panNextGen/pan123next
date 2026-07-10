@@ -24,7 +24,6 @@ class _CloudInfoViewState extends State<CloudInfoView> {
   final NetSession _session = Get.find();
   final NeoDb _neoDb = Get.find();
   List<NeoUser> _otherUsers = [];
-  bool _autoLogin = false;
   bool _rememberPassword = false;
 
   @override
@@ -38,7 +37,6 @@ class _CloudInfoViewState extends State<CloudInfoView> {
     final current = await _neoDb.getCurrentUser();
     if (!mounted) return;
     setState(() {
-      _autoLogin = current?.autoLogin ?? false;
       _rememberPassword = current?.rememberPassword ?? false;
     });
   }
@@ -264,17 +262,6 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Text('自动登录:'),
-                          const SizedBox(width: 8.0),
-                          InfoBadge(
-                            source: Text(
-                              _autoLogin ? '开启' : '关闭',
-                            ),
-                          ),
-                        ],
-                      ),
                       Row(
                         children: [
                           Text('记住密码:'),

@@ -18,7 +18,6 @@ class LoginInputPage extends StatefulWidget {
 }
 
 class _LoginInputPageState extends State<LoginInputPage> {
-  bool autoLogin = false;
   bool rememberPassword = false;
   final userNameController = TextEditingController();
   final passwordController = TextEditingController();
@@ -38,7 +37,6 @@ class _LoginInputPageState extends State<LoginInputPage> {
       final value = await control.login(
         userNameController.text,
         passwordController.text,
-        autoLogin,
         rememberPassword,
       );
       if (!mounted) return;
@@ -64,13 +62,8 @@ class _LoginInputPageState extends State<LoginInputPage> {
     setState(() {
       userNameController.text = info['userName'] ?? '';
       passwordController.text = info['password'] ?? '';
-      autoLogin = info['autoLogin'] ?? false;
       rememberPassword = info['rememberPassword'] ?? false;
     });
-
-    if (autoLogin) {
-      login();
-    }
   }
 
   @override
@@ -102,27 +95,11 @@ class _LoginInputPageState extends State<LoginInputPage> {
                   children: [
                     Checkbox(
                       checked: rememberPassword,
-                      onChanged: autoLogin
-                          ? null
-                          : (_) => setState(
-                              () => rememberPassword = !rememberPassword,
-                            ),
+                      onChanged: (_) => setState(
+                          () => rememberPassword = !rememberPassword),
                     ),
                     const SizedBox(width: 5),
                     const Text('记住密码'),
-
-                    const SizedBox(width: 15),
-                    Checkbox(
-                      checked: autoLogin,
-                      onChanged: (_) => setState(() {
-                        if (!rememberPassword && !autoLogin) {
-                          rememberPassword = true;
-                        }
-                        autoLogin = !autoLogin;
-                      }),
-                    ),
-                    const SizedBox(width: 5),
-                    const Text('自动登录'),
                   ],
                 ),
 

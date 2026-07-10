@@ -61,28 +61,57 @@ class _UserListViewState extends State<UserListView> {
   }
 
   Future<void> _onDeleteUser(NeoUser user) async {
-    final confirm = await showDialog<bool>(
+    final passwordController = TextEditingController();
+
+    final password = await showDialog<String>(
       context: context,
       builder: (ctx) => ContentDialog(
         title: const Text('删除账户'),
-        content: Text('确定要删除账户「${user.userName}」吗？'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('删除账户「${obfuscatePhoneNumber(user.userName)}」需要验证密码：'),
+            const SizedBox(height: 8),
+            PasswordBox(
+              placeholder: '请输入密码',
+              controller: passwordController,
+            ),
+          ],
+        ),
         actions: [
           Button(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
+            onPressed: () =>
+                Navigator.pop(ctx, passwordController.text),
+            child: const Text('确认删除'),
           ),
         ],
       ),
     );
 
-    if (confirm != true || !mounted) return;
+    if (password == null || password.isEmpty || !mounted) return;
+
+    setState(() => _loading = true);
+
+    final verified = await control.verifyPassword(user, password);
+    if (!mounted) return;
+
+    if (!verified) {
+      showInfoBar(
+        context, '验证失败', '密码错误，无法删除', InfoBarSeverity.error,
+      );
+      setState(() => _loading = false);
+      return;
+    }
 
     final neoDb = Get.find<NeoDb>();
     await neoDb.deleteUser(user.id);
+    if (!mounted) return;
+    showInfoBar(context, '成功', '已删除账户', InfoBarSeverity.success);
     _loadUsers();
   }
 
