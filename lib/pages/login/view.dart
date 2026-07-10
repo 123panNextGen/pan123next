@@ -123,7 +123,10 @@ class _LoginInputPageState extends State<LoginInputPage> {
                     FilledButton(onPressed: login, child: const Text('登录')),
                     const SizedBox(width: 5),
                     Button(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        control.exitProgram();
+                      },
                       child: const Text('取消'),
                     ),
                   ],

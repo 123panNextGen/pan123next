@@ -21,9 +21,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return NavigationView(
       titleBar: TitleBar(
-        icon: const Padding(
-          padding: EdgeInsetsGeometry.all(2.0),
-          child: Image(image: AssetImage('assets/image/app_icon.png')),
+        icon: Padding(
+          padding: const EdgeInsetsGeometry.all(2.0),
+          child: Image(
+            image: AssetImage(
+              FluentTheme.of(context).brightness == Brightness.dark
+                  ? 'assets/image/app_icon.png'
+                  : 'assets/image/app_icon_white.png',
+            ),
+          ),
         ),
         title: Text(screenTitle),
         subtitle: const Text(screenSubTitle),

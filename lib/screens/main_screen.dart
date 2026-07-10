@@ -4,6 +4,7 @@ import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
 import 'package:pan123next/pages/transfer/view.dart';
+import 'package:pan123next/pages/cloud/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:window_manager/window_manager.dart';
@@ -22,9 +23,15 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return NavigationView(
       titleBar: TitleBar(
-        icon: const Padding(
-          padding: EdgeInsetsGeometry.all(2.0),
-          child: Image(image: AssetImage('assets/image/app_icon.png')),
+        icon: Padding(
+          padding: const EdgeInsetsGeometry.all(2.0),
+          child: Image(
+            image: AssetImage(
+              FluentTheme.of(context).brightness == Brightness.dark
+                  ? 'assets/image/app_icon.png'
+                  : 'assets/image/app_icon_white.png',
+            ),
+          ),
         ),
         title: Text(screenTitle),
         subtitle: const Text(screenSubTitle),
@@ -66,6 +73,14 @@ class _MainScreenState extends State<MainScreen> {
 
         footerItems: [
           PaneItemSeparator(),
+          PaneItem(
+            icon: const Icon(FluentIcons.cloud_24_regular),
+            title: const Text('云盘'),
+            body: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: CloudInfoView(),
+            ),
+          ),
           PaneItem(
             icon: const Icon(FluentIcons.settings_24_regular),
             title: const Text('设置'),

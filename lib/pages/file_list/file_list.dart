@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/api/extra.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -63,9 +64,23 @@ class _FileListWidgetState extends State<FileListWidget> {
   void initState() {
     super.initState();
     _loadFileList('0');
+    _initOpenUserInfo();
   }
 
-  Future<void> _loadFileList(String fileId, {int retryCount = 0}) async {
+  Future<void> _initOpenUserInfo() async {
+    final res = await _session.getOpenUserInfo();
+
+    if (res.apiCodeEnum == ApiCode.success) {
+      final openInfo = res.data!;
+      _session.userInformation?.openInfo = openInfo;
+      ExtraApiService.to.updateUserInfoSession(
+        _session.userInformation!,
+        updateSession: false,
+      );
+    }
+  }
+
+  Future<void> _loadFileList(String fileId) async {
     setState(() {
       _isLoading = true;
       _currentParentId = int.parse(fileId);
@@ -77,19 +92,8 @@ class _FileListWidgetState extends State<FileListWidget> {
           ? await _session.getTrashList(fileId)
           : await _session.getFileList(fileId);
       if (response.apiCode != 200) {
-        if (retryCount >= 1) {
-          if (!mounted) return;
-          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
-          return;
-        }
-        final loginResponse = await _session.login();
-        if (loginResponse.apiCode != 200) {
-          if (!mounted) return;
-          showInfoBar(context, '错误', 'Token 已过期且无法正常获取', InfoBarSeverity.error);
-          return;
-        }
         if (!mounted) return;
-        _loadFileList(fileId, retryCount: retryCount + 1);
+        showInfoBar(context, '错误', response.msg, InfoBarSeverity.error);
         return;
       }
       setState(() {
@@ -152,8 +156,13 @@ class _FileListWidgetState extends State<FileListWidget> {
     );
 
     if (result != null) {
-      await _session.createDir(result, _currentParentId.toString());
-      _loadFileList(_currentParentId.toString());
+      final ret = await _session.createDir(result, _currentParentId.toString());
+      if (ret.apiCodeEnum == ApiCode.success) {
+        _loadFileList(_currentParentId.toString());
+      } else {
+        if (!mounted) return;
+        showInfoBar(context, '错误', ret.msg, InfoBarSeverity.error);
+      }
     }
   }
 
@@ -234,8 +243,16 @@ class _FileListWidgetState extends State<FileListWidget> {
     );
 
     if (result != null) {
-      await _session.renameFile(_selectedFile!.fileId.toString(), result);
-      _loadFileList(_currentParentId.toString());
+      final ret = await _session.renameFile(
+        _selectedFile!.fileId.toString(),
+        result,
+      );
+      if (ret.apiCodeEnum == ApiCode.success) {
+        _loadFileList(_currentParentId.toString());
+      } else {
+        if (!mounted) return;
+        showInfoBar(context, '错误', ret.msg, InfoBarSeverity.error);
+      }
     }
   }
 
@@ -358,6 +375,16 @@ class _FileListWidgetState extends State<FileListWidget> {
                 return MenuFlyout(
                   items: !widget.isShowTrash
                       ? [
+                          MenuFlyoutItem(
+                            leading: const Icon(
+                              FluentIcons.select_object_24_regular,
+                            ),
+                            text: const Text('选择当前内容'),
+                            onPressed: () {
+                              Flyout.of(context).close();
+                            },
+                          ),
+                          MenuFlyoutSeparator(),
                           MenuFlyoutItem(
                             leading: const Icon(FluentIcons.delete_24_regular),
                             text: const Text('删除'),

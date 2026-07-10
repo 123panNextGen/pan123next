@@ -35,51 +35,12 @@ class _FileListTabState extends TabState {
     super.dispose();
   }
 
-  void _showMenu(Offset position) {
-    _flyoutController.showFlyout<void>(
-      position: position,
-      builder: (context) {
-        return MenuFlyout(
-          items: [
-            MenuFlyoutItem(
-              onPressed: () {
-                Flyout.of(context).close();
-              },
-              leading: const Icon(FluentIcons.arrow_repeat_all_24_regular),
-              text: const Text('刷新'),
-            ),
-            MenuFlyoutItem(
-              onPressed: () {
-                Flyout.of(context).close();
-              },
-              leading: const Icon(FluentIcons.dismiss_24_regular),
-              text: const Text('关闭'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onSecondaryTapUp: (d) {
-        final targetContext = _targetKey.currentContext;
-        if (targetContext == null) return;
-        final box = targetContext.findRenderObject() as RenderBox;
-        final position = box.localToGlobal(
-          d.localPosition,
-          ancestor: Navigator.of(context).context.findRenderObject(),
-        );
-
-        _showMenu(position);
-      },
-      child: FlyoutTarget(
-        key: _targetKey,
-        controller: _flyoutController,
-        child: super.build(context),
-      ),
+    return FlyoutTarget(
+      key: _targetKey,
+      controller: _flyoutController,
+      child: super.build(context),
     );
   }
 }

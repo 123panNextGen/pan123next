@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
-class SettingCard extends StatefulWidget {
-  const SettingCard({
+class RounderCard extends StatefulWidget {
+  const RounderCard({
     super.key,
     required this.child,
     this.margin,
@@ -16,14 +16,14 @@ class SettingCard extends StatefulWidget {
   final Color? borderColor;
 
   @override
-  State<SettingCard> createState() => _SettingCardState();
+  State<RounderCard> createState() => _RounderCardState();
 }
 
-class _SettingCardState extends State<SettingCard> {
+class _RounderCardState extends State<RounderCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(8),
       margin: widget.margin,
       backgroundColor: widget.backgroundColor,
       borderColor: widget.borderColor,
