@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
+import 'package:pan123next/common/data/neo/neo_db.dart';
 import 'package:pan123next/common/get_platform.dart';
 
 import 'app.dart';
@@ -30,12 +31,14 @@ Future<void> main() async {
 
   final appDb = AppDb();
   final userDb = UserDb();
+  final neoDb = await NeoDb.create();
 
   await appDb.initDb();
   await userDb.initDb();
 
   Get.put(appDb);
   Get.put(userDb);
+  Get.put(neoDb);
   Get.put(NetSession());
   Get.put(ExtraApiService());
 

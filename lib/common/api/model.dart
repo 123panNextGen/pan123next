@@ -188,6 +188,13 @@ class VipInfo {
     startTime: json['startTime'] ?? '',
     endTime: json['endTime'] ?? '',
   );
+
+  Map<String, dynamic> toJson() => {
+    'vipLevel': vipLevel,
+    'vipLabel': vipLabel,
+    'startTime': startTime,
+    'endTime': endTime,
+  };
 }
 
 class DeveloperInfo {
@@ -200,6 +207,11 @@ class DeveloperInfo {
     startTime: json['startTime'] ?? '',
     endTime: json['endTime'] ?? '',
   );
+
+  Map<String, dynamic> toJson() => {
+    'startTime': startTime,
+    'endTime': endTime,
+  };
 }
 
 class OpenUserInfoModel {
@@ -261,4 +273,22 @@ class OpenUserInfoModel {
               )
             : null,
       );
+
+  Map<String, dynamic> toJson() => {
+    'uid': uid,
+    'nickname': nickname,
+    'headImage': headImage,
+    'passport': passport,
+    'mail': mail,
+    'spaceUsed': spaceUsed,
+    'spacePermanent': spacePermanent,
+    'spaceTemp': spaceTemp,
+    'spaceTempExpr': spaceTempExpr,
+    'vip': vip,
+    'directTraffic': directTraffic,
+    'isHideUID': isHideUID,
+    'httpsCount': httpsCount,
+    'vipInfo': vipInfo?.map((e) => e.toJson()).toList(),
+    'developerInfo': developerInfo?.toJson(),
+  };
 }
