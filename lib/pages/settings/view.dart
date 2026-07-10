@@ -5,7 +5,7 @@ import 'package:pan123next/common/data/app.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:pan123next/widgets/setting_card.dart';
+import 'package:pan123next/widgets/card.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -44,7 +44,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
 
             const SizedBox(height: 16.0),
-            SettingCard(
+            Card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -121,7 +121,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
 
             const SizedBox(height: 16.0),
-            SettingCard(
+            Card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -5,7 +5,7 @@ import 'package:pan123next/common/api/extra.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/format.dart';
-import 'package:pan123next/widgets/setting_card.dart';
+import 'package:pan123next/widgets/card.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 
 class CloudInfoView extends StatefulWidget {
@@ -38,7 +38,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
         ),
 
         const SizedBox(height: 16.0),
-        SettingCard(
+        RounderCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
