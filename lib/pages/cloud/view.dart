@@ -5,6 +5,7 @@ import 'package:pan123next/common/api/extra.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/format.dart';
+import 'package:pan123next/pages/cloud/control.dart';
 import 'package:pan123next/widgets/card.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'model.dart';
@@ -29,41 +30,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
   }
 
   CloudNameModel get cloudName {
-    // 缓存 getter 结果，避免重复调用和多次 showInfoBar
-    final info = openInfo;
-
-    if (info == null) {
-      return CloudNameModel(name: '', nickName: '空用户名');
-    }
-
-    late String nickName;
-    late String name;
-
-    if (info.nickname.isNotEmpty) {
-      nickName = info.nickname;
-      if (info.passport.isNotEmpty) {
-        name = formatPhoneNumber(info.passport); // nickName 为用户名, name 为手机号
-      } else if (info.mail.isNotEmpty) {
-        name = info.mail; // nickName 为用户名, name 为邮箱
-      } else {
-        name = ''; // nickName 为用户名, name 为空
-      }
-    } else if (info.passport.isNotEmpty) {
-      nickName = formatPhoneNumber(info.passport);
-      if (info.mail.isNotEmpty) {
-        name = info.mail; // nickName 为手机号, name 为邮箱
-      } else {
-        name = ''; // nickName 为手机号, name 为空
-      }
-    } else if (info.mail.isNotEmpty) {
-      nickName = info.mail;
-      name = ''; // nickName 为邮箱, name 为空
-    } else {
-      nickName = '空用户名';
-      name = '';
-    }
-
-    return CloudNameModel(name: name, nickName: nickName);
+    return getCloudName(openInfo);
   }
 
   @override
@@ -122,9 +89,19 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                             formatPhoneNumber(cloudName.name ?? ''),
                             style: TextStyle(fontStyle: FontStyle.italic),
                           ),
+
+                          const SizedBox(width: 8.0),
+                          openInfo?.vip ?? false
+                              ? InfoBadge(
+                                  source: Text('VIP'),
+                                  color: Colors.teal,
+                                )
+                              : Container(),
                         ],
                       ),
-                      Text('123网盘用户 (其实这段还没来得及写..)'),
+                      Text(
+                        '${formatSize(openInfo?.spaceUsed ?? 0)} / ${formatSize((openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0))}',
+                      ),
                     ],
                   ),
                 ],

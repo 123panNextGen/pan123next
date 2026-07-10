@@ -1,13 +1,15 @@
 import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:pan123next/common/api/model.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:pan123next/common/const.dart';
 
-enum SizeUnit { b, kb, mb, gb, auto }
+enum SizeUnit { b, kb, mb, gb, tb, auto }
 
 String formatSize(
   int size, {
   SizeUnit target = SizeUnit.auto,
   SizeUnit from = SizeUnit.b,
+  int customFileSizeFormatMaxDecimal = fileSizeFormatMaxDecimal,
 }) {
   late int realSize;
   switch (from) {
@@ -23,6 +25,9 @@ String formatSize(
     case SizeUnit.gb:
       realSize = size * 1024 * 1024 * 1024;
       break;
+    case SizeUnit.tb:
+      realSize = size * 1024 * 1024 * 1024 * 1024;
+      break;
     default:
       realSize = size;
       break;
@@ -32,20 +37,25 @@ String formatSize(
     case SizeUnit.b:
       return '$realSize B';
     case SizeUnit.kb:
-      return '${(realSize / 1024).toStringAsFixed(1)} KB';
+      return '${(realSize / 1024).toStringAsFixed(customFileSizeFormatMaxDecimal)} KB';
     case SizeUnit.mb:
-      return '${(realSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+      return '${(realSize / (1024 * 1024)).toStringAsFixed(customFileSizeFormatMaxDecimal)} MB';
     case SizeUnit.gb:
-      return '${(realSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+      return '${(realSize / (1024 * 1024 * 1024)).toStringAsFixed(customFileSizeFormatMaxDecimal)} GB';
+    case SizeUnit.tb:
+      return '${(realSize / (1024 * 1024 * 1024 * 1024)).toStringAsFixed(customFileSizeFormatMaxDecimal)} TB';
     default:
-      if (realSize < 1024) return '$realSize B';
-      if (realSize < 1024 * 1024) {
-        return '${(realSize / 1024).toStringAsFixed(1)} KB';
+      if (realSize < 1024 * fileSizeFormatCount) return '$realSize B';
+      if (realSize < 1024 * 1024 * fileSizeFormatCount) {
+        return '${(realSize / 1024).toStringAsFixed(customFileSizeFormatMaxDecimal)} KB';
       }
-      if (realSize < 1024 * 1024 * 1024) {
-        return '${(realSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+      if (realSize < 1024 * 1024 * 1024 * fileSizeFormatCount) {
+        return '${(realSize / (1024 * 1024)).toStringAsFixed(customFileSizeFormatMaxDecimal)} MB';
       }
-      return '${(realSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+      if (realSize < 1024 * 1024 * 1024 * 1024 * fileSizeFormatCount) {
+        return '${(realSize / (1024 * 1024 * 1024)).toStringAsFixed(customFileSizeFormatMaxDecimal)} GB';
+      }
+      return '${(realSize / (1024 * 1024 * 1024 * 1024)).toStringAsFixed(customFileSizeFormatMaxDecimal)} TB';
   }
 }
 
