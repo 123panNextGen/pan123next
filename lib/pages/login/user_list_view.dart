@@ -73,20 +73,13 @@ class _UserListViewState extends State<UserListView> {
           children: [
             Text('删除账户「${obfuscatePhoneNumber(user.userName)}」需要验证密码：'),
             const SizedBox(height: 8),
-            PasswordBox(
-              placeholder: '请输入密码',
-              controller: passwordController,
-            ),
+            PasswordBox(placeholder: '请输入密码', controller: passwordController),
           ],
         ),
         actions: [
-          Button(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
+          Button(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(ctx, passwordController.text),
+            onPressed: () => Navigator.pop(ctx, passwordController.text),
             child: const Text('确认删除'),
           ),
         ],
@@ -101,9 +94,7 @@ class _UserListViewState extends State<UserListView> {
     if (!mounted) return;
 
     if (!verified) {
-      showInfoBar(
-        context, '验证失败', '密码错误，无法删除', InfoBarSeverity.error,
-      );
+      showInfoBar(context, '验证失败', '密码错误，无法删除', InfoBarSeverity.error);
       setState(() => _loading = false);
       return;
     }
@@ -133,26 +124,26 @@ class _UserListViewState extends State<UserListView> {
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            if (_users.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: Text('暂无保存的账户')),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _users.length,
-                  itemBuilder: (context, index) {
-                    final user = _users[index];
-                    return _UserCard(
-                      user: user,
-                      onTap: () => _onUserTap(user),
-                      onDelete: () => _onDeleteUser(user),
-                    );
-                  },
-                ),
-              ),
+            Expanded(
+              child: _users.isEmpty
+                  ? GestureDetector(
+                      onTap: widget.onAddNewUser,
+                      child: const Center(
+                        child: Text('暂无保存的账户，点击添加'),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _users.length,
+                      itemBuilder: (context, index) {
+                        final user = _users[index];
+                        return _UserCard(
+                          user: user,
+                          onTap: () => _onUserTap(user),
+                          onDelete: () => _onDeleteUser(user),
+                        );
+                      },
+                    ),
+            ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -162,10 +153,7 @@ class _UserListViewState extends State<UserListView> {
                   child: const Text('添加新用户'),
                 ),
                 const SizedBox(width: 8),
-                Button(
-                  onPressed: control.exitProgram,
-                  child: const Text('退出'),
-                ),
+                Button(onPressed: control.exitProgram, child: const Text('退出')),
               ],
             ),
           ],
@@ -214,6 +202,17 @@ class _UserCardState extends State<_UserCard> {
     );
   }
 
+  void _onMoreTap() {
+    final targetContext = _targetKey.currentContext;
+    if (targetContext == null) return;
+    final box = targetContext.findRenderObject() as RenderBox;
+    final pos = box.localToGlobal(
+      Offset(box.size.width, 0),
+      ancestor: Navigator.of(context).context.findRenderObject(),
+    );
+    _showMenu(pos);
+  }
+
   @override
   void dispose() {
     _flyoutController.dispose();
@@ -230,67 +229,60 @@ class _UserCardState extends State<_UserCard> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: FlyoutTarget(
-        key: _targetKey,
-        controller: _flyoutController,
-        child: Card(
-          child: GestureDetector(
-            onTap: widget.onTap,
-            onSecondaryTapUp: (d) {
-              final targetContext = _targetKey.currentContext;
-              if (targetContext == null) return;
-              final box = targetContext.findRenderObject() as RenderBox;
-              final position = box.localToGlobal(
-                d.localPosition,
-                ancestor:
-                    Navigator.of(context).context.findRenderObject(),
-              );
-              _showMenu(position);
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Icon(
-                    FluentIcons.person_24_regular,
-                    size: 40,
-                    color: theme.accentColor,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          obfuscatePhoneNumber(widget.user.userName),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.inactiveColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (openInfo?.vip == true)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: InfoBadge(
-                        source: const Text('VIP'),
-                        color: theme.accentColor.defaultBrushFor(
-                          theme.brightness,
+      child: Card(
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  FluentIcons.person_24_regular,
+                  size: 40,
+                  color: theme.accentColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        obfuscatePhoneNumber(widget.user.userName),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.inactiveColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (openInfo?.vip == true)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: InfoBadge(
+                      source: const Text('VIP'),
+                      color: theme.accentColor.defaultBrushFor(
+                        theme.brightness,
+                      ),
                     ),
-                ],
-              ),
+                  ),
+                FlyoutTarget(
+                  key: _targetKey,
+                  controller: _flyoutController,
+                  child: IconButton(
+                    icon: const Icon(FluentIcons.more_vertical_24_regular),
+                    onPressed: _onMoreTap,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

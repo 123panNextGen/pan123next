@@ -95,8 +95,8 @@ class _LoginInputPageState extends State<LoginInputPage> {
                   children: [
                     Checkbox(
                       checked: rememberPassword,
-                      onChanged: (_) => setState(
-                          () => rememberPassword = !rememberPassword),
+                      onChanged: (_) =>
+                          setState(() => rememberPassword = !rememberPassword),
                     ),
                     const SizedBox(width: 5),
                     const Text('记住密码'),
