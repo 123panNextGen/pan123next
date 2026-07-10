@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:get/get.dart';
 import 'package:pan123next/common/data/app.dart';
-import 'package:pan123next/common/data/user.dart';
+import 'package:pan123next/common/data/neo/neo_db.dart';
 
 class AppSession extends GetxController {
   late final Rx<Brightness> theme;
@@ -42,12 +42,8 @@ class AppSession extends GetxController {
     orElse: () => accentColors.first,
   )['value'];
 
-  void clearSession() {
-    final userDb = Get.find<UserDb>();
-    userDb.setValue('password', '');
-    userDb.setValue('authorization', '');
-    userDb.setValue('uuid', '');
-    userDb.setValue('autoLogin', false);
-    userDb.setValue('rememberPassword', false);
+  Future<void> clearSession() async {
+    final neoDb = Get.find<NeoDb>();
+    await neoDb.clearCurrentUser();
   }
 }

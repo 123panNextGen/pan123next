@@ -6,18 +6,26 @@ import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/neo/neo_db.dart';
 import 'package:pan123next/common/data/neo/neo_user.dart';
-import 'package:pan123next/common/data/user.dart';
 import 'package:uuid/uuid.dart';
 
-Map<String, dynamic> getUserInfo() {
-  UserDb db = Get.find();
-  UserInfoModel model = db.getUserInfo();
+Future<Map<String, dynamic>> getUserInfo() async {
+  final neoDb = Get.find<NeoDb>();
+  final current = await neoDb.getCurrentUser();
+
+  if (current == null) {
+    return {
+      'userName': '',
+      'password': '',
+      'autoLogin': false,
+      'rememberPassword': false,
+    };
+  }
 
   return {
-    'userName': model.userName,
-    'password': model.password,
-    'autoLogin': db.getValue('autoLogin') ?? false,
-    'rememberPassword': db.getValue('rememberPassword') ?? false,
+    'userName': current.userName,
+    'password': current.password,
+    'autoLogin': current.autoLogin,
+    'rememberPassword': current.rememberPassword,
   };
 }
 
@@ -27,24 +35,20 @@ Future<ApiReturnModel> login(
   bool autoLogin,
   bool rememberPassword,
 ) async {
-  final NetSession session = Get.find();
-  final UserDb db = Get.find();
-  final NeoDb neoDb = Get.find();
-  UserInfoModel model = db.getUserInfo();
+  final session = Get.find<NetSession>();
+  final neoDb = Get.find<NeoDb>();
 
-  if (model.userName == userName &&
-      rememberPassword &&
-      model.authorization.isNotEmpty) {
-    model.userName = userName;
-    model.password = password;
-    session.setUserInformation(model);
-
-    await db.setUserInfo(model);
-    await db.setValueAsync('autoLogin', autoLogin);
-    await db.setValueAsync('rememberPassword', rememberPassword);
-    await db.setValueAsync('userName', userName);
-
-    await _saveToNeoDb(neoDb, session, autoLogin, rememberPassword);
+  final existing = await neoDb.getUser(userName);
+  if (existing != null &&
+      existing.authorization.isNotEmpty &&
+      rememberPassword) {
+    final updated = existing.copyWith(
+      password: password,
+      autoLogin: autoLogin,
+      rememberPassword: rememberPassword,
+    );
+    session.setUserInformation(updated.toUserInfoModel());
+    await neoDb.saveUser(updated, asCurrent: true);
 
     return ApiReturnModel(
       code: 0,
@@ -54,58 +58,37 @@ Future<ApiReturnModel> login(
     );
   }
 
-  model.userName = userName;
-  model.password = password;
-
-  if (model.uuid.isEmpty) model.uuid = const Uuid().v4();
-  if (model.device.type.isEmpty) {
-    model.device.type = (await getRandomDevice())['type'];
-  }
-  if (model.device.os.isEmpty) {
-    model.device.os = (await getRandomDevice())['os'];
-  }
+  final model = UserInfoModel(
+    userName: userName,
+    password: password,
+    uuid: const Uuid().v4(),
+    authorization: '',
+    device: DeviceModel(
+      os: (await getRandomDevice())['os'],
+      type: (await getRandomDevice())['type'],
+    ),
+  );
 
   session.setUserInformation(model);
 
-  ApiReturnModel returnModel = await session.login();
+  final returnModel = await session.login();
   if (returnModel.apiCodeEnum == ApiCode.success) {
-    if (rememberPassword) {
-      await db.setUserInfo(session.userInformation!);
-    } else {
-      await db.setValueAsync('password', '');
-      await db.setValueAsync('authorization', '');
-    }
-    await db.setValueAsync('autoLogin', autoLogin);
-    await db.setValueAsync('rememberPassword', rememberPassword);
-    await db.setValueAsync('userName', userName);
-
-    await _saveToNeoDb(neoDb, session, autoLogin, rememberPassword);
+    final updated = session.userInformation!;
+    final neoUser = NeoUser(
+      id: userName,
+      userName: userName,
+      password: rememberPassword ? updated.password : '',
+      authorization: updated.authorization,
+      uuid: updated.uuid,
+      device: updated.device,
+      openInfo: updated.openInfo,
+      rememberPassword: rememberPassword,
+      autoLogin: autoLogin,
+    );
+    await neoDb.saveUser(neoUser, asCurrent: true);
   }
 
   return returnModel;
-}
-
-Future<void> _saveToNeoDb(
-  NeoDb neoDb,
-  NetSession session,
-  bool autoLogin,
-  bool rememberPassword,
-) async {
-  final info = session.userInformation;
-  if (info == null) return;
-
-  final user = NeoUser(
-    id: info.userName,
-    userName: info.userName,
-    password: rememberPassword ? info.password : '',
-    authorization: info.authorization,
-    uuid: info.uuid,
-    device: info.device,
-    openInfo: info.openInfo,
-    rememberPassword: rememberPassword,
-    autoLogin: autoLogin,
-  );
-  await neoDb.saveUser(user, asCurrent: true);
 }
 
 Future<ApiReturnModel> loginWithNeoUser(NeoUser user) async {

@@ -55,7 +55,12 @@ class _LoginInputPageState extends State<LoginInputPage> {
   @override
   void initState() {
     super.initState();
-    Map<String, dynamic> info = control.getUserInfo();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final info = await control.getUserInfo();
+    if (!mounted) return;
     setState(() {
       userNameController.text = info['userName'] ?? '';
       passwordController.text = info['password'] ?? '';

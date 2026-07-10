@@ -6,7 +6,6 @@ import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/data/neo/neo_db.dart';
 import 'package:pan123next/common/data/neo/neo_user.dart';
-import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/pages/cloud/control.dart';
 import 'package:pan123next/pages/cloud/dialog.dart';
@@ -23,14 +22,25 @@ class CloudInfoView extends StatefulWidget {
 
 class _CloudInfoViewState extends State<CloudInfoView> {
   final NetSession _session = Get.find();
-  final UserDb _userDb = Get.find();
   final NeoDb _neoDb = Get.find();
   List<NeoUser> _otherUsers = [];
+  bool _autoLogin = false;
+  bool _rememberPassword = false;
 
   @override
   void initState() {
     super.initState();
     _loadOtherUsers();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final current = await _neoDb.getCurrentUser();
+    if (!mounted) return;
+    setState(() {
+      _autoLogin = current?.autoLogin ?? false;
+      _rememberPassword = current?.rememberPassword ?? false;
+    });
   }
 
   Future<void> _loadOtherUsers() async {
@@ -260,9 +270,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                           const SizedBox(width: 8.0),
                           InfoBadge(
                             source: Text(
-                              (_userDb.getValue('autoLogin') as bool?) == true
-                                  ? '开启'
-                                  : '关闭',
+                              _autoLogin ? '开启' : '关闭',
                             ),
                           ),
                         ],
@@ -273,10 +281,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                           const SizedBox(width: 8.0),
                           InfoBadge(
                             source: Text(
-                              (_userDb.getValue('rememberPassword') as bool?) ==
-                                      true
-                                  ? '开启'
-                                  : '关闭',
+                              _rememberPassword ? '开启' : '关闭',
                             ),
                           ),
                         ],
