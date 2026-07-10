@@ -17,16 +17,6 @@ class AppSession extends GetxController {
         (appDb.getValue('theme') == 'dark' ? Brightness.dark : Brightness.light)
             .obs;
     accentColor = appDb.getAccentColor().obs;
-
-    final savedLocale = Get.find<UserDb>().getValue('set.language') as String?;
-    if (savedLocale?.isNotEmpty == true) {
-      final parts = savedLocale!.split('_');
-      if (parts.length == 2) {
-        appLocale.value = Locale(parts[0], parts[1]);
-        Get.locale = appLocale.value;
-      }
-    }
-    Get.locale = appLocale.value;
   }
 
   void updateTheme(Brightness value) {
@@ -42,14 +32,6 @@ class AppSession extends GetxController {
     Get.find<AppDb>().setValue('accentColor', value);
     accentColor.value = Get.find<AppDb>().getAccentColor();
     update();
-  }
-
-  void updateLocale(String languageTag) {
-    final parts = languageTag.split('_');
-    final locale = Locale(parts[0], parts[1]);
-    appLocale.value = locale;
-    Get.locale = locale;
-    Get.find<UserDb>().setValue('set.language', languageTag);
   }
 
   String getTheme() => theme.value == Brightness.dark ? 'dark' : 'light';
