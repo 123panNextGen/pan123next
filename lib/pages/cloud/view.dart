@@ -33,6 +33,10 @@ class _CloudInfoViewState extends State<CloudInfoView> {
     return getCloudName(openInfo);
   }
 
+  int get spaceAll {
+    return (openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
@@ -86,12 +90,11 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                             ),
                           ),
 
-                          const SizedBox(width: 8.0),
-                          Text(
-                            formatPhoneNumber(cloudName.name ?? ''),
-                            style: TextStyle(fontStyle: FontStyle.italic),
-                          ),
-
+                          // const SizedBox(width: 8.0),
+                          // Text(
+                          //   formatPhoneNumber(cloudName.name ?? ''),
+                          //   style: TextStyle(fontStyle: FontStyle.italic),
+                          // ),
                           const SizedBox(width: 8.0),
                           openInfo?.vip ?? false
                               ? InfoBadge(
@@ -104,9 +107,47 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                         ],
                       ),
                       Text(
-                        '${formatSize(openInfo?.spaceUsed ?? 0)} / ${formatSize((openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0))}',
+                        formatPhoneNumber(cloudName.name ?? ''),
+                        style: TextStyle(fontStyle: FontStyle.italic),
                       ),
+                      // Text(
+                      //   '${formatSize(openInfo?.spaceUsed ?? 0)} / ${formatSize((openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0))}',
+                      // ),
                     ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16.0),
+        RounderCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(FluentIcons.arrow_autofit_width_24_regular),
+                  const SizedBox(width: 8.0),
+                  Text('空间信息', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ProgressBar(
+                      value: (openInfo?.spaceUsed ?? 0) / spaceAll * 100,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${((openInfo?.spaceUsed ?? 0) / spaceAll * 100).toStringAsFixed(2)}%',
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${formatSize((openInfo?.spaceUsed ?? 0))} / ${formatSize(spaceAll)}',
                   ),
                 ],
               ),
