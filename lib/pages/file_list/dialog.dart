@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AddFolderDialog extends StatefulWidget {
   const AddFolderDialog({super.key});
@@ -32,12 +33,7 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
   void _createFile() async {
     final fileName = _fileNameController.text;
     if (fileName.isEmpty) {
-      showInfoBar(
-        context,
-        '错误',
-        '请输入文件夹名称',
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', '请输入文件夹名称', InfoBarSeverity.error);
       return;
     }
     Navigator.pop(context, fileName);
@@ -67,10 +63,7 @@ class _AddFolderDialogState extends State<AddFolderDialog> {
           child: const Text('取消'),
           onPressed: () => Navigator.pop(context),
         ),
-        Button(
-          onPressed: _createFile,
-          child: const Text('创建'),
-        ),
+        Button(onPressed: _createFile, child: const Text('创建')),
       ],
     );
   }
@@ -151,21 +144,11 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
   void _renameFile() async {
     final fileName = _fileNameController.text;
     if (fileName.isEmpty) {
-      showInfoBar(
-        context,
-        '错误',
-        '请输入新文件名',
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', '请输入新文件名', InfoBarSeverity.error);
       return;
     }
     if (fileName == widget.fileName) {
-      showInfoBar(
-        context,
-        '错误',
-        '新文件名不能与原文件名相同',
-        InfoBarSeverity.error,
-      );
+      showInfoBar(context, '错误', '新文件名不能与原文件名相同', InfoBarSeverity.error);
       return;
     }
 
@@ -182,10 +165,7 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
         children: [
           const Text('请输入新文件名：'),
           const SizedBox(height: 16),
-          TextBox(
-            controller: _fileNameController,
-            placeholder: '新文件名',
-          ),
+          TextBox(controller: _fileNameController, placeholder: '新文件名'),
         ],
       ),
       actions: [
@@ -193,10 +173,7 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
           child: const Text('取消'),
           onPressed: () => Navigator.pop(context, null),
         ),
-        Button(
-          onPressed: _renameFile,
-          child: const Text('确定'),
-        ),
+        Button(onPressed: _renameFile, child: const Text('确定')),
       ],
     );
   }
@@ -218,6 +195,18 @@ class ShowDownloadLinkDialog extends StatefulWidget {
 
 class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
   bool isCopying = false;
+
+  Future<void> openLink() async {
+    final uri = Uri.parse(widget.link);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      showInfoBar(context, '已打开', '已在浏览器中打开下载链接', InfoBarSeverity.success);
+    } else {
+      if (!mounted) return;
+      showInfoBar(context, '错误', '无法打开下载链接', InfoBarSeverity.error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +281,17 @@ class _ShowDownloadLinkDialogState extends State<ShowDownloadLinkDialog> {
                           },
                         );
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    Button(
+                      onPressed: openLink,
+                      child: Row(
+                        children: [
+                          Icon(FluentIcons.open_24_regular),
+                          SizedBox(width: 6),
+                          Text('在浏览器打开'),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     SelectableText(
