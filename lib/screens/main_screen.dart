@@ -3,7 +3,6 @@ import 'package:pan123next/common/const.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:pan123next/pages/file_list/view.dart';
 import 'package:pan123next/pages/settings/view.dart';
-import 'package:pan123next/pages/transfer/view.dart';
 import 'package:pan123next/pages/cloud/view.dart';
 import 'package:pan123next/widgets/window_buttons.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -59,14 +58,6 @@ class _MainScreenState extends State<MainScreen> {
             body: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
               child: FileListView(),
-            ),
-          ),
-          PaneItem(
-            icon: const Icon(FluentIcons.arrow_download_24_regular),
-            title: const Text('传输'),
-            body: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: TransferView(),
             ),
           ),
         ],
