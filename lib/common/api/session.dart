@@ -29,6 +29,12 @@ class NetSession {
     _updateHeaders();
   }
 
+  void clearSession() {
+    _userInformation = null;
+    cookie = '';
+    headers.clear();
+  }
+
   Dio get dio {
     if (_userInformation == null) {
       throw Exception('请先调用 setUserInformation 设置用户信息');

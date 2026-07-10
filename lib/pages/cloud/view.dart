@@ -6,6 +6,7 @@ import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/pages/cloud/control.dart';
+import 'package:pan123next/pages/cloud/dialog.dart';
 import 'package:pan123next/widgets/card.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
 import 'model.dart';
@@ -35,6 +36,42 @@ class _CloudInfoViewState extends State<CloudInfoView> {
 
   int get spaceAll {
     return (openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0);
+  }
+
+  Future<void> refreshUser() async {
+    final userInfo = _session.userInformation;
+    if (userInfo == null) {
+      showInfoBar(context, '错误', '用户信息为空', InfoBarSeverity.error);
+      return;
+    }
+
+    final result = await ExtraApiService.to.loginWithUserInfo(userInfo);
+
+    if (result.apiCodeEnum == ApiCode.success) {
+      await ExtraApiService.to.updateUserInfoSession(result.data!);
+      setState(() {});
+
+      if (!mounted) return;
+      showInfoBar(context, '成功', '刷新成功', InfoBarSeverity.success);
+    } else {
+      if (!mounted) return;
+      showInfoBar(context, '刷新失败', result.msg, InfoBarSeverity.error);
+    }
+  }
+
+  Future<void> logout() async {
+    bool? result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const LogoutContentDialog(),
+    );
+
+    if (!mounted || !(result ?? false)) return;
+
+    await ExtraApiService.to.logout();
+    setState(() {});
+
+    if (!mounted) return;
+    showInfoBar(context, '成功', '已退出登录', InfoBarSeverity.success);
   }
 
   @override
@@ -173,48 +210,16 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                   Icon(FluentIcons.arrow_clockwise_24_regular),
                   const SizedBox(width: 8.0),
                   Expanded(child: Text('重新登录')),
-                  Button(
-                    child: Text('刷新'),
-                    onPressed: () async {
-                      final userInfo = _session.userInformation;
-                      if (userInfo == null) {
-                        showInfoBar(
-                          context,
-                          '错误',
-                          '用户信息为空',
-                          InfoBarSeverity.error,
-                        );
-                        return;
-                      }
-
-                      final result = await ExtraApiService.to.loginWithUserInfo(
-                        userInfo,
-                      );
-
-                      if (result.apiCodeEnum == ApiCode.success) {
-                        await ExtraApiService.to.updateUserInfoSession(
-                          result.data!,
-                        );
-                        setState(() {});
-
-                        if (!context.mounted) return;
-                        showInfoBar(
-                          context,
-                          '成功',
-                          '刷新成功',
-                          InfoBarSeverity.success,
-                        );
-                      } else {
-                        if (!context.mounted) return;
-                        showInfoBar(
-                          context,
-                          '刷新失败',
-                          result.msg,
-                          InfoBarSeverity.error,
-                        );
-                      }
-                    },
-                  ),
+                  Button(onPressed: refreshUser, child: Text('刷新')),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                children: [
+                  Icon(FluentIcons.dismiss_circle_24_regular),
+                  const SizedBox(width: 8.0),
+                  Expanded(child: Text('退出登录')),
+                  FilledButton(onPressed: logout, child: Text('退出')),
                 ],
               ),
             ],

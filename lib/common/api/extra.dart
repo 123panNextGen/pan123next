@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
+import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/user.dart';
 
 class ExtraApiService {
@@ -63,5 +64,17 @@ class ExtraApiService {
   }) async {
     if (updateSession) _session.setUserInformation(userInfo);
     if (save) await _db.setUserInfo(userInfo);
+  }
+
+  /// 清空登录：清除内存会话、持久化凭据，并返回登录页面
+  Future<void> logout() async {
+    _session.clearSession();
+    _db.setValue('password', '');
+    _db.setValue('authorization', '');
+    _db.setValue('uuid', '');
+    _db.setValue('autoLogin', false);
+    _db.setValue('rememberPassword', false);
+    final appSession = Get.find<AppSession>();
+    appSession.isLoggedIn.value = false;
   }
 }
