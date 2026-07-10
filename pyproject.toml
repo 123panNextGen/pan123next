@@ -1,6 +1,6 @@
 [project]
 name = "pan123next"
-version = "0.3.0"
+version = "0.3.1"
 description = "Your cloud, always ready"
 readme = "README.md"
 requires-python = ">=3.12"
