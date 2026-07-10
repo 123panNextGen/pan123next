@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/api/device.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/data/neo/neo_db.dart';
+import 'package:pan123next/common/data/neo/neo_user.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:uuid/uuid.dart';
 
@@ -26,7 +28,8 @@ Future<ApiReturnModel> login(
   bool rememberPassword,
 ) async {
   final NetSession session = Get.find();
-  UserDb db = Get.find();
+  final UserDb db = Get.find();
+  final NeoDb neoDb = Get.find();
   UserInfoModel model = db.getUserInfo();
 
   if (model.userName == userName &&
@@ -40,6 +43,8 @@ Future<ApiReturnModel> login(
     await db.setValueAsync('autoLogin', autoLogin);
     await db.setValueAsync('rememberPassword', rememberPassword);
     await db.setValueAsync('userName', userName);
+
+    await _saveToNeoDb(neoDb, session, autoLogin, rememberPassword);
 
     return ApiReturnModel(
       code: 0,
@@ -73,9 +78,58 @@ Future<ApiReturnModel> login(
     await db.setValueAsync('autoLogin', autoLogin);
     await db.setValueAsync('rememberPassword', rememberPassword);
     await db.setValueAsync('userName', userName);
+
+    await _saveToNeoDb(neoDb, session, autoLogin, rememberPassword);
   }
 
   return returnModel;
+}
+
+Future<void> _saveToNeoDb(
+  NeoDb neoDb,
+  NetSession session,
+  bool autoLogin,
+  bool rememberPassword,
+) async {
+  final info = session.userInformation;
+  if (info == null) return;
+
+  final user = NeoUser(
+    id: info.userName,
+    userName: info.userName,
+    password: rememberPassword ? info.password : '',
+    authorization: info.authorization,
+    uuid: info.uuid,
+    device: info.device,
+    openInfo: info.openInfo,
+    rememberPassword: rememberPassword,
+    autoLogin: autoLogin,
+  );
+  await neoDb.saveUser(user, asCurrent: true);
+}
+
+Future<ApiReturnModel> loginWithNeoUser(NeoUser user) async {
+  final session = Get.find<NetSession>();
+  final neoDb = Get.find<NeoDb>();
+
+  if (user.authorization.isEmpty) {
+    return ApiReturnModel(
+      code: 0,
+      apiCode: -1,
+      apiCodeEnum: ApiCode.fail,
+      msg: '登录凭据已失效，请使用密码重新登录',
+    );
+  }
+
+  session.setUserInformation(user.toUserInfoModel());
+  await neoDb.saveUser(user, asCurrent: true);
+
+  return ApiReturnModel(
+    code: 0,
+    apiCode: 0,
+    apiCodeEnum: ApiCode.success,
+    msg: '登录成功',
+  );
 }
 
 void exitProgram() {

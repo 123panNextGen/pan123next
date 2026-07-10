@@ -4,9 +4,14 @@ import 'package:pan123next/pages/login/control.dart' as control;
 import 'package:pan123next/widgets/show_info_bar.dart';
 
 class LoginInputPage extends StatefulWidget {
-  const LoginInputPage({super.key, required this.onLoginSuccess});
+  const LoginInputPage({
+    super.key,
+    required this.onLoginSuccess,
+    this.onCancel,
+  });
 
   final Function() onLoginSuccess;
+  final VoidCallback? onCancel;
 
   @override
   State<LoginInputPage> createState() => _LoginInputPageState();
@@ -124,8 +129,12 @@ class _LoginInputPageState extends State<LoginInputPage> {
                     const SizedBox(width: 5),
                     Button(
                       onPressed: () {
-                        Navigator.pop(context);
-                        control.exitProgram();
+                        if (widget.onCancel != null) {
+                          widget.onCancel!();
+                        } else {
+                          Navigator.pop(context);
+                          control.exitProgram();
+                        }
                       },
                       child: const Text('取消'),
                     ),
