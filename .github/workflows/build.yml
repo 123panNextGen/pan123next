@@ -76,35 +76,6 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact }}
 
-  build-arm64:
-    name: Build Windows arm64
-    runs-on: windows-latest
-    if: |
-      always()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build Windows arm64
-        env:
-          FLUTTER_TARGET_PLATFORM: windows-arm64
-        run: flutter build windows --release
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: pan123next-windows-arm64
-          path: build/windows/arm64/runner/Release/
-
   build-apk:
     name: Build APK
     runs-on: ubuntu-latest
@@ -134,13 +105,12 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: [build, build-apk, build-arm64]
+    needs: [build, build-apk]
     runs-on: ubuntu-latest
     if: |
       always() &&
       needs.build.result == 'success' &&
       needs.build-apk.result == 'success' &&
-      needs.build-arm64.result == 'success' &&
       ((github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch')
     permissions:
       contents: write
@@ -297,7 +267,6 @@ jobs:
           cp pan123next-apk/app-release.apk artifacts/Pan123Next-Android.apk
           zip -r artifacts/Pan123Next-Linux.zip pan123next-linux/
           zip -r artifacts/Pan123Next-Windows.zip pan123next-windows/
-          zip -r artifacts/Pan123Next-Windows-arm64.zip pan123next-windows-arm64/
           zip -r artifacts/Pan123Next-macos.zip pan123next-macos/
 
       - name: Create GitHub Release
