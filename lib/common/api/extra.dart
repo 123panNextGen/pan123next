@@ -70,22 +70,9 @@ class ExtraApiService {
     }
   }
 
-  /// 清空登录：清除内存会话、当前用户标记，并返回登录页面
+  /// 清空内存会话，返回登录页面（保留用户凭据）
   Future<void> logout() async {
     _session.clearSession();
-
-    final neoDb = Get.find<NeoDb>();
-    final currentId = neoDb.currentUserId;
-    if (currentId != null) {
-      final user = await neoDb.getUser(currentId);
-      if (user != null) {
-        await neoDb.saveUser(user.copyWith(
-          authorization: '',
-          lastLogin: DateTime.now(),
-        ), asCurrent: false);
-      }
-    }
-    await neoDb.clearCurrentUser();
 
     final appSession = Get.find<AppSession>();
     appSession.isLoggedIn.value = false;

@@ -317,7 +317,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    user.userName,
+                                    obfuscatePhoneNumber(user.userName),
                                     style: const TextStyle(fontSize: 14),
                                   ),
                                 ),

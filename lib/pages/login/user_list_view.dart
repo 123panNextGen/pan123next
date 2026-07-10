@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/data/neo/neo_db.dart';
 import 'package:pan123next/common/data/neo/neo_user.dart';
+import 'package:pan123next/common/format.dart';
 import 'package:pan123next/pages/login/control.dart' as control;
 import 'package:pan123next/widgets/show_info_bar.dart';
 
@@ -240,7 +241,7 @@ class _UserCardState extends State<_UserCard> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          widget.user.userName,
+                          obfuscatePhoneNumber(widget.user.userName),
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.inactiveColor,
