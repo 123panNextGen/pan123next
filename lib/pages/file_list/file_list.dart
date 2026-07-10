@@ -376,6 +376,16 @@ class _FileListWidgetState extends State<FileListWidget> {
                   items: !widget.isShowTrash
                       ? [
                           MenuFlyoutItem(
+                            leading: const Icon(
+                              FluentIcons.select_object_24_regular,
+                            ),
+                            text: const Text('选择当前内容'),
+                            onPressed: () {
+                              Flyout.of(context).close();
+                            },
+                          ),
+                          MenuFlyoutSeparator(),
+                          MenuFlyoutItem(
                             leading: const Icon(FluentIcons.delete_24_regular),
                             text: const Text('删除'),
                             onPressed: () {

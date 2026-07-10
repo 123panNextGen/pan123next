@@ -35,6 +35,8 @@ class _CloudInfoViewState extends State<CloudInfoView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -94,7 +96,9 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                           openInfo?.vip ?? false
                               ? InfoBadge(
                                   source: Text('VIP'),
-                                  color: Colors.teal,
+                                  color: theme.accentColor.defaultBrushFor(
+                                    theme.brightness,
+                                  ),
                                 )
                               : Container(),
                         ],
