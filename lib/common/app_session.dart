@@ -8,6 +8,7 @@ class AppSession extends GetxController {
   late final Rx<AccentColor> accentColor;
   final Rx<Locale> appLocale = const Locale('zh', 'CN').obs;
   final RxBool isLoggedIn = false.obs;
+  final RxInt userSwitchSignal = 0.obs;
 
   @override
   void onInit() {

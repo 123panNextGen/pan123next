@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/api/extra.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
+import 'package:pan123next/common/data/neo/neo_db.dart';
+import 'package:pan123next/common/data/neo/neo_user.dart';
 import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/pages/cloud/control.dart';
@@ -22,6 +24,23 @@ class CloudInfoView extends StatefulWidget {
 class _CloudInfoViewState extends State<CloudInfoView> {
   final NetSession _session = Get.find();
   final UserDb _userDb = Get.find();
+  final NeoDb _neoDb = Get.find();
+  List<NeoUser> _otherUsers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOtherUsers();
+  }
+
+  Future<void> _loadOtherUsers() async {
+    final currentId = _neoDb.currentUserId;
+    final all = await _neoDb.getAllUsers();
+    if (!mounted) return;
+    setState(() {
+      _otherUsers = all.where((u) => u.id != currentId).toList();
+    });
+  }
 
   OpenUserInfoModel? get openInfo {
     if (_session.userInformation == null) {
@@ -58,6 +77,36 @@ class _CloudInfoViewState extends State<CloudInfoView> {
     } else {
       if (!mounted) return;
       showInfoBar(context, '刷新失败', result.msg, InfoBarSeverity.error);
+    }
+  }
+
+  Future<void> _onSwitchToUser(NeoUser target) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => ContentDialog(
+        title: const Text('切换账户'),
+        content: Text('确定切换到账户「${target.userName}」吗？'),
+        actions: [
+          Button(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('切换'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final result = await switchToUser(target);
+    if (!mounted) return;
+    if (result.apiCodeEnum == ApiCode.success) {
+      showInfoBar(context, '成功', result.msg, InfoBarSeverity.success);
+    } else {
+      showInfoBar(context, '切换失败', result.msg, InfoBarSeverity.error);
     }
   }
 
@@ -235,6 +284,50 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                     ],
                   ),
                 ),
+
+                if (_otherUsers.isNotEmpty) ...[
+                  const SizedBox(height: 16.0),
+                  RounderCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(FluentIcons.people_24_regular),
+                            const SizedBox(width: 8.0),
+                            Text('其他账户', style: TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ..._otherUsers.map(
+                          (user) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  FluentIcons.person_24_regular,
+                                  size: 28,
+                                  color: theme.accentColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    user.userName,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ),
+                                Button(
+                                  onPressed: () => _onSwitchToUser(user),
+                                  child: const Text('切换'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 16.0),
                 Card(

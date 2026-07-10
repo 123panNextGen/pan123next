@@ -1,4 +1,9 @@
+import 'package:get/get.dart';
 import 'package:pan123next/common/api/model.dart';
+import 'package:pan123next/common/api/session.dart';
+import 'package:pan123next/common/app_session.dart';
+import 'package:pan123next/common/data/neo/neo_db.dart';
+import 'package:pan123next/common/data/neo/neo_user.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/pages/cloud/model.dart';
 
@@ -15,26 +20,54 @@ CloudNameModel getCloudName(OpenUserInfoModel? openInfo) {
   if (info.nickname.isNotEmpty) {
     nickName = info.nickname;
     if (info.passport.isNotEmpty) {
-      name = formatPhoneNumber(info.passport); // nickName 为用户名, name 为手机号
+      name = formatPhoneNumber(info.passport);
     } else if (info.mail.isNotEmpty) {
-      name = info.mail; // nickName 为用户名, name 为邮箱
+      name = info.mail;
     } else {
-      name = ''; // nickName 为用户名, name 为空
+      name = '';
     }
   } else if (info.passport.isNotEmpty) {
     nickName = formatPhoneNumber(info.passport);
     if (info.mail.isNotEmpty) {
-      name = info.mail; // nickName 为手机号, name 为邮箱
+      name = info.mail;
     } else {
-      name = ''; // nickName 为手机号, name 为空
+      name = '';
     }
   } else if (info.mail.isNotEmpty) {
     nickName = info.mail;
-    name = ''; // nickName 为邮箱, name 为空
+    name = '';
   } else {
     nickName = '空用户名';
     name = '';
   }
 
   return CloudNameModel(name: name, nickName: nickName);
+}
+
+Future<ApiReturnModel> switchToUser(NeoUser targetUser) async {
+  final session = Get.find<NetSession>();
+  final neoDb = Get.find<NeoDb>();
+  final appSession = Get.find<AppSession>();
+
+  session.setUserInformation(targetUser.toUserInfoModel());
+
+  try {
+    final result = await session.getOpenUserInfo();
+    if (result.apiCodeEnum == ApiCode.success) {
+      if (session.userInformation != null) {
+        session.userInformation!.openInfo = result.data;
+      }
+      targetUser = targetUser.copyWith(openInfo: result.data);
+    }
+  } catch (_) {}
+
+  await neoDb.saveUser(targetUser, asCurrent: true);
+  appSession.userSwitchSignal.value++;
+
+  return ApiReturnModel(
+    code: 0,
+    apiCode: 0,
+    apiCodeEnum: ApiCode.success,
+    msg: '已切换到 ${targetUser.userName}',
+  );
 }
