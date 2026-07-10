@@ -7,6 +7,7 @@ import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/format.dart';
 import 'package:pan123next/widgets/card.dart';
 import 'package:pan123next/widgets/show_info_bar.dart';
+import 'model.dart';
 
 class CloudInfoView extends StatefulWidget {
   const CloudInfoView({super.key});
@@ -25,6 +26,44 @@ class _CloudInfoViewState extends State<CloudInfoView> {
     }
 
     return _session.userInformation!.openInfo;
+  }
+
+  CloudNameModel get cloudName {
+    // 缓存 getter 结果，避免重复调用和多次 showInfoBar
+    final info = openInfo;
+
+    if (info == null) {
+      return CloudNameModel(name: '', nickName: '空用户名');
+    }
+
+    late String nickName;
+    late String name;
+
+    if (info.nickname.isNotEmpty) {
+      nickName = info.nickname;
+      if (info.passport.isNotEmpty) {
+        name = formatPhoneNumber(info.passport); // nickName 为用户名, name 为手机号
+      } else if (info.mail.isNotEmpty) {
+        name = info.mail; // nickName 为用户名, name 为邮箱
+      } else {
+        name = ''; // nickName 为用户名, name 为空
+      }
+    } else if (info.passport.isNotEmpty) {
+      nickName = formatPhoneNumber(info.passport);
+      if (info.mail.isNotEmpty) {
+        name = info.mail; // nickName 为手机号, name 为邮箱
+      } else {
+        name = ''; // nickName 为手机号, name 为空
+      }
+    } else if (info.mail.isNotEmpty) {
+      nickName = info.mail;
+      name = ''; // nickName 为邮箱, name 为空
+    } else {
+      nickName = '空用户名';
+      name = '';
+    }
+
+    return CloudNameModel(name: name, nickName: nickName);
   }
 
   @override
@@ -71,9 +110,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                       Row(
                         children: [
                           Text(
-                            openInfo?.nickname != null
-                                ? openInfo!.nickname
-                                : '空用户名',
+                            cloudName.nickName ?? '空用户名',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -82,7 +119,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
 
                           const SizedBox(width: 8.0),
                           Text(
-                            formatPhoneNumber(openInfo?.passport ?? ''),
+                            formatPhoneNumber(cloudName.name ?? ''),
                             style: TextStyle(fontStyle: FontStyle.italic),
                           ),
                         ],
@@ -117,8 +154,19 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                   Button(
                     child: Text('刷新'),
                     onPressed: () async {
+                      final userInfo = _session.userInformation;
+                      if (userInfo == null) {
+                        showInfoBar(
+                          context,
+                          '错误',
+                          '用户信息为空',
+                          InfoBarSeverity.error,
+                        );
+                        return;
+                      }
+
                       final result = await ExtraApiService.to.loginWithUserInfo(
-                        _session.userInformation!,
+                        userInfo,
                       );
 
                       if (result.apiCodeEnum == ApiCode.success) {
@@ -127,7 +175,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                         );
                         setState(() {});
 
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         showInfoBar(
                           context,
                           '成功',
@@ -135,7 +183,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                           InfoBarSeverity.success,
                         );
                       } else {
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         showInfoBar(
                           context,
                           '刷新失败',
