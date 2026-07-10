@@ -2,17 +2,15 @@ import 'package:get/get.dart';
 import 'package:pan123next/common/api/model.dart';
 import 'package:pan123next/common/api/session.dart';
 import 'package:pan123next/common/app_session.dart';
-import 'package:pan123next/common/data/user.dart';
+import 'package:pan123next/common/data/neo/neo_db.dart';
 
 class ExtraApiService {
   static ExtraApiService get to => Get.find<ExtraApiService>();
 
   final NetSession _session;
-  final UserDb _db;
 
-  ExtraApiService({NetSession? session, UserDb? db})
-    : _session = session ?? Get.find<NetSession>(),
-      _db = db ?? Get.find<UserDb>();
+  ExtraApiService({NetSession? session})
+    : _session = session ?? Get.find<NetSession>();
 
   /// 先写入 NetSession，再复用 NetSession.login() 完成登录，
   /// 成功时返回带更新后 authorization 的 UserInfoModel 拷贝
@@ -54,8 +52,8 @@ class ExtraApiService {
     );
   }
 
-  /// 同步用户信息到内存会话 (NetSession) 和 / 或本地持久化 (UserDb)
-  /// - save=true 时写入 UserDb
+  /// 同步用户信息到内存会话 (NetSession) 和 / 或本地持久化
+  /// - save=true 时写入 NeoDb
   /// - updateSession=true 时更新 NetSession
   Future<void> updateUserInfoSession(
     UserInfoModel userInfo, {
@@ -63,17 +61,19 @@ class ExtraApiService {
     bool updateSession = true,
   }) async {
     if (updateSession) _session.setUserInformation(userInfo);
-    if (save) await _db.setUserInfo(userInfo);
+    if (save) {
+      final neoDb = Get.find<NeoDb>();
+      final currentId = neoDb.currentUserId;
+      if (currentId != null && userInfo.openInfo != null) {
+        await neoDb.updateUserOpenInfo(currentId, userInfo.openInfo!);
+      }
+    }
   }
 
-  /// 清空登录：清除内存会话、持久化凭据，并返回登录页面
+  /// 清空内存会话，返回登录页面（保留用户凭据）
   Future<void> logout() async {
     _session.clearSession();
-    _db.setValue('password', '');
-    _db.setValue('authorization', '');
-    _db.setValue('uuid', '');
-    _db.setValue('autoLogin', false);
-    _db.setValue('rememberPassword', false);
+
     final appSession = Get.find<AppSession>();
     appSession.isLoggedIn.value = false;
   }

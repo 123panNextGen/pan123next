@@ -4,16 +4,20 @@ import 'package:pan123next/pages/login/control.dart' as control;
 import 'package:pan123next/widgets/show_info_bar.dart';
 
 class LoginInputPage extends StatefulWidget {
-  const LoginInputPage({super.key, required this.onLoginSuccess});
+  const LoginInputPage({
+    super.key,
+    required this.onLoginSuccess,
+    this.onCancel,
+  });
 
   final Function() onLoginSuccess;
+  final VoidCallback? onCancel;
 
   @override
   State<LoginInputPage> createState() => _LoginInputPageState();
 }
 
 class _LoginInputPageState extends State<LoginInputPage> {
-  bool autoLogin = false;
   bool rememberPassword = false;
   final userNameController = TextEditingController();
   final passwordController = TextEditingController();
@@ -33,7 +37,6 @@ class _LoginInputPageState extends State<LoginInputPage> {
       final value = await control.login(
         userNameController.text,
         passwordController.text,
-        autoLogin,
         rememberPassword,
       );
       if (!mounted) return;
@@ -50,17 +53,17 @@ class _LoginInputPageState extends State<LoginInputPage> {
   @override
   void initState() {
     super.initState();
-    Map<String, dynamic> info = control.getUserInfo();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final info = await control.getUserInfo();
+    if (!mounted) return;
     setState(() {
       userNameController.text = info['userName'] ?? '';
       passwordController.text = info['password'] ?? '';
-      autoLogin = info['autoLogin'] ?? false;
       rememberPassword = info['rememberPassword'] ?? false;
     });
-
-    if (autoLogin) {
-      login();
-    }
   }
 
   @override
@@ -92,27 +95,11 @@ class _LoginInputPageState extends State<LoginInputPage> {
                   children: [
                     Checkbox(
                       checked: rememberPassword,
-                      onChanged: autoLogin
-                          ? null
-                          : (_) => setState(
-                              () => rememberPassword = !rememberPassword,
-                            ),
+                      onChanged: (_) =>
+                          setState(() => rememberPassword = !rememberPassword),
                     ),
                     const SizedBox(width: 5),
                     const Text('记住密码'),
-
-                    const SizedBox(width: 15),
-                    Checkbox(
-                      checked: autoLogin,
-                      onChanged: (_) => setState(() {
-                        if (!rememberPassword && !autoLogin) {
-                          rememberPassword = true;
-                        }
-                        autoLogin = !autoLogin;
-                      }),
-                    ),
-                    const SizedBox(width: 5),
-                    const Text('自动登录'),
                   ],
                 ),
 
@@ -124,8 +111,12 @@ class _LoginInputPageState extends State<LoginInputPage> {
                     const SizedBox(width: 5),
                     Button(
                       onPressed: () {
-                        Navigator.pop(context);
-                        control.exitProgram();
+                        if (widget.onCancel != null) {
+                          widget.onCancel!();
+                        } else {
+                          Navigator.pop(context);
+                          control.exitProgram();
+                        }
                       },
                       child: const Text('取消'),
                     ),

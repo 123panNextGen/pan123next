@@ -125,3 +125,11 @@ String formatPhoneNumber(String phoneNumber) {
   }
   return '*' * phoneNumber.length;
 }
+
+/// 仅当值为11位纯数字时（手机号）做脱敏处理，否则原样返回
+String obfuscatePhoneNumber(String value) {
+  if (value.length == 11 && RegExp(r'^\d{11}$').hasMatch(value)) {
+    return '${value.substring(0, 3)}****${value.substring(7)}';
+  }
+  return value;
+}

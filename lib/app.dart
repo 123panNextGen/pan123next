@@ -33,7 +33,9 @@ class _MainAppState extends State<MainApp> {
         ),
         home: SafeArea(
           child: appSession.isLoggedIn.value
-              ? const MainScreen()
+              ? MainScreen(
+                  key: ValueKey('main_${appSession.userSwitchSignal.value}'),
+                )
               : LoginScreen(onLoginSuccess: onLoginSuccess),
         ),
       );

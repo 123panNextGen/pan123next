@@ -2,7 +2,6 @@ import 'package:fluent_ui/fluent_ui.dart' hide FluentIcons;
 import 'package:get/get.dart';
 import 'package:pan123next/common/app_session.dart';
 import 'package:pan123next/common/data/app.dart';
-import 'package:pan123next/common/data/user.dart';
 import 'package:pan123next/common/get_platform.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
@@ -17,14 +16,12 @@ class _SettingsViewState extends State<SettingsView> {
   final AppSession appSession = Get.find();
   late String theme;
   late String accentColor;
-  late String language;
 
   @override
   void initState() {
     super.initState();
     theme = appSession.getTheme();
     accentColor = appSession.getAccentColor();
-    language = Get.find<UserDb>().getValue('set.language') ?? 'zh_CN';
   }
 
   @override
