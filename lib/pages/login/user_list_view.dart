@@ -115,48 +115,58 @@ class _UserListViewState extends State<UserListView> {
     return Center(
       child: SizedBox(
         width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '选择账户',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: _users.isEmpty
-                  ? GestureDetector(
-                      onTap: widget.onAddNewUser,
-                      child: const Center(
-                        child: Text('暂无保存的账户，点击添加'),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _users.length,
-                      itemBuilder: (context, index) {
-                        final user = _users[index];
-                        return _UserCard(
-                          user: user,
-                          onTap: () => _onUserTap(user),
-                          onDelete: () => _onDeleteUser(user),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const headerFooterHeight = 140.0;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                FilledButton(
-                  onPressed: widget.onAddNewUser,
-                  child: const Text('添加新用户'),
+                const Text(
+                  '选择账户',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 8),
-                Button(onPressed: control.exitProgram, child: const Text('退出')),
+                const SizedBox(height: 20),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight - headerFooterHeight,
+                  ),
+                  child: _users.isEmpty
+                      ? GestureDetector(
+                          onTap: widget.onAddNewUser,
+                          child: const Center(child: Text('暂无保存的账户，点击添加')),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _users.length,
+                          itemBuilder: (context, index) {
+                            final user = _users[index];
+                            return _UserCard(
+                              user: user,
+                              onTap: () => _onUserTap(user),
+                              onDelete: () => _onDeleteUser(user),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FilledButton(
+                      onPressed: widget.onAddNewUser,
+                      child: const Text('添加新用户'),
+                    ),
+                    const SizedBox(width: 8),
+                    Button(
+                      onPressed: control.exitProgram,
+                      child: const Text('退出'),
+                    ),
+                  ],
+                ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -188,6 +198,14 @@ class _UserCardState extends State<_UserCard> {
       builder: (context) {
         return MenuFlyout(
           items: [
+            MenuFlyoutItem(
+              onPressed: () {
+                Flyout.of(context).close();
+                widget.onTap();
+              },
+              leading: const Icon(FluentIcons.arrow_right_24_regular),
+              text: const Text('登录'),
+            ),
             MenuFlyoutItem(
               onPressed: () {
                 Flyout.of(context).close();
