@@ -133,11 +133,6 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                                     ),
                                   ),
 
-                                  // const SizedBox(width: 8.0),
-                                  // Text(
-                                  //   formatPhoneNumber(cloudName.name ?? ''),
-                                  //   style: TextStyle(fontStyle: FontStyle.italic),
-                                  // ),
                                   const SizedBox(width: 8.0),
                                   openInfo?.vip ?? false
                                       ? InfoBadge(
@@ -154,9 +149,6 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                                 formatPhoneNumber(cloudName.name ?? ''),
                                 style: TextStyle(fontStyle: FontStyle.italic),
                               ),
-                              // Text(
-                              //   '${formatSize(openInfo?.spaceUsed ?? 0)} / ${formatSize((openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0))}',
-                              // ),
                             ],
                           ),
                         ],
@@ -261,7 +253,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                         children: [
                           Icon(FluentIcons.arrow_clockwise_24_regular),
                           const SizedBox(width: 8.0),
-                          Expanded(child: Text('重新登录')),
+                          Expanded(child: Text('刷新 Token (重新登录)')),
                           Button(onPressed: refreshUser, child: Text('刷新')),
                         ],
                       ),
