@@ -67,6 +67,14 @@ class _CloudInfoViewState extends State<CloudInfoView> {
     return (openInfo?.spacePermanent ?? 0) + (openInfo?.spaceTemp ?? 0);
   }
 
+  double get spaceValue {
+    if (spaceAll != 0) {
+      return (openInfo?.spaceUsed ?? 0) / spaceAll * 100;
+    } else {
+      return 0;
+    }
+  }
+
   Future<void> refreshUser() async {
     final userInfo = _session.userInformation;
     if (userInfo == null) {
@@ -229,16 +237,9 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(
-                            child: ProgressBar(
-                              value:
-                                  (openInfo?.spaceUsed ?? 0) / spaceAll * 100,
-                            ),
-                          ),
+                          Expanded(child: ProgressBar(value: spaceValue)),
                           const SizedBox(width: 8),
-                          Text(
-                            '${((openInfo?.spaceUsed ?? 0) / spaceAll * 100).toStringAsFixed(2)}%',
-                          ),
+                          Text('${spaceValue.toStringAsFixed(2)}%'),
                           const SizedBox(width: 8),
                           Text(
                             '${formatSize((openInfo?.spaceUsed ?? 0))} / ${formatSize(spaceAll)}',
@@ -267,9 +268,7 @@ class _CloudInfoViewState extends State<CloudInfoView> {
                           Text('记住密码:'),
                           const SizedBox(width: 8.0),
                           InfoBadge(
-                            source: Text(
-                              _rememberPassword ? '开启' : '关闭',
-                            ),
+                            source: Text(_rememberPassword ? '开启' : '关闭'),
                           ),
                         ],
                       ),

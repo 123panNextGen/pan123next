@@ -59,7 +59,14 @@ Future<ApiReturnModel> switchToUser(NeoUser targetUser) async {
       }
       targetUser = targetUser.copyWith(openInfo: result.data);
     }
-  } catch (_) {}
+  } catch (e) {
+    return ApiReturnModel(
+      code: 0,
+      apiCode: 0,
+      apiCodeEnum: ApiCode.fail,
+      msg: e.toString(),
+    );
+  }
 
   await neoDb.saveUser(targetUser, asCurrent: true);
   appSession.userSwitchSignal.value++;
