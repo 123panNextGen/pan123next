@@ -8,10 +8,12 @@ class LoginInputPage extends StatefulWidget {
     super.key,
     required this.onLoginSuccess,
     this.onCancel,
+    this.initialUserName,
   });
 
   final Function() onLoginSuccess;
   final VoidCallback? onCancel;
+  final String? initialUserName;
 
   @override
   State<LoginInputPage> createState() => _LoginInputPageState();
@@ -19,6 +21,7 @@ class LoginInputPage extends StatefulWidget {
 
 class _LoginInputPageState extends State<LoginInputPage> {
   bool rememberPassword = false;
+  bool saveLoginInfo = false;
   final userNameController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -38,6 +41,7 @@ class _LoginInputPageState extends State<LoginInputPage> {
         userNameController.text,
         passwordController.text,
         rememberPassword,
+        saveLoginInfo: saveLoginInfo,
       );
       if (!mounted) return;
       if (value.apiCodeEnum == ApiCode.success) {
@@ -53,7 +57,14 @@ class _LoginInputPageState extends State<LoginInputPage> {
   @override
   void initState() {
     super.initState();
-    _loadUserInfo();
+    if (widget.initialUserName != null) {
+      userNameController.text = widget.initialUserName!;
+      passwordController.text = '';
+      rememberPassword = false;
+      saveLoginInfo = false;
+    } else {
+      _loadUserInfo();
+    }
   }
 
   Future<void> _loadUserInfo() async {
@@ -94,12 +105,47 @@ class _LoginInputPageState extends State<LoginInputPage> {
                 Row(
                   children: [
                     Checkbox(
-                      checked: rememberPassword,
-                      onChanged: (_) =>
-                          setState(() => rememberPassword = !rememberPassword),
+                      checked: saveLoginInfo,
+                      onChanged: (v) {
+                        setState(() {
+                          saveLoginInfo = v ?? false;
+                          if (!saveLoginInfo) rememberPassword = false;
+                        });
+                      },
                     ),
                     const SizedBox(width: 5),
-                    const Text('记住密码'),
+                    GestureDetector(
+                      onTap: () => setState(() {
+                        saveLoginInfo = !saveLoginInfo;
+                        if (!saveLoginInfo) rememberPassword = false;
+                      }),
+                      child: const Text('保存登录信息'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Checkbox(
+                      checked: rememberPassword,
+                      onChanged: (v) {
+                        setState(() {
+                          rememberPassword = v ?? false;
+                          if (rememberPassword) saveLoginInfo = true;
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () => setState(() {
+                        rememberPassword = !rememberPassword;
+                        if (rememberPassword) saveLoginInfo = true;
+                      }),
+                      child: Opacity(
+                        opacity: saveLoginInfo ? 1.0 : 0.4,
+                        child: const Text('记住密码'),
+                      ),
+                    ),
                   ],
                 ),
 

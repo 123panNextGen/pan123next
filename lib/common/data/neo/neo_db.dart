@@ -130,6 +130,10 @@ class NeoDb {
       value: user.rememberPassword.toString(),
     );
     await w(
+      key: _key(user.id, 'isQrCodeLogin'),
+      value: user.isQrCodeLogin.toString(),
+    );
+    await w(
       key: _key(user.id, 'lastLogin'),
       value: user.lastLogin.toIso8601String(),
     );
@@ -152,6 +156,7 @@ class NeoDb {
     final os = await r(key: _key(id, 'os')) ?? '';
     final type = await r(key: _key(id, 'type')) ?? '';
     final rememberPasswordStr = await r(key: _key(id, 'rememberPassword'));
+    final isQrCodeLoginStr = await r(key: _key(id, 'isQrCodeLogin'));
     final lastLoginStr = await r(key: _key(id, 'lastLogin'));
     final openInfoRaw = await r(key: _key(id, 'openInfo'));
 
@@ -170,6 +175,7 @@ class NeoDb {
       device: DeviceModel(os: os, type: type),
       openInfo: openInfo,
       rememberPassword: rememberPasswordStr == 'true',
+      isQrCodeLogin: isQrCodeLoginStr == 'true',
       lastLogin:
           lastLoginStr != null ? DateTime.parse(lastLoginStr) : DateTime.now(),
     );
@@ -184,6 +190,7 @@ class NeoDb {
     await d(key: _key(id, 'os'));
     await d(key: _key(id, 'type'));
     await d(key: _key(id, 'rememberPassword'));
+    await d(key: _key(id, 'isQrCodeLogin'));
     await d(key: _key(id, 'lastLogin'));
     await d(key: _key(id, 'openInfo'));
   }

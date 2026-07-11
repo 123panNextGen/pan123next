@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showUserList = false;
   bool _hasChecked = false;
   int _topIndex = 0;
+  String? _loginUserName;
 
   @override
   void initState() {
@@ -86,6 +87,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: UserListView(
                   onLoginSuccess: widget.onLoginSuccess,
                   onAddNewUser: () => setState(() => _showUserList = false),
+                  onLoginAsUser: (user) => setState(() {
+                    _loginUserName = user.userName;
+                    _showUserList = false;
+                  }),
                 ),
               ),
             ),
@@ -136,7 +141,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               child: LoginInputPage(
                 onLoginSuccess: widget.onLoginSuccess,
-                onCancel: () => setState(() => _showUserList = true),
+                onCancel: () => setState(() {
+                  _showUserList = true;
+                  _loginUserName = null;
+                }),
+                initialUserName: _loginUserName,
               ),
             ),
           ),

@@ -13,10 +13,12 @@ class UserListView extends StatefulWidget {
     super.key,
     required this.onLoginSuccess,
     required this.onAddNewUser,
+    this.onLoginAsUser,
   });
 
   final VoidCallback onLoginSuccess;
   final VoidCallback onAddNewUser;
+  final ValueChanged<NeoUser>? onLoginAsUser;
 
   @override
   State<UserListView> createState() => _UserListViewState();
@@ -43,14 +45,58 @@ class _UserListViewState extends State<UserListView> {
   }
 
   Future<void> _onUserTap(NeoUser user) async {
+    if (user.isQrCodeLogin) {
+      setState(() => _loading = true);
+      try {
+        final result = await control.loginWithNeoUser(user);
+        if (!mounted) return;
+        if (result.apiCodeEnum == ApiCode.success) {
+          widget.onLoginSuccess();
+        } else {
+          showInfoBar(
+            context,
+            '登录失败',
+            '登录凭据已失效，请重新扫码或删除此账户',
+            InfoBarSeverity.error,
+          );
+          setState(() => _loading = false);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        showInfoBar(context, '登录失败', e.toString(), InfoBarSeverity.error);
+        setState(() => _loading = false);
+      }
+      return;
+    }
+
+    if (user.password.isEmpty) {
+      widget.onLoginAsUser?.call(user);
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       final result = await control.loginWithNeoUser(user);
       if (!mounted) return;
       if (result.apiCodeEnum == ApiCode.success) {
         widget.onLoginSuccess();
+        return;
+      }
+      final passwordResult = await control.login(
+        user.userName,
+        user.password,
+        user.rememberPassword,
+      );
+      if (!mounted) return;
+      if (passwordResult.apiCodeEnum == ApiCode.success) {
+        widget.onLoginSuccess();
       } else {
-        showInfoBar(context, '登录失败', result.msg, InfoBarSeverity.error);
+        showInfoBar(
+          context,
+          '登录失败',
+          passwordResult.msg,
+          InfoBarSeverity.error,
+        );
         setState(() => _loading = false);
       }
     } catch (e) {

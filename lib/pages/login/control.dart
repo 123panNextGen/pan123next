@@ -30,12 +30,13 @@ Future<Map<String, dynamic>> getUserInfo() async {
 Future<ApiReturnModel> login(
   String userName,
   String password,
-  bool rememberPassword,
-) async {
+  bool rememberPassword, {
+  bool saveLoginInfo = true,
+}) async {
   final session = Get.find<NetSession>();
   final neoDb = Get.find<NeoDb>();
 
-  final existing = await neoDb.getUser(userName);
+  final existing = saveLoginInfo ? await neoDb.getUser(userName) : null;
   if (existing != null &&
       existing.authorization.isNotEmpty &&
       rememberPassword) {
@@ -79,8 +80,11 @@ Future<ApiReturnModel> login(
       device: updated.device,
       openInfo: updated.openInfo,
       rememberPassword: rememberPassword,
+      isQrCodeLogin: false,
     );
-    await neoDb.saveUser(neoUser, asCurrent: true);
+    if (saveLoginInfo) {
+      await neoDb.saveUser(neoUser, asCurrent: true);
+    }
   }
 
   return returnModel;

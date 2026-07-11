@@ -25,6 +25,7 @@ class _MainScreenState extends State<MainScreen> {
         icon: Padding(
           padding: const EdgeInsetsGeometry.all(2.0),
           child: Image(
+            width: 32,
             image: AssetImage(
               FluentTheme.of(context).brightness == Brightness.dark
                   ? 'assets/image/app_icon.png'
@@ -32,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
+        content: Container(),
         title: Text(screenTitle),
         subtitle: const Text(screenSubTitle),
         captionControls: const WindowButtons(),

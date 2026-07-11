@@ -1,6 +1,6 @@
 name: pan123next
 description: "Your cloud, always ready"
-publish_to: 'none'
+publish_to: "none"
 version: 0.3.3+1
 
 environment:
@@ -57,7 +57,7 @@ flutter:
         - asset: assets/fonts/JetBrainsMonoNFM/JetBrainsMonoNerdFontMono-BoldItalic.ttf
           weight: 700
           style: italic
-    
+
     - family: MiSans
       fonts:
         - asset: assets/fonts/MiSans/MiSans-Normal.ttf
